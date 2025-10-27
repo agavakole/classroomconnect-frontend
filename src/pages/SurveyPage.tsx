@@ -3,21 +3,24 @@ import { ProgressBar } from "../components/ProgressBar";
 import { QuestionCard } from "../components/QuestionCard";
 import { AnswerButton } from "../components/AnswerButton";
 import { SURVEY_QUESTIONS, ANSWER_OPTIONS } from "../constants/surveyData";
+interface SurveyProps {
+  studentName: string;
+}
 
-export function Survey() {
+export function Survey({ studentName }: SurveyProps) {
   // States
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [isComplete, setIsComplete] = useState(false);
 
-  const question = SURVEY_QUESTIONS[currentQuestion];
+  const question = SURVEY_QUESTIONS[currentQuestion]; // Needs to update when state changes!
 
   // Functions
   const handleAnswer = (value: number) => {
     // Create the new answers object FIRST
     const newAnswers = {
       ...answers,
-      [question.id]: value, // ... means make a copy then append
+      [question.id]: value, // The ... means make a copy then append
     };
 
     // Update state
@@ -73,8 +76,26 @@ export function Survey() {
   // Regular survey (only shows if NOT complete)
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] flex flex-col items-center">
-      <div className="mx-auto w-full max-w-screen-sm px-4 pb-10 pt-[calc(env(safe-area-inset-top,0)+16px)]">
+    <div
+      className="min-h-screen bg-[#E6F6FF] relative"
+      style={{
+        backgroundImage: "url('/images/3d-image.png')",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "bottom center",
+        backgroundSize: "cover",
+      }}
+    >
+      {/* content container */}
+      <div
+        className="
+        relative z-10
+        mx-auto
+        w-full
+        px-4 sm:px-5 md:px-6 lg:px-8
+        py-6 md:py-10
+        max-w-[900px]
+      "
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#0AC5FF]">
@@ -99,15 +120,16 @@ export function Survey() {
         </div>
 
         {/* Main survey card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-12">
+        <div
+          className="w-full bg-white rounded-3xl md:rounded-[32px]
+                   shadow-[4px_8px_28px_rgba(0,0,0,0.08)] p-6 sm:p-8 md:p-10"
+        >
           <p className="text-2xl text-gray-700 mb-8 text-center">
             There are NO wrong answers! Just pick what feels right for you! ❤️
           </p>
 
-          {/* Question display */}
           <QuestionCard emoji={question.emoji} text={question.text} />
 
-          {/* Answer buttons */}
           <div className="grid grid-cols-2 gap-4 sm:gap-5 mb-8 max-[360px]:grid-cols-1">
             {ANSWER_OPTIONS.map((option) => (
               <AnswerButton
@@ -127,12 +149,11 @@ export function Survey() {
           {/* Navigation footer */}
           <div className="pt-4 border-t border-gray-100">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              {/* Previous button — on the left for large screens */}
               <button
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
                 className={[
-                  "w-full sm:w-auto", // full width on mobile
+                  "w-full sm:w-auto",
                   "px-4 py-3 rounded-xl text-sm sm:text-base font-medium",
                   "transition-colors duration-150",
                   currentQuestion === 0
@@ -144,7 +165,6 @@ export function Survey() {
                 ← Previous
               </button>
 
-              {/* Progress text — moves to right on large screens */}
               <div className="text-center text-gray-600 text-sm sm:text-base font-medium">
                 {Object.keys(answers).length === 0
                   ? "Let's start! 🌟"
