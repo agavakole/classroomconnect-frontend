@@ -40,6 +40,7 @@ export interface Question {
   id: number;
   text: string;
   emoji: string;
+  options?: AnswerOption[]; 
 }
 
 export interface AnswerOption {

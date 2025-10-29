@@ -48,9 +48,7 @@ export function Welcome({ onStart }: WelcomeProps) {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-10">
-            Let’s learn what makes you awesome!
-          </p>
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-10"></p>
 
           {/* Input section */}
           <div className="mb-8 text-left">
