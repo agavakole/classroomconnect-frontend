@@ -1,20 +1,24 @@
 // src/App.tsx
-import { useState, useEffect } from "react"; // ← ADD useEffect!
+import { useState, useEffect } from "react";
 import "./index.css";
 import { Home } from "./pages/Home";
+import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup"; // ← ADD THIS IMPORT!
 import { Welcome } from "./pages/Welcome";
 import { Survey } from "./pages/SurveyPage";
 import { publicApi } from "./services/api";
 
-type Screen = "home" | "welcome" | "survey" | "loading"; // ← ADD "loading"
+type Screen = "home" | "welcome" | "survey" | "loading" | "login" | "signup"; // ← ADD "signup"
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("loading"); // ← START with "loading"
+  const [currentScreen, setCurrentScreen] = useState<Screen>("loading");
   const [studentName, setStudentName] = useState("");
-  const [sessionData, setSessionData] = useState<any>(null); // ← NEW! Store session data
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<"student" | "teacher" | null>(null);
 
   // ========================================
-  // NEW FUNCTION: Handle QR Code Join
+  // EXISTING: Handle QR Code Join
   // ========================================
   const handleJoinSession = async (joinToken: string) => {
     try {
@@ -51,50 +55,84 @@ function App() {
   };
 
   // ========================================
-  // NEW useEffect: Check URL on Load
+  // Handle Login
+  // ========================================
+  const handleLogin = (type: "student" | "teacher") => {
+    console.log("✅ User logged in as:", type);
+
+    setIsAuthenticated(true);
+    setUserType(type);
+
+    if (type === "teacher") {
+      alert("Welcome Teacher! 👨‍🏫 Dashboard coming in Session 3!");
+    } else {
+      alert("Welcome Student! 🎓 Dashboard coming in Session 4!");
+    }
+
+    setCurrentScreen("home");
+  };
+
+  // ========================================
+  // NEW: Handle Signup
+  // ========================================
+  const handleSignup = (type: "student" | "teacher") => {
+    console.log("✅ User signed up as:", type);
+
+    setIsAuthenticated(true);
+    setUserType(type);
+
+    if (type === "teacher") {
+      alert(
+        "Account created! Welcome Teacher! 👨‍🏫 Dashboard coming in Session 3!"
+      );
+    } else {
+      alert(
+        "Account created! Welcome Student! 🎓 Dashboard coming in Session 4!"
+      );
+    }
+
+    setCurrentScreen("home");
+  };
+
+  // ========================================
+  // Check URL on Load
   // ========================================
   useEffect(() => {
     console.log("🚀 App loading...");
 
-    // Step 1: Get current URL path
     const path = window.location.pathname;
     console.log("📍 Current path:", path);
 
-    // Step 2: Check if it's a QR code link
     if (path.startsWith("/join/")) {
       console.log("🎯 QR code detected!");
 
-      // Step 3: Extract join token from URL
       const joinToken = path.split("/").pop();
       console.log("🔑 Join token:", joinToken);
 
-      // Step 4: Join session automatically
       if (joinToken) {
         handleJoinSession(joinToken);
       }
     } else {
-      // Normal home page - no QR code
       console.log("🏠 Normal homepage load");
       setCurrentScreen("home");
     }
-  }, []); // ← Empty array = run once on load
+  }, []);
 
   // ========================================
-  // EXISTING FUNCTIONS (Keep these!)
+  // Navigation Functions
   // ========================================
-
-  // Home -> Welcome
   const handleGoToWelcome = () => setCurrentScreen("welcome");
 
-  // Welcome -> Survey
   const handleStartSurvey = (name: string) => {
     setStudentName(name);
     setCurrentScreen("survey");
   };
 
   // ========================================
-  // NEW SCREEN: Loading
+  // RENDER SCREENS
   // ========================================
+
+  // Loading Screen
   if (currentScreen === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
@@ -107,20 +145,46 @@ function App() {
     );
   }
 
-  // ========================================
-  // EXISTING SCREENS (Keep these!)
-  // ========================================
-
+  // Home Screen
   if (currentScreen === "home") {
-    return <Home onStudent={handleGoToWelcome} />;
+    return (
+      <Home
+        onStudent={handleGoToWelcome}
+        onLogin={() => setCurrentScreen("login")}
+        onSignup={() => setCurrentScreen("signup")} // ← CHANGED!
+      />
+    );
   }
 
+  // Login Screen
+  if (currentScreen === "login") {
+    return (
+      <Login
+        onLogin={handleLogin}
+        onBackToHome={() => setCurrentScreen("home")}
+      />
+    );
+  }
+
+  // ← NEW SCREEN!
+  // Signup Screen
+  if (currentScreen === "signup") {
+    return (
+      <Signup
+        onSignup={handleSignup}
+        onBackToHome={() => setCurrentScreen("home")}
+      />
+    );
+  }
+
+  // Welcome Screen
   if (currentScreen === "welcome") {
     return <Welcome onStart={handleStartSurvey} />;
   }
 
+  // Survey Screen
   if (currentScreen === "survey") {
-    return <Survey studentName={studentName} sessionData={sessionData} />; // ← Pass sessionData!
+    return <Survey studentName={studentName} sessionData={sessionData} />;
   }
 
   return null;
