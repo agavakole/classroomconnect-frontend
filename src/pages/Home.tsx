@@ -1,11 +1,45 @@
 // src/pages/Home.tsx
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
 
+  // If a teacher started a session in this browser, show a real QR.
+  const [joinToken, setJoinToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("session");
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s?.joinToken) setJoinToken(String(s.joinToken));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Simple QR without extra libs
+  const qrUrl = joinToken
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+        `${window.location.origin}/join/${joinToken}`
+      )}`
+    : null;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#EAF6FF] via-[#F7FBFF] to-[#EAF6FF]">
+    <div
+      className="min-h-screen flex flex-col relative"
+      // Background image + soft white veil so foreground stays readable
+      style={{
+        backgroundImage: `
+          linear-gradient( to bottom right, rgba(255,255,255,0.30), rgba(255,255,255,0.88) ),
+          url('/images/3d-image.png')
+        `,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "bottom center",
+        backgroundSize: "cover",
+      }}
+    >
       {/* NAVBAR */}
       <header className="w-full border-b border-white/60 bg-white/70 backdrop-blur-sm">
         <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
@@ -34,23 +68,25 @@ export default function Home() {
 
       {/* HERO */}
       <main className="flex-1">
-        <section className="max-w-6xl mx-auto px-4 pt-10 pb-16 lg:pt-16">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
+        <section className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-16 sm:pt-20 md:pt-24 xl:pt-28 pb-16">
+          {/* NOTE: single column up to xl; only at xl we split (so iPad Mini/Pro look the same) */}
+          <div className="grid xl:grid-cols-2 gap-10 items-start">
             {/* Left: Copy */}
-            <div>
+            <div className="mt-2">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 Check in fast.
                 <br />
                 Learn smarter.
               </h1>
-              <p className="mt-4 text-lg sm:text-xl text-gray-700">
+              <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-gray-700 max-w-[55ch]">
                 Students scan, share mood, answer a quick survey, and instantly
-                get a personalized activity. Teachers see the class picture at a glance.
+                get a personalized activity. Teachers see the class picture at a
+                glance.
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => navigate("/welcome")}
+                  onClick={() => navigate("/join")}
                   className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_24px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_32px_rgba(38,132,255,0.45)] transition"
                 >
                   Join with code / QR
@@ -80,82 +116,77 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Clean Hero Card (no busy background) */}
+            {/* Right: Card with QR */}
             <div className="relative">
-              <div className="bg-white/90 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.10)]">
+              <div
+                className="
+                  rounded-3xl p-6 sm:p-8
+                  backdrop-blur-2xl bg-white/65
+                  ring-1 ring-black/10
+                  shadow-[0_20px_50px_rgba(0,0,0,0.18)]
+                "
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#6EE7B7] to-[#0AC5FF]" />
                   <div>
-                    <p className="text-lg font-bold text-gray-800">
+                    <p className="text-lg font-bold text-gray-900">
                       Today’s Session
                     </p>
-                    <p className="text-gray-600 text-sm">Scan to check in</p>
+                    <p className="text-gray-700 text-sm">
+                      {joinToken
+                        ? "Scan to check in"
+                        : "QR appears when a session starts"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
-                  <div className="rounded-2xl border-2 border-dashed border-gray-200 p-6 text-center text-gray-500">
-                    QR preview
+                  {/* Glass sub-card: QR box */}
+                  <div className="rounded-2xl p-4 text-center text-gray-700 flex items-center justify-center border border-white/60 bg-white/70">
+                    {qrUrl ? (
+                      <img
+                        src={qrUrl}
+                        alt="Session QR"
+                        className="w-[210px] h-[210px] object-contain"
+                      />
+                    ) : (
+                      <div>
+                        <div className="font-semibold mb-1">QR preview</div>
+                        <div className="text-xs">
+                          Start a session to display the QR here
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="rounded-2xl bg-white p-4 border-2 border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1">
+
+                  {/* Glass sub-card: Featured activity */}
+                  <div className="rounded-2xl p-4 border border-white/60 bg-white/70">
+                    <p className="text-sm text-gray-600 mb-1">
                       Featured activity
                     </p>
-                    <p className="font-semibold text-gray-800">Pattern Match</p>
-                    <p className="text-gray-600 text-sm mt-1">
+                    <p className="font-semibold text-gray-900">Pattern Match</p>
+                    <p className="text-gray-700 text-sm mt-1">
                       3–5 min • Visual • Game
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
-                  <span className="rounded-xl bg-[#F0F9FF] text-[#0369A1] px-3 py-2 text-sm font-semibold text-center">
+                  <span className="rounded-xl bg-white/70 text-[#0369A1] px-3 py-2 text-sm font-semibold text-center ring-1 ring-white/60">
                     Mood check
                   </span>
-                  <span className="rounded-xl bg-[#F1F5F9] text-[#0F172A] px-3 py-2 text-sm font-semibold text-center">
+                  <span className="rounded-xl bg-white/70 text-[#0F172A] px-3 py-2 text-sm font-semibold text-center ring-1 ring-white/60">
                     Short survey
                   </span>
-                  <span className="rounded-xl bg-[#ECFDF5] text-[#065F46] px-3 py-2 text-sm font-semibold text-center">
+                  <span className="rounded-xl bg-white/70 text-[#065F46] px-3 py-2 text-sm font-semibold text-center ring-1 ring-white/60">
                     Recommendation
                   </span>
                 </div>
 
-                <p className="mt-6 text-gray-700 flex items-center">
-                  Instant, student-friendly
-                  flow with zero friction.
+                <p className="mt-6 text-gray-800">
+                  Instant, student-friendly flow with zero friction.
                 </p>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* FEATURES (high contrast cards) */}
-        <section className="max-w-6xl mx-auto px-4 pb-16">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center">
-            Built for classrooms
-          </h2>
-
-          <div className="mt-8 grid md:grid-cols-3 gap-5">
-            <div className="bg-white rounded-2xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.06)] border border-white/80">
-              <div className="text-3xl mb-3">⚡</div>
-              <p className="font-bold text-gray-800">Fast onboarding</p>
-              <p className="text-gray-600 mt-1">
-                Guest mode or accounts—both work with the same QR flow.
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.06)] border border-white/80">
-              <div className="text-3xl mb-3">🔒</div>
-              <p className="font-bold text-gray-800">Private by default</p>
-              <p className="text-gray-600 mt-1">
-                Only the class and teacher see session data.
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl p-6 shadow-[0_10px_24px_rgba(0,0,0,0.06)] border border-white/80">
-              <div className="text-3xl mb-3">📊</div>
-              <p className="font-bold text-gray-800">Actionable insights</p>
-              <p className="text-gray-600 mt-1">
-                Mood summary + activity matches—ready in seconds.
-              </p>
             </div>
           </div>
         </section>
@@ -168,13 +199,22 @@ export default function Home() {
             © {new Date().getFullYear()} ClassroomConnect
           </p>
           <div className="text-sm text-gray-600 flex items-center gap-4">
-            <button onClick={() => navigate("/login")} className="hover:text-[#0072FF]">
+            <button
+              onClick={() => navigate("/login")}
+              className="hover:text-[#0072FF]"
+            >
               Log in
             </button>
-            <button onClick={() => navigate("/signup")} className="hover:text-[#0072FF]">
+            <button
+              onClick={() => navigate("/signup")}
+              className="hover:text-[#0072FF]"
+            >
               Sign up
             </button>
-            <button onClick={() => navigate("/welcome")} className="hover:text-[#0072FF]">
+            <button
+              onClick={() => navigate("/join")}
+              className="hover:text-[#0072FF]"
+            >
               Join with code
             </button>
           </div>

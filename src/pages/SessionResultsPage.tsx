@@ -6,9 +6,11 @@ type Submission = {
   id?: string;
   student_name?: string;
   mood?: string;
-  learning_style?: "visual" | "auditory" | "kinesthetic" | string;
+  learning_style?: string;   // normalize to string
   created_at?: string;
 };
+
+const norm = (v?: string) => (v ? String(v).toLowerCase() : "");
 
 export default function SessionResultsPage() {
   const navigate = useNavigate();
@@ -25,15 +27,29 @@ export default function SessionResultsPage() {
       try {
         if (!sessionId) throw new Error("Missing sessionId");
         setErr("");
+
         const data = await teacherApi.getSessionSubmissions(sessionId);
 
-        const list: Submission[] = Array.isArray(data?.submissions)
+        // API may return either { submissions: [...] } or bare array. Normalize:
+        const list: any[] = Array.isArray(data?.submissions)
           ? data.submissions
           : Array.isArray(data)
           ? data
           : [];
 
-        setRows(list);
+        const normalized: Submission[] = list.map((r) => ({
+          id: r.id ?? r.submission_id ?? undefined,
+          student_name: r.student_name ?? r.name ?? "Guest",
+          mood: r.mood ?? r.mood_label ?? undefined,
+          learning_style:
+            r.learning_style ??
+            r.learning_style_label ??
+            r.learningStyle ??
+            undefined,
+          created_at: r.created_at ?? r.submitted_at ?? r.timestamp ?? undefined,
+        }));
+
+        setRows(normalized);
       } catch (e: any) {
         const msg = String(e?.message || "");
         if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
@@ -53,7 +69,7 @@ export default function SessionResultsPage() {
 
   const totals = useMemo(() => {
     const count = (k: string) =>
-      rows.filter((r) => r.learning_style === k).length;
+      rows.filter((r) => norm(r.learning_style) === k).length;
     return {
       total: rows.length,
       visual: count("visual"),
@@ -62,14 +78,16 @@ export default function SessionResultsPage() {
     };
   }, [rows]);
 
-  const badge = (ls?: string) =>
-    ls === "visual"
+  const badge = (ls?: string) => {
+    const x = norm(ls);
+    return x === "visual"
       ? "bg-blue-100 text-blue-700"
-      : ls === "auditory"
+      : x === "auditory"
       ? "bg-purple-100 text-purple-700"
-      : ls === "kinesthetic"
+      : x === "kinesthetic"
       ? "bg-emerald-100 text-emerald-700"
       : "bg-gray-100 text-gray-700";
+  };
 
   const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "—");
 
@@ -89,9 +107,7 @@ export default function SessionResultsPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Session Results
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-800">Session Results</h1>
             <p className="text-sm text-gray-500">
               Session ID: <code>{sessionId}</code>
             </p>
@@ -158,9 +174,7 @@ export default function SessionResultsPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="p-3 bg-gray-50 border-b text-left">
-                      Student
-                    </th>
+                    <th className="p-3 bg-gray-50 border-b text-left">Student</th>
                     <th className="p-3 bg-gray-50 border-b text-left">Mood</th>
                     <th className="p-3 bg-gray-50 border-b text-left">
                       Learning Style
@@ -173,12 +187,8 @@ export default function SessionResultsPage() {
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={r.id || i}>
-                      <td className="p-3 border-b">
-                        {r.student_name || "Guest"}
-                      </td>
-                      <td className="p-3 border-b capitalize">
-                        {r.mood || "—"}
-                      </td>
+                      <td className="p-3 border-b">{r.student_name || "Guest"}</td>
+                      <td className="p-3 border-b capitalize">{r.mood || "—"}</td>
                       <td className="p-3 border-b">
                         <span
                           className={`px-2 py-1 rounded text-sm ${badge(

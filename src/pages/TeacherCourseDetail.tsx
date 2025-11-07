@@ -36,7 +36,7 @@ export default function TeacherCourseDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
+  
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,7 +165,7 @@ export default function TeacherCourseDetail() {
                 onClick={handleStartSession}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600"
               >
-                🚀 Start Session
+                Start Session
               </button>
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function TeacherCourseDetail() {
                 }
                 className="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
               >
-                📊 View Results
+                View Results
               </button>
             </div>
           </div>
@@ -232,6 +232,7 @@ export default function TeacherCourseDetail() {
 
         {/* Recommendations Matrix */}
         <div className="bg-white rounded-2xl shadow p-6">
+          
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
@@ -277,7 +278,7 @@ export default function TeacherCourseDetail() {
                         key={mood}
                         className="border-2 border-gray-300 bg-purple-50 p-3 text-center font-semibold capitalize"
                       >
-                        😊 {mood}
+                        {mood}
                       </th>
                     ))}
                   </tr>

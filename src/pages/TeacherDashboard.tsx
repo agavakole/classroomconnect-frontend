@@ -6,6 +6,7 @@ import { Modal } from "../components/Modal";
 import CreateSurveyModal from "../components/CreateSurveyModal";
 import CreateActivityModal from "../components/CreateActivityModal";
 import CreateCourseModal from "../components/CreateCourseModal";
+import { Link } from "react-router-dom";
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -159,25 +160,19 @@ export default function TeacherDashboard() {
             ) : (
               <div className="space-y-3">
                 {activities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer"
-                    onClick={() =>
-                      navigate(`/teacher/activities/${activity.id}`)
-                    }
-                  >
-                    <h3 className="font-semibold text-gray-800">
-                      {activity.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                        {activity.type}
-                      </span>
-                      <p className="text-sm text-gray-600 truncate">
-                        {activity.summary}
-                      </p>
-                    </div>
-                  </div>
+                   <Link
+    key={activity.id}
+    to={`/teacher/activities/${activity.id}`}
+    className="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+  >
+    <h3 className="font-semibold text-gray-800">{activity.name}</h3>
+    <div className="flex items-center gap-2 mt-1">
+      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+        {activity.type}
+      </span>
+      <p className="text-sm text-gray-600 truncate">{activity.summary}</p>
+    </div>
+  </Link>
                 ))}
               </div>
             )}

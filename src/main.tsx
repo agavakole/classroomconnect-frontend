@@ -18,6 +18,8 @@ import TeacherSurveyDetail from "./pages/TeacherSurveyDetail";
 import TeacherCourseDetail from "./pages/TeacherCourseDetail";
 import StartSessionPage from "./pages/StartSessionPage";
 import SessionResultsPage from "./pages/SessionResultsPage";
+import TeacherActivitiesPage from "./pages/TeacherActivityPage";
+import TeacherActivityDetail from "./pages/TeacherActivityDetail";
 
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
@@ -100,8 +102,25 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </RequireTeacher>
           }
         />
+        <Route
+  path="/teacher/activities"
+  element={
+    <RequireTeacher>
+      <TeacherActivitiesPage />
+    </RequireTeacher>
+  }
+/>
+<Route
+  path="/teacher/activities/:id"
+  element={
+    <RequireTeacher>
+      <TeacherActivityDetail />
+    </RequireTeacher>
+  }
+/>
           <Route path="/join" element={<JoinSession />} />
   <Route path="/join/:joinToken" element={<JoinSession />} />
+
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

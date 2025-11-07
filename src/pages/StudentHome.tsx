@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../services/api";
-import { getStudentToken, clearStudentToken } from "../auth";
-
+import { clearStudentToken } from "../auth";
+import { logoutStudentCompletely, getStudentToken } from "../auth";
 export default function StudentHome() {
   const nav = useNavigate();
   const [profile, setProfile] = useState<any>(null);
@@ -44,11 +44,10 @@ export default function StudentHome() {
   }
 
   const logout = () => {
-    clearStudentToken();
-    // leave teacher token alone; this is student logout
+    logoutStudentCompletely();
+    // this guarantees App will render the Landing/Home (no session left)
     nav("/", { replace: true });
   };
-
   return (
     <div className="min-h-screen bg-[#E6F6FF] px-4 py-8">
       <div className="max-w-4xl mx-auto">

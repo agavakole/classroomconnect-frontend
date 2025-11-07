@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-// (do NOT import "./index.css" here; it's in main.tsx)
 
 import Home from "./pages/Home";
 import { Welcome } from "./pages/Welcome";

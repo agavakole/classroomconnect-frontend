@@ -1,4 +1,3 @@
-// src/pages/JoinSessionPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { publicApi } from "../services/api";
@@ -8,31 +7,42 @@ export default function JoinSession() {
   const { joinToken: tokenFromPath } = useParams<{ joinToken: string }>();
   const [sp] = useSearchParams();
 
-  const cameFromScanner = sp.get("scanner") === "1";
-  const [rawInput, setRawInput] = useState<string>(tokenFromPath || sp.get("code") || "");
+  const [rawInput, setRawInput] = useState<string>(
+    tokenFromPath || sp.get("code") || ""
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Extract token if the user pastes a full QR URL
   const token = useMemo(() => {
-    const trimmed = (rawInput || "").trim();
-    if (!trimmed) return "";
+  const raw = (rawInput || "").trim();
+  if (!raw) return "";
 
-    // 1) If the input looks like a URL … try to extract /join/<token>
-    try {
-      const u = new URL(trimmed);
-      // handle /join/<token> or /join?code=<token>
-      const pathParts = u.pathname.split("/").filter(Boolean);
-      if (pathParts[0] === "join" && pathParts[1]) return pathParts[1];
-      const qCode = u.searchParams.get("code");
-      if (qCode) return qCode;
-    } catch {
-      // not a URL → fall back to “as typed”
-    }
+  // If text starts with '#', strip it (common when copying a fragment)
+  const cleaned = raw.replace(/^#/, "");
 
-    // 2) Otherwise assume it’s a plain code
-    return trimmed.toUpperCase();
-  }, [rawInput]);
+  try {
+    const u = new URL(cleaned);
+
+    // 1) ?code=<token>
+    const code = u.searchParams.get("code");
+    if (code) return code;
+
+    // 2) .../join/<token> (find the last "join" segment and take what follows)
+    const parts = u.pathname.split("/").filter(Boolean);
+    const idx = parts.lastIndexOf("join");
+    if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+
+    // 3) fallback: last non-empty path segment
+    if (parts.length > 0) return parts[parts.length - 1];
+
+    // 4) fallback to original string
+    return cleaned;
+  } catch {
+    // Not a URL — return cleaned as typed (keep case)
+    return cleaned;
+  }
+}, [rawInput]);
 
   const resolveAndGo = async (t: string) => {
     try {
@@ -68,9 +78,7 @@ export default function JoinSession() {
 
         <h1 className="text-2xl font-bold mb-2">Join a Session</h1>
         <p className="text-gray-600 mb-6">
-          {cameFromScanner
-            ? "If you’re on a phone, scanning a QR will usually open this page with the code filled in. You can also paste the QR link below, or just type the 6-digit code."
-            : "Enter the code from your teacher — or paste the QR link here."}
+          Paste the QR link or type the 6-character code from your teacher.
         </p>
 
         <div className="space-y-3">
@@ -100,15 +108,6 @@ export default function JoinSession() {
             {error}
           </div>
         )}
-
-        <div className="mt-6 rounded-xl bg-gray-50 border p-4 text-sm text-gray-600">
-          <div className="font-semibold mb-1">How QR works</div>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>On phones, open the Camera and point at the classroom screen.</li>
-            <li>It opens this site with the session token pre-filled.</li>
-            <li>No camera? Just type the code your teacher shows.</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
