@@ -1,5 +1,5 @@
 // src/pages/JoinSessionPage.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { publicApi } from "../services/api";
 
@@ -8,27 +8,38 @@ export default function JoinSession() {
   const { joinToken: tokenFromPath } = useParams<{ joinToken: string }>();
   const [sp] = useSearchParams();
 
-  const [code, setCode] = useState<string>(
-    tokenFromPath || sp.get("code") || ""
-  );
+  const cameFromScanner = sp.get("scanner") === "1";
+  const [rawInput, setRawInput] = useState<string>(tokenFromPath || sp.get("code") || "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const resolveAndGo = async (token: string) => {
+  // Extract token if the user pastes a full QR URL
+  const token = useMemo(() => {
+    const trimmed = (rawInput || "").trim();
+    if (!trimmed) return "";
+
+    // 1) If the input looks like a URL … try to extract /join/<token>
+    try {
+      const u = new URL(trimmed);
+      // handle /join/<token> or /join?code=<token>
+      const pathParts = u.pathname.split("/").filter(Boolean);
+      if (pathParts[0] === "join" && pathParts[1]) return pathParts[1];
+      const qCode = u.searchParams.get("code");
+      if (qCode) return qCode;
+    } catch {
+      // not a URL → fall back to “as typed”
+    }
+
+    // 2) Otherwise assume it’s a plain code
+    return trimmed.toUpperCase();
+  }, [rawInput]);
+
+  const resolveAndGo = async (t: string) => {
     try {
       setError("");
       setLoading(true);
-
-      // DO NOT clear tokens here — keep student logged in
-      const session = await publicApi.getSession(token);
-
-      // Save for App + Survey
-      sessionStorage.setItem(
-        "session",
-        JSON.stringify({ joinToken: token, session })
-      );
-
-      // Send back to App; App decides welcome vs survey
+      const session = await publicApi.getSession(t);
+      sessionStorage.setItem("session", JSON.stringify({ joinToken: t, session }));
       navigate("/?from=join", { replace: true });
     } catch (e: any) {
       setError(e?.message || "Invalid or expired session code.");
@@ -39,7 +50,7 @@ export default function JoinSession() {
 
   useEffect(() => {
     if (tokenFromPath) {
-      setCode(tokenFromPath);
+      setRawInput(tokenFromPath);
       resolveAndGo(tokenFromPath);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,33 +58,57 @@ export default function JoinSession() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#E6F6FF] px-4">
-      <div className="bg-white/90 rounded-2xl p-8 shadow max-w-md w-full">
+      <div className="bg-white/90 rounded-2xl p-8 shadow max-w-lg w-full">
+        <button
+          onClick={() => navigate("/")}
+          className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2"
+        >
+          <span>←</span> Back to Home
+        </button>
+
         <h1 className="text-2xl font-bold mb-2">Join a Session</h1>
         <p className="text-gray-600 mb-6">
-          Enter the code from your teacher or scan their QR.
+          {cameFromScanner
+            ? "If you’re on a phone, scanning a QR will usually open this page with the code filled in. You can also paste the QR link below, or just type the 6-digit code."
+            : "Enter the code from your teacher — or paste the QR link here."}
         </p>
 
-        <div className="flex gap-2 mb-3">
+        <div className="space-y-3">
           <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.trim())}
-            placeholder="e.g. 7F9K2A"
-            className="flex-1 px-4 py-3 rounded-lg border"
+            value={rawInput}
+            onChange={(e) => setRawInput(e.target.value)}
+            placeholder="Paste QR link or type code e.g. 7F9K2A"
+            className="w-full px-4 py-3 rounded-xl border"
           />
           <button
-            onClick={() => code && resolveAndGo(code)}
-            disabled={!code || loading}
-            className="px-4 py-3 rounded-lg bg-black text-white disabled:opacity-60"
+            onClick={() => token && resolveAndGo(token)}
+            disabled={!token || loading}
+            className="w-full py-3 rounded-xl bg-black text-white disabled:opacity-60"
           >
             {loading ? "Joining..." : "Join"}
           </button>
         </div>
 
+        {token && rawInput && token !== rawInput.trim() && (
+          <p className="text-xs text-gray-500 mt-2">
+            Detected token: <span className="font-mono">{token}</span>
+          </p>
+        )}
+
         {error && (
-          <div className="mt-2 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2">
+          <div className="mt-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2">
             {error}
           </div>
         )}
+
+        <div className="mt-6 rounded-xl bg-gray-50 border p-4 text-sm text-gray-600">
+          <div className="font-semibold mb-1">How QR works</div>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>On phones, open the Camera and point at the classroom screen.</li>
+            <li>It opens this site with the session token pre-filled.</li>
+            <li>No camera? Just type the code your teacher shows.</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

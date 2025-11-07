@@ -22,7 +22,7 @@ import SessionResultsPage from "./pages/SessionResultsPage";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import StudentHome from "./pages/StudentHome"; // NEW
-import "./index.css";
+import "./index.css";         
 function DevBootToHome() {
   const nav = useNavigate();
   const loc = useLocation();
@@ -100,6 +100,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </RequireTeacher>
           }
         />
+          <Route path="/join" element={<JoinSession />} />
+  <Route path="/join/:joinToken" element={<JoinSession />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
