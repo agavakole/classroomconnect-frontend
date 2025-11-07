@@ -1,233 +1,233 @@
-# ClassroomConnect Frontend
+# ClassroomConnect — Frontend
 
-Frontend application for ClassroomConnect - A learning style assessment tool that helps teachers understand how their students learn best and provides personalized activity recommendations.
-
-## 🎯 Overview
-
-ClassroomConnect allows teachers to create quick learning style surveys for their students. Students take an 8-question survey (via QR code or manual entry), and the system uses AI to generate personalized learning activities based on their learning style profile.
-
-## ✨ Features
-
-### (Current) - Guest Survey Flow
-- **🏠 Home Page** - Welcome screen with login/signup/guest options
-- **👋 Welcome Page** - Student name collection
-- **📋 Interactive Survey** - 8-question learning style assessment with 4 answer options per question
-- **🎉 Results Display** - Learning style breakdown with AI-generated activities
-- **📱 QR Code Integration** - Automatic session joining via QR code scanning
-- **💾 API Integration** - Backend connection for session fetching and survey submission
-- **🎨 Responsive Design** - Works on mobile, tablet, and desktop
-- **⚡ Guest Mode** - Quick surveys without account creation
-
-
-## 🛠️ Tech Stack
-
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling and animations
-- **React Hooks** - State management (useState, useEffect)
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+ (tested with v22.19.0 ✅)
-- npm 10+ (tested with v10.9.3 ✅)
-
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/YOUR-USERNAME/classroomconnect-frontend.git
-cd classroomconnect-frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Visit `http://localhost:5173` to see the app!
-
-### Testing the App
-
-#### Test Normal Flow (Without Backend):
-```bash
-# Open in browser
-http://localhost:5173/
-
-# Click "Continue as Guest"
-# Enter a name
-# Complete the survey
-# See completion screen
-```
-
-#### Test QR Code Flow:
-```bash
-# Open in browser with a join token
-http://localhost:5173/join/TEST123
-
-# App will attempt to connect to backend
-# If backend is offline, you'll see error message
-# This is expected! Backend integration coming in Week 2
-```
-
-## 📁 Project Structure
-```
-src/
-├── components/         # Reusable UI components
-│   ├── AnswerButton.tsx       # Survey answer option button
-│   ├── ProgressBar.tsx        # Survey progress indicator
-│   └── QuestionCard.tsx       # Survey question display
-│
-├── pages/             # Full page components
-│   ├── Home.tsx              # Landing page with auth options
-│   ├── Welcome.tsx           # Student name entry page
-│   ├── SurveyPage.tsx        # 8-question survey
-│   └── (more coming in Week 2)
-│
-├── services/          # API integration
-│   └── api.ts                # Backend API calls
-│
-├── constants/         # Static data
-│   └── surveyData.ts         # Survey questions and options
-│
-├── types/             # TypeScript definitions
-│   └── index.ts              # All type definitions
-│
-├── App.tsx            # Main app with routing logic
-└── main.tsx           # App entry point
-```
-
-## 🔌 Backend Integration
-
-This frontend connects to the ClassroomConnect backend API.
-
-**Backend Repository:** [Link to Michael's backend repo]
-
-**API Endpoints Used:**
-- `GET /join/{token}` - Fetch session by join token
-- `GET /sessions/{id}/survey` - Fetch survey questions
-- `POST /sessions/{id}/submit` - Submit survey answers
-
-**API Base URL:** 
-- Development: `http://localhost:8000`
-- Production: TBD
-
-## 🎨 Design Decisions
-
-### Guest Mode
-Guest mode allows students (especially young children) to take surveys without creating accounts. This reduces friction and ensures high completion rates in classroom settings.
-
-**Guest Flow:**
-1. Student scans QR code (or enters join code)
-2. Student enters their name
-3. Student completes survey
-4. Results submitted to teacher
-5. Optional: Create account to save results permanently
-
-### QR Code Integration
-Teachers display QR codes in the classroom. Students scan with their phones to instantly join the survey session. The join token is embedded in the URL and automatically detected by the app.
-
-### Answer Options
-Each question has 4 answer options representing different levels of agreement:
-- "Yes! All the time!" (Strong yes)
-- "Yes, sometimes!" (Moderate yes)
-- "Not sure!" (Neutral)
-- "Not really!" (Disagree)
-
-## 📱 Responsive Design
-
-The app is fully responsive and optimized for:
-- **Mobile** (320px+) - Touch-friendly, single column
-- **Tablet** (640px+) - Larger touch targets, optimized spacing
-- **Desktop** (1024px+) - Centered layouts, optimal reading width
-
-## 🧪 Available Scripts
-```bash
-# Development
-npm run dev          # Start dev server with hot reload
-
-# Production
-npm run build        # Build optimized production bundle
-npm run preview      # Preview production build locally
-
-# Code Quality
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript compiler check
-```
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the root directory:
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-## 🚧 Current Status
-
-### ✅ Completed
-- [x] Project setup and configuration
-- [x] Home page with guest/login/signup options
-- [x] Welcome page for name collection
-- [x] Survey page with 8 questions and 4 answer options per question(not connected to backend currently)
-- [x] Progress tracking and navigation (Previous button, question counter)
-- [x] Completion screen
-- [x] QR code URL detection and auto-join
-- [x] API service layer (getSession, getSurvey, submitSurvey)
-- [x] Guest survey submission
-- [x] Error handling and loading states
-- [x] Responsive design for all screen sizes
-- [x] TypeScript types and interfaces
-
-### 🔄 In Progress
-- [ ] Authentication system (Login/Signup)
-- [ ] Teacher dashboard
-- [ ] Student portal
-- [ ] Results display with learning styles
-- [ ] AI-generated activities display
-- [ ] Manual join code entry
-
-## 👥 Team
-
-**Frontend Developers:**
-- Kole - Lead Developer
-- Dayu - Developer
-
-**Backend Developers:**
-- Michael - Lead Backend Developer
-- Tommy - Backend Developer
-
-## 📚 Learning Resources
-
-### Key Concepts Used in Week 1:
-- **React Hooks** - useState for state management, useEffect for side effects
-- **TypeScript** - Interface definitions, type safety
-- **Async/Await** - API calls and promise handling
-- **Component Architecture** - Reusable, modular components
-- **Responsive Design** - Mobile-first approach with Tailwind
-- **URL Routing** - Detection and parameter extraction
-
-## 🐛 Known Issues
-
-- [ ] Guest results are not displayed after survey completion (Week 2 feature)
-- [ ] No manual join code entry yet (Week 2 feature)
-
-## 📄 License
-
-CS5500 Final Project - Fall 2025
-
-## 🤝 Contributing
-
-1. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-2. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-3. Push to the branch (`git push origin feature/AmazingFeature`)
-4. Open a Pull Request
-
-## 📞 Contact
-
-For questions or issues, please contact the development team or create an issue in the repository.
+A React + TypeScript app that helps teachers learn how their students learn best.  
+Students join a live session (QR/link), take a short survey, and teachers see results and recommended activities in real time.
 
 ---
 
-**Made with ❤️ by the ClassroomConnect Team**
+## ✨ Features
+
+### Student
+
+- **Join via QR/Link**: `/join/:token` (auto-detects token)
+- **Guest Mode** with friendly name capture (no account needed)
+- **Authenticated Student Mode** (JWT) with profile fetch
+- **Interactive Survey** with progress and animated choices
+- **Completion Screen** with learning style, mood, and a **Recommended Activity** (video/link embed support)
+
+### Teacher
+
+- **Login/Signup** (JWT stored in `localStorage`)
+- **Dashboard & Course Detail** with **LearningStyle × Mood** activity recommendation matrix
+- **Start Session** page: generates **Join Link + QR Code**
+- **Live Results** page: auto-refreshes every 6 seconds and aggregates student submissions
+
+### Engineering
+
+- React 18 + TypeScript + Vite
+- Tailwind CSS
+- Robust API layer with:
+  - Shared `VITE_API_BASE_URL`
+  - Graceful JSON parsing + human-friendly errors
+  - Student/Teacher token helpers
+  - Public submit retry (falls back when `Authorization` is rejected)
+- Local/session storage hygiene:
+  - `teacher_token`, `student_token` (localStorage)
+  - `session`, `guest_name`, `student_full_name` (sessionStorage)
+
+---
+
+## 🗺️ Routes
+
+```text
+/                              Home (Student/Teacher entry)
+/login                         Unified login (used for teacher in this app)
+/signup                        Unified signup (used for teacher in this app)
+
+# Student public flow (handled by <App/>)
+ /                             Home → (Welcome) → Survey
+ /join                         Manual join page (enter token)
+ /join/:token                  Auto-join by token (QR/link)
+ (Welcome)                     Student name capture
+ (Survey)                      Mood + questions → submit → activity
+
+# Teacher (protected by token)
+ /teacher/dashboard            Teacher dashboard
+ /teacher/courses/:id          Course detail + recommendation matrix
+ /teacher/courses/:id/session  Start session (join link + QR)
+ /teacher/sessions/:id/results Live results (auto-refresh)
+Guard: RequireTeacher redirects to /login if teacher_token is missing.
+
+🧱 Project Structure
+text
+Copy code
+src/
+├─ App.tsx                     # Controls student public flow (Home → Welcome → Survey)
+├─ main.tsx                    # Router and all <Route> definitions
+├─ auth.ts                     # Token helpers (getStudentToken / getTeacherToken)
+├─ components/
+│  ├─ ProgressBar.tsx
+│  └─ (…)
+├─ constants/
+│  └─ surveyData.ts            # Fallback survey questions/options (when backend not present)
+├─ pages/
+│  ├─ Home.tsx
+│  ├─ Welcome.tsx
+│  ├─ JoinSessionPage.tsx
+│  ├─ SurveyPage.tsx
+│  ├─ StudentHome.tsx
+│  ├─ TeacherDashboard.tsx
+│  ├─ TeacherCourseDetail.tsx
+│  ├─ StartSessionPage.tsx
+│  └─ SessionResultsPage.tsx
+├─ services/
+│  ├─ api.ts                   # publicApi + authApi (students/teachers)
+│  └─ teacherApi.ts            # teacher-only endpoints (courses, sessions, activities, surveys)
+└─ index.css                   # Tailwind entry
+⚙️ Environment
+Create .env in the project root:
+
+env
+Copy code
+VITE_API_BASE_URL=http://localhost:8000
+Defaults to http://localhost:8000 if unset.
+
+Ensure the backend CORS allows http://localhost:5173.
+
+🚀 Getting Started
+bash
+Copy code
+# 1) Clone
+git clone https://github.com/YOUR-USERNAME/classroomconnect-frontend.git
+cd classroomconnect-frontend
+
+# 2) Install deps
+npm install
+
+# 3) Run dev server
+npm run dev
+Open http://localhost:5173.
+
+🔌 Backend (expected)
+This frontend expects the CS5500 backend (FastAPI) with endpoints like:
+
+Public
+
+GET /api/public/join/{join_token}
+
+POST /api/public/join/{join_token}/submit
+
+Students
+
+POST /api/students/login
+
+GET /api/students/me
+
+GET /api/students/submissions
+
+Teachers (JWT)
+
+POST /api/teachers/login
+
+GET /api/courses/:id
+
+GET /api/activities
+
+PATCH /api/courses/:id/recommendations
+
+POST /api/sessions/{course_id}/sessions
+
+GET /api/sessions/{session_id}/submissions
+
+Seed data typically includes an open session and test teacher/student accounts.
+Confirm at http://localhost:8000/docs.
+
+🧪 End-to-End Testing (Manual)
+A) Teacher flow
+Visit /login and sign in with a seeded teacher (e.g., teacher1@example.com / Passw0rd!).
+
+Go to a course: /teacher/courses/:id
+
+Click “🚀 Start Session” → /teacher/courses/:id/session
+
+Press “▶ Start Session” to generate join link + QR.
+
+Click “📊 View Results” (will be empty until students submit).
+
+The app stores last started session in sessionStorage.active_session so you can return to results.
+
+B) Student flow (Guest)
+On another tab/device, open the Join Link from the teacher page or scan the QR.
+
+You’ll land on /join/:token and continue to Welcome to enter a name.
+
+Complete the Survey → see Recommended Activity.
+
+Teacher Live Results page should now show the submission within ~6 seconds.
+
+C) Student flow (Authenticated)
+Call POST /api/students/login (or build a simple student login page).
+
+Ensure student_token is present in localStorage.
+
+Join via /join/:token; submit survey → counts as authenticated submission.
+
+🔐 Storage Keys
+localStorage.teacher_token — JWT for teacher area
+
+localStorage.student_token — JWT for student
+
+sessionStorage.session — server session blob after joining
+
+sessionStorage.guest_name — temporary guest name
+
+sessionStorage.student_full_name — fetched once for greeting
+
+sessionStorage.active_session — last started teacher session (to persist across pages)
+
+🧰 NPM Scripts
+bash
+Copy code
+npm run dev        # Start Vite dev server
+npm run build      # Production build
+npm run preview    # Preview the production build
+npm run lint       # ESLint
+npm run type-check # TypeScript diagnostics
+🩺 Troubleshooting
+I go straight to /join after restarting dev server.
+Clear sessionStorage.session and reload. Or visit / directly.
+
+Teacher “View Results” is empty after student submission.
+
+Confirm student submitted to the same join_token.
+
+Keep the results page open (it auto-refreshes every 6s).
+
+Ensure backend shows the submission under /api/sessions/{id}/submissions.
+
+CORS / 401 on public submit with Authorization header.
+publicApi.submitSurvey will retry without Authorization if the first attempt fails with 401 or a CORS network error.
+
+Session disappeared after logout / refresh.
+Teacher session UI persists a started session in sessionStorage.active_session. If you log out, re-start a session or rehydrate from your backend (optional enhancement).
+
+🧭 Roadmap
+Student login UI (currently API-only)
+
+Teacher dashboard list view & filters
+
+Persist “active session” server-side and list open sessions
+
+Better activity previews (thumbnails)
+
+Unit tests & E2E tests
+
+👥 Team
+Frontend: Kole, Dayu
+
+Backend: Michael, Tommy
+
+📄 License
+CS5500 Final Project — Fall 2025
+Made with ❤️ by the ClassroomConnect Team
+```

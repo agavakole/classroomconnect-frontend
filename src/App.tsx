@@ -1,193 +1,110 @@
-// src/App.tsx
-import { useState, useEffect } from "react";
-import "./index.css";
-import { Home } from "./pages/Home";
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup"; // ← ADD THIS IMPORT!
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+// (do NOT import "./index.css" here; it's in main.tsx)
+
+import Home from "./pages/Home";
 import { Welcome } from "./pages/Welcome";
-import { Survey } from "./pages/SurveyPage";
-import { publicApi } from "./services/api";
+import { Survey as SurveyScreen } from "./pages/SurveyPage";
 
-type Screen = "home" | "welcome" | "survey" | "loading" | "login" | "signup"; // ← ADD "signup"
+type Screen = "home" | "welcome" | "survey" | "loading";
 
-function App() {
+export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [currentScreen, setCurrentScreen] = useState<Screen>("loading");
   const [studentName, setStudentName] = useState("");
   const [sessionData, setSessionData] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<"student" | "teacher" | null>(null);
 
-  // ========================================
-  // EXISTING: Handle QR Code Join
-  // ========================================
-  const handleJoinSession = async (joinToken: string) => {
+  const loadSessionFromStorage = () => {
     try {
-      console.log("🔍 Fetching session for token:", joinToken);
-
-      // Step 1: Get session info from backend
-      const session = await publicApi.getSession(joinToken);
-      console.log("✅ Session data received:", session);
-
-      // Step 2: Get survey questions from backend
-      const survey = await publicApi.getSurvey(session.sessionId);
-      console.log("✅ Survey data received:", survey);
-
-      // Step 3: Combine session + survey data
-      const completeData = {
-        ...session,
-        survey: survey,
-      };
-
-      // Step 4: Save to state
-      setSessionData(completeData);
-
-      // Step 5: Go to welcome page (skip home!)
-      setCurrentScreen("welcome");
-
-      console.log("🎉 Successfully joined session!");
-    } catch (error) {
-      console.error("❌ Error joining session:", error);
-      alert("Invalid join code! Please check and try again.");
-
-      // Go to home page on error
-      setCurrentScreen("home");
+      const raw = sessionStorage.getItem("session");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
   };
 
-  // ========================================
-  // Handle Login
-  // ========================================
-  const handleLogin = (type: "student" | "teacher") => {
-    console.log("✅ User logged in as:", type);
-
-    setIsAuthenticated(true);
-    setUserType(type);
-
-    if (type === "teacher") {
-      alert("Welcome Teacher! 👨‍🏫 Dashboard coming in Session 3!");
-    } else {
-      alert("Welcome Student! 🎓 Dashboard coming in Session 4!");
-    }
-
-    setCurrentScreen("home");
-  };
-
-  // ========================================
-  // NEW: Handle Signup
-  // ========================================
-  const handleSignup = (type: "student" | "teacher") => {
-    console.log("✅ User signed up as:", type);
-
-    setIsAuthenticated(true);
-    setUserType(type);
-
-    if (type === "teacher") {
-      alert(
-        "Account created! Welcome Teacher! 👨‍🏫 Dashboard coming in Session 3!"
-      );
-    } else {
-      alert(
-        "Account created! Welcome Student! 🎓 Dashboard coming in Session 4!"
-      );
-    }
-
-    setCurrentScreen("home");
-  };
-
-  // ========================================
-  // Check URL on Load
-  // ========================================
   useEffect(() => {
-    console.log("🚀 App loading...");
+    const hasFromJoin =
+      new URLSearchParams(location.search).get("from") === "join";
+    const sess = loadSessionFromStorage();
+    const isStudent = Boolean(localStorage.getItem("student_token"));
 
-    const path = window.location.pathname;
-    console.log("📍 Current path:", path);
+    const validSession = !!(
+      sess &&
+      sess.joinToken &&
+      sess.session &&
+      sess.session.session_id
+    );
 
-    if (path.startsWith("/join/")) {
-      console.log("🎯 QR code detected!");
-
-      const joinToken = path.split("/").pop();
-      console.log("🔑 Join token:", joinToken);
-
-      if (joinToken) {
-        handleJoinSession(joinToken);
-      }
-    } else {
-      console.log("🏠 Normal homepage load");
-      setCurrentScreen("home");
+    if (hasFromJoin && validSession) {
+      setSessionData(sess);
+      setCurrentScreen(isStudent ? "survey" : "welcome");
+      navigate("/", { replace: true });
+      return;
     }
+
+    if (validSession) {
+      setSessionData(sess);
+      setCurrentScreen(isStudent ? "survey" : "welcome");
+      return;
+    }
+
+    setCurrentScreen("home");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ========================================
-  // Navigation Functions
-  // ========================================
-  const handleGoToWelcome = () => setCurrentScreen("welcome");
-
-  const handleStartSurvey = (name: string) => {
-    setStudentName(name);
-    setCurrentScreen("survey");
+  const ensureSessionOrKick = () => {
+    const s = sessionData ?? loadSessionFromStorage();
+    const valid = !!(s && s.joinToken && s.session && s.session.session_id);
+    if (!valid) {
+      navigate("/join", { replace: true });
+      return null;
+    }
+    if (!sessionData) setSessionData(s);
+    return s;
   };
 
-  // ========================================
-  // RENDER SCREENS
-  // ========================================
-
-  // Loading Screen
   if (currentScreen === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="text-center">
           <div className="text-6xl mb-4">⏳</div>
           <p className="text-2xl font-bold text-gray-700">Loading...</p>
-          <p className="text-gray-500 mt-2">Checking your link...</p>
         </div>
       </div>
     );
   }
 
-  // Home Screen
-  if (currentScreen === "home") {
-    return (
-      <Home
-        onStudent={handleGoToWelcome}
-        onLogin={() => setCurrentScreen("login")}
-        onSignup={() => setCurrentScreen("signup")} // ← CHANGED!
-      />
-    );
-  }
+  if (currentScreen === "home") return <Home />;
 
-  // Login Screen
-  if (currentScreen === "login") {
-    return (
-      <Login
-        onLogin={handleLogin}
-        onBackToHome={() => setCurrentScreen("home")}
-      />
-    );
-  }
-
-  // ← NEW SCREEN!
-  // Signup Screen
-  if (currentScreen === "signup") {
-    return (
-      <Signup
-        onSignup={handleSignup}
-        onBackToHome={() => setCurrentScreen("home")}
-      />
-    );
-  }
-
-  // Welcome Screen
   if (currentScreen === "welcome") {
-    return <Welcome onStart={handleStartSurvey} />;
+    const sess = ensureSessionOrKick();
+    if (!sess) return null;
+    return (
+      <Welcome
+        onStart={(name) => {
+          setStudentName(name);
+          sessionStorage.setItem("guest_name", name.trim());
+          setCurrentScreen("survey");
+        }}
+      />
+    );
   }
 
-  // Survey Screen
   if (currentScreen === "survey") {
-    return <Survey studentName={studentName} sessionData={sessionData} />;
+    const sess = ensureSessionOrKick();
+    if (!sess) return null;
+
+    const nameForGreeting = localStorage.getItem("student_token")
+      ? sessionStorage.getItem("student_full_name") || studentName
+      : studentName;
+
+    return (
+      <SurveyScreen studentName={nameForGreeting || ""} sessionData={sess} />
+    );
   }
 
   return null;
 }
-
-export default App;

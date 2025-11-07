@@ -1,17 +1,17 @@
+// src/pages/Login.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authApi } from "../services/api";
 
-interface LoginProps {
-  onLogin: (userType: "student" | "teacher") => void;
-  onBackToHome: () => void;
-}
+export function Login() {
+  const navigate = useNavigate();
 
-export function Login({ onLogin, onBackToHome }: LoginProps) {
-  // State for form inputs
+  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<"student" | "teacher">("student");
 
-  // State for UI
+  // UI state
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,19 +19,27 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-
     try {
-      // TODO: Week 2 Session 2 - Connect to backend
-      console.log("Login attempt:", { email, password, userType });
-
-      // Simulate API call (1 second delay)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Success! Tell App.tsx we logged in
-      onLogin(userType);
-    } catch (err) {
-      setError("Login failed. Please try again.");
-      console.error("Login error:", err);
+      if (userType === "teacher") {
+        const { access_token } = await authApi.teacherLogin(email, password);
+        localStorage.setItem("teacher_token", access_token);
+        localStorage.setItem("user_type", "teacher");
+        navigate("/teacher/dashboard", { replace: true });
+      } else {
+        const { access_token } = await authApi.studentLogin(email, password);
+        localStorage.setItem("student_token", access_token);
+        localStorage.setItem("user_type", "student");
+        navigate("/student/home", { replace: true }); // << student destination
+      }
+    } catch (err: any) {
+      const msg =
+        err?.status === 401 ||
+        String(err?.message || "")
+          .toLowerCase()
+          .includes("unauthorized")
+          ? "Invalid email or password."
+          : err?.message || "Login failed. Please try again.";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -50,15 +58,13 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
       <div className="relative z-10 w-full max-w-md">
         {/* Back Button */}
         <button
-          onClick={onBackToHome}
+          onClick={() => navigate("/")}
           className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2"
         >
           <span>←</span> Back to Home
         </button>
 
-        {/* Login Card */}
         <div className="bg-white/70 backdrop-blur-xl ring-1 ring-white/60 shadow-[0_20px_40px_rgba(0,0,0,0.12)] rounded-[32px] p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
               Welcome Back! 👋
@@ -66,9 +72,10 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
             <p className="text-gray-600">Log in to continue</p>
           </div>
 
-          {/* User Type Toggle */}
+          {/* Role Toggle */}
           <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
             <button
+              type="button"
               onClick={() => setUserType("student")}
               className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                 userType === "student"
@@ -76,9 +83,10 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
                   : "text-gray-600"
               }`}
             >
-              🎓 Student
+              Student
             </button>
             <button
+              type="button"
               onClick={() => setUserType("teacher")}
               className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                 userType === "teacher"
@@ -86,13 +94,11 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
                   : "text-gray-600"
               }`}
             >
-              👨‍🏫 Teacher
+              Teacher
             </button>
           </div>
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Email
@@ -107,7 +113,6 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
               />
             </div>
 
-            {/* Password Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Password
@@ -122,14 +127,12 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
                 {error}
               </div>
             )}
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -139,12 +142,11 @@ export function Login({ onLogin, onBackToHome }: LoginProps) {
             </button>
           </form>
 
-          {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Don't have an account?{" "}
+              Don’t have an account?{" "}
               <button
-                onClick={onBackToHome}
+                onClick={() => navigate("/signup")}
                 className="text-[#0072FF] font-semibold hover:underline"
               >
                 Sign up

@@ -1,19 +1,17 @@
+// src/pages/Signup.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authApi } from "../services/api";
 
-interface SignupProps {
-  onSignup: (userType: "student" | "teacher") => void;
-  onBackToHome: () => void;
-}
+export function Signup() {
+  const navigate = useNavigate();
 
-export function Signup({ onSignup, onBackToHome }: SignupProps) {
-  // Form inputs
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState<"student" | "teacher">("student");
 
-  // UI state
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,31 +19,32 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (password !== confirmPassword) {
       setError("Passwords don't match!");
       return;
     }
-
     if (password.length < 6) {
       setError("Password must be at least 6 characters!");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // TODO: Week 2 Session 2 - Connect to backend
-      console.log("Signup attempt:", { name, email, password, userType });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Success!
-      onSignup(userType);
-    } catch (err) {
-      setError("Signup failed. Please try again.");
-      console.error("Signup error:", err);
+      if (userType === "student") {
+        await authApi.studentSignup(email, password, name);
+        const { access_token } = await authApi.studentLogin(email, password);
+        localStorage.setItem("student_token", access_token);
+        localStorage.setItem("user_type", "student");
+        navigate("/student/home", { replace: true });
+      } else {
+        await authApi.teacherSignup(email, password, name);
+        const { access_token } = await authApi.teacherLogin(email, password);
+        localStorage.setItem("teacher_token", access_token);
+        localStorage.setItem("user_type", "teacher");
+        navigate("/teacher/dashboard", { replace: true });
+      }
+    } catch (err: any) {
+      setError(err?.message || "Signup failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -62,17 +61,14 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
       }}
     >
       <div className="relative z-10 w-full max-w-md">
-        {/* Back Button */}
         <button
-          onClick={onBackToHome}
+          onClick={() => navigate("/")}
           className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2"
         >
           <span>←</span> Back to Home
         </button>
 
-        {/* Signup Card */}
         <div className="bg-white/70 backdrop-blur-xl ring-1 ring-white/60 shadow-[0_20px_40px_rgba(0,0,0,0.12)] rounded-[32px] p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
               Create Account ✨
@@ -80,7 +76,6 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
             <p className="text-gray-600">Join ClassroomConnect today</p>
           </div>
 
-          {/* User Type Toggle */}
           <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
             <button
               onClick={() => setUserType("student")}
@@ -90,7 +85,7 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
                   : "text-gray-600"
               }`}
             >
-              🎓 Student
+              Student
             </button>
             <button
               onClick={() => setUserType("teacher")}
@@ -100,13 +95,11 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
                   : "text-gray-600"
               }`}
             >
-              👨‍🏫 Teacher
+              Teacher
             </button>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Full Name
@@ -121,7 +114,6 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
               />
             </div>
 
-            {/* Email Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Email
@@ -136,7 +128,6 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
               />
             </div>
 
-            {/* Password Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Password
@@ -152,7 +143,6 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
               />
             </div>
 
-            {/* Confirm Password Input */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">
                 Confirm Password
@@ -168,14 +158,12 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
                 {error}
               </div>
             )}
 
-            {/* Signup Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -185,12 +173,11 @@ export function Signup({ onSignup, onBackToHome }: SignupProps) {
             </button>
           </form>
 
-          {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Already have an account?{" "}
               <button
-                onClick={onBackToHome}
+                onClick={() => navigate("/login")}
                 className="text-[#0072FF] font-semibold hover:underline"
               >
                 Log in
