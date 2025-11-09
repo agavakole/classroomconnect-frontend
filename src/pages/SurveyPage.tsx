@@ -36,6 +36,15 @@ const GRADIENTS = [
   { from: "#F472B6", to: "#EC4899" },
   { from: "#FCD34D", to: "#F59E0B" },
 ];
+const MOOD_CANON: Record<string, string> = {
+  curious: "Curious",
+  energized: "Energized",
+  tired: "Tired",
+  happy: "Happy",
+  calm: "Calm",
+  nervous: "Nervous",
+  neutral: "Neutral",
+};
 const toKey = (s: string) => s.trim().toLowerCase();
 
 /* ---------------- UI bits ---------------- */
@@ -235,7 +244,13 @@ export function Survey({
           return;
         }
 
-        const moodToSend = (mood || "neutral").trim();
+   
+        // If the session provided a schema, we must send the original label (stored in `mood`).
+        // If there's no schema, map our UI key to a title-cased canonical value.
+        const moodToSend =
+          (sessionData?.session?.mood_check_schema?.options?.length ?? 0) > 0
+            ? mood || "Neutral" // raw label from schema
+            : MOOD_CANON[toKey(mood)] || "Neutral";
         // Always provide a name – works for both logged-in and guest paths
         const displayName = (
           nameForGreeting ||
@@ -514,6 +529,7 @@ export function Survey({
           </div>
         </div>
 
+        {/* Mood picker */}
         {moodOptions.length > 0 && (
           <div className="mb-6">
             <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8">
@@ -522,13 +538,13 @@ export function Survey({
               </div>
               <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-12">
                 {moodOptions.map((opt) => {
-                  const key = toKey(opt);
+                  const key = toKey(opt); // key for visuals only
                   return (
                     <MoodChoice
                       key={key}
-                      value={key}
-                      selected={toKey(mood) === key}
-                      onClick={(v) => setMood(v)}
+                      value={opt} // <-- keep ORIGINAL label here
+                      selected={toKey(mood) === key} // compare by key
+                      onClick={(v) => setMood(v)} // <-- store ORIGINAL label in state
                     />
                   );
                 })}

@@ -32,7 +32,7 @@ export default function Home() {
       // Background image + soft white veil so foreground stays readable
       style={{
         backgroundImage: `
-          linear-gradient( to bottom right, rgba(255,255,255,0.30), rgba(255,255,255,0.88) ),
+          linear-gradient( to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.88) ),
           url('/images/3d-image.png')
         `,
         backgroundRepeat: "no-repeat",
