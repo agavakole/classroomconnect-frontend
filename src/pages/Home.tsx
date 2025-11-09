@@ -28,16 +28,18 @@ export default function Home() {
 
   return (
     <div
-      className="min-h-screen flex flex-col relative"
-      // Background image + soft white veil so foreground stays readable
+      className="
+    min-h-screen flex flex-col relative
+    bg-no-repeat bg-cover
+    bg-[position:center_105%]    /* slight push on mobile/tablet */
+    lg:bg-[position:center_100%] /* more on large screens */
+    xl:bg-[position:center_60%] /* even more on desktop */
+  "
       style={{
         backgroundImage: `
-          linear-gradient( to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.88) ),
-          url('/images/3d-image.png')
-        `,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "bottom center",
-        backgroundSize: "cover",
+      linear-gradient(to bottom right, rgba(255,255,255,0.20), rgba(255,255,255,0.68)),
+      url('/images/3d-image.png')
+    `,
       }}
     >
       {/* NAVBAR */}
@@ -47,7 +49,7 @@ export default function Home() {
             onClick={() => navigate("/")}
             className="text-2xl sm:text-3xl font-extrabold text-gray-900"
           >
-            Classroom<span className="text-[#0AC5FF]">Connect</span>
+            Class<span className="text-[#0AC5FF]">Connect</span>
           </button>
           <div className="hidden sm:flex items-center gap-2">
             <button
@@ -69,43 +71,20 @@ export default function Home() {
       {/* HERO */}
       <main className="flex-1">
         <section className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-16 sm:pt-20 md:pt-24 xl:pt-28 pb-16">
-          {/* NOTE: single column up to xl; only at xl we split (so iPad Mini/Pro look the same) */}
           <div className="grid xl:grid-cols-2 gap-10 items-start">
-            {/* Left: Copy */}
-            <div className="mt-2">
+            {/* 1) LEFT: Copy (no buttons) */}
+            <div className="mt-2 order-2 xl:order-1">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 Check in fast.
                 <br />
                 Learn smarter.
               </h1>
-              <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-gray-700 max-w-[55ch]">
+              <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-gray-800 max-w-[55ch]">
                 Students scan, share mood, answer a quick survey, and instantly
                 get a personalized activity. Teachers see the class picture at a
                 glance.
               </p>
-
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => navigate("/join")}
-                  className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_24px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_32px_rgba(38,132,255,0.45)] transition"
-                >
-                  Join with code / QR
-                </button>
-                <button
-                  onClick={() => navigate("/signup")}
-                  className="px-6 py-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
-                >
-                  Create an account
-                </button>
-                <button
-                  onClick={() => navigate("/login")}
-                  className="px-6 py-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
-                >
-                  Log in
-                </button>
-              </div>
-
-              <div className="mt-4 text-sm text-gray-600">
+              <div className="mt-4 text-sm text-gray-900">
                 Are you a teacher?{" "}
                 <button
                   onClick={() => navigate("/teacher/dashboard")}
@@ -115,13 +94,12 @@ export default function Home() {
                 </button>
               </div>
             </div>
-
             {/* Right: Card with QR */}
-            <div className="relative">
+           <div className="relative order-2 xl:order-2 mt-16">
               <div
                 className="
                   rounded-3xl p-6 sm:p-8
-                  backdrop-blur-2xl bg-white/65
+                  backdrop-blur-2xl bg-white/85
                   ring-1 ring-black/10
                   shadow-[0_20px_50px_rgba(0,0,0,0.18)]
                 "
@@ -142,7 +120,7 @@ export default function Home() {
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   {/* Glass sub-card: QR box */}
-                  <div className="rounded-2xl p-4 text-center text-gray-700 flex items-center justify-center border border-white/60 bg-white/70">
+                  <div className="rounded-2xl p-4 text-center text-gray-700 flex items-center justify-center border border-black/10 bg-white/45">
                     {qrUrl ? (
                       <img
                         src={qrUrl}
@@ -160,7 +138,7 @@ export default function Home() {
                   </div>
 
                   {/* Glass sub-card: Featured activity */}
-                  <div className="rounded-2xl p-4 border border-white/60 bg-white/70">
+                  <div className="rounded-2xl p-4 border border-black/10 bg-white/70">
                     <p className="text-sm text-gray-600 mb-1">
                       Featured activity
                     </p>
@@ -183,9 +161,32 @@ export default function Home() {
                   </span>
                 </div>
 
-                <p className="mt-6 text-gray-800">
+                <p className="mt-6 text-gray-800 text-center">
                   Instant, student-friendly flow with zero friction.
                 </p>
+              </div>
+            </div>
+            {/* 3) BUTTONS — mobile: after the card; desktop: below the text (same left column) */}
+            <div className="order-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => navigate("/join")}
+                  className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_24px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_32px_rgba(38,132,255,0.45)] transition"
+                >
+                  Join with code / QR
+                </button>
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="px-6 py-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
+                >
+                  Create an account
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-6 py-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
+                >
+                  Log in
+                </button>
               </div>
             </div>
           </div>

@@ -1,24 +1,60 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { teacherApi } from "../services/teacherApi";
+import { teacherApi } from "../services/api";
 
-type Submission = {
+type Row = {
   id?: string;
   student_name?: string;
-  mood?: string;
-  learning_style?: string;   // normalize to string
+  student_full_name?: string;
+  mood?: string;             // e.g., "energized"
+  learning_style?: string;   // arbitrary label from backend (e.g., "visual", "active learner", etc.)
+  status?: string;           // "completed" | "skipped"
   created_at?: string;
 };
 
-const norm = (v?: string) => (v ? String(v).toLowerCase() : "");
+function styleColor(key: string) {
+  const k = key.toLowerCase();
+  if (k.includes("visual")) return "text-blue-600";
+  if (k.includes("auditory")) return "text-purple-600";
+  if (k.includes("kinesthetic")) return "text-emerald-600";
+  if (k.includes("active")) return "text-emerald-600";
+  if (k.includes("passive")) return "text-slate-700";
+  if (k.includes("structured")) return "text-indigo-600";
+  if (k.includes("balanced")) return "text-teal-600";
+  return "text-gray-700";
+}
+
+function styleEmoji(key: string) {
+  const k = key.toLowerCase();
+  if (k.includes("visual")) return "👁️";
+  if (k.includes("auditory")) return "🎧";
+  if (k.includes("kinesthetic")) return "✋";
+  if (k.includes("active")) return "⚡";
+  if (k.includes("passive")) return "📖";
+  if (k.includes("structured")) return "📐";
+  if (k.includes("balanced")) return "🎯";
+  return "🎓";
+}
+
+function badgeClass(ls?: string) {
+  const k = (ls || "").toLowerCase();
+  if (k.includes("visual")) return "bg-blue-100 text-blue-700";
+  if (k.includes("auditory")) return "bg-purple-100 text-purple-700";
+  if (k.includes("kinesthetic")) return "bg-emerald-100 text-emerald-700";
+  if (k.includes("active")) return "bg-emerald-100 text-emerald-700";
+  if (k.includes("passive")) return "bg-slate-100 text-slate-700";
+  if (k.includes("structured")) return "bg-indigo-100 text-indigo-700";
+  if (k.includes("balanced")) return "bg-teal-100 text-teal-700";
+  return "bg-gray-100 text-gray-700";
+}
 
 export default function SessionResultsPage() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
 
-  const [rows, setRows] = useState<Submission[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string>("");
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     let timer: number;
@@ -29,36 +65,28 @@ export default function SessionResultsPage() {
         setErr("");
 
         const data = await teacherApi.getSessionSubmissions(sessionId);
+        const items = Array.isArray(data?.items) ? data.items : [];
 
-        // API may return either { submissions: [...] } or bare array. Normalize:
-        const list: any[] = Array.isArray(data?.submissions)
-          ? data.submissions
-          : Array.isArray(data)
-          ? data
-          : [];
-
-        const normalized: Submission[] = list.map((r) => ({
-          id: r.id ?? r.submission_id ?? undefined,
-          student_name: r.student_name ?? r.name ?? "Guest",
-          mood: r.mood ?? r.mood_label ?? undefined,
-          learning_style:
-            r.learning_style ??
-            r.learning_style_label ??
-            r.learningStyle ??
-            undefined,
-          created_at: r.created_at ?? r.submitted_at ?? r.timestamp ?? undefined,
+        const normalized: Row[] = items.map((it: any) => ({
+          id: it.id ?? undefined,
+          student_name: it.student_full_name || it.student_name || "Guest",
+          mood: (it.mood || "").toLowerCase(),
+          learning_style: (it.learning_style || "").toLowerCase(), // keep lowercase for grouping; display will be capitalized
+          status: it.status || "completed",
+          created_at: it.created_at,
         }));
 
         setRows(normalized);
       } catch (e: any) {
         const msg = String(e?.message || "");
-        if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
+        if (e?.status === 401 || msg.toLowerCase().includes("unauthorized")) {
           setErr("Not authorized. Please log in as a teacher again.");
         } else {
           setErr(msg || "Failed to load submissions.");
         }
       } finally {
         setLoading(false);
+        // auto-refresh every 6s so teachers can watch results roll in live
         timer = window.setTimeout(load, 6000);
       }
     };
@@ -67,27 +95,17 @@ export default function SessionResultsPage() {
     return () => window.clearTimeout(timer);
   }, [sessionId]);
 
-  const totals = useMemo(() => {
-    const count = (k: string) =>
-      rows.filter((r) => norm(r.learning_style) === k).length;
-    return {
-      total: rows.length,
-      visual: count("visual"),
-      auditory: count("auditory"),
-      kinesthetic: count("kinesthetic"),
-    };
+  // Dynamic buckets based on whatever labels backend sends
+  const buckets = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of rows) {
+      const key = (r.learning_style || "unknown").toLowerCase();
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]); // sorted by count desc
   }, [rows]);
 
-  const badge = (ls?: string) => {
-    const x = norm(ls);
-    return x === "visual"
-      ? "bg-blue-100 text-blue-700"
-      : x === "auditory"
-      ? "bg-purple-100 text-purple-700"
-      : x === "kinesthetic"
-      ? "bg-emerald-100 text-emerald-700"
-      : "bg-gray-100 text-gray-700";
-  };
+  const topBuckets = buckets.slice(0, 3); // show top 3 after "Total"
 
   const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "—");
 
@@ -136,38 +154,36 @@ export default function SessionResultsPage() {
           </div>
         )}
 
-        {/* Summary tiles */}
+        {/* Summary tiles: total + top 3 style buckets */}
         <div className="grid sm:grid-cols-4 gap-3 mb-6">
           <div className="p-4 bg-white rounded-xl shadow">
             <div className="text-sm text-gray-500">Total submissions</div>
-            <div className="text-2xl font-bold">{totals.total}</div>
+            <div className="text-2xl font-bold">{rows.length}</div>
           </div>
-          <div className="p-4 bg-white rounded-xl shadow">
-            <div className="text-sm text-gray-500">Visual</div>
-            <div className="text-2xl font-bold text-blue-600">
-              {totals.visual}
+
+          {topBuckets.map(([label, count]) => (
+            <div key={label} className="p-4 bg-white rounded-xl shadow">
+              <div className={`text-sm ${styleColor(label)} flex items-center gap-2`}>
+                <span className="text-xl">{styleEmoji(label)}</span>
+                <span className="capitalize">{label}</span>
+              </div>
+              <div className={`text-2xl font-bold ${styleColor(label)} mt-1`}>
+                {count}
+              </div>
             </div>
-          </div>
-          <div className="p-4 bg-white rounded-xl shadow">
-            <div className="text-sm text-gray-500">Auditory</div>
-            <div className="text-2xl font-bold text-purple-600">
-              {totals.auditory}
-            </div>
-          </div>
-          <div className="p-4 bg-white rounded-xl shadow">
-            <div className="text-sm text-gray-500">Kinesthetic</div>
-            <div className="text-2xl font-bold text-emerald-600">
-              {totals.kinesthetic}
-            </div>
-          </div>
+          ))}
+
+          {/* If fewer than 3 buckets, fill the grid for consistent layout */}
+          {Array.from({ length: Math.max(0, 3 - topBuckets.length) }).map((_, i) => (
+            <div key={`pad-${i}`} className="p-4 bg-white rounded-xl shadow opacity-40" />
+          ))}
         </div>
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow p-6">
           {rows.length === 0 ? (
             <div className="text-gray-600">
-              No submissions yet. Keep this page open; it auto-refreshes every 6
-              seconds.
+              No submissions yet. Keep this page open; it auto-refreshes every 6 seconds.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -176,12 +192,9 @@ export default function SessionResultsPage() {
                   <tr>
                     <th className="p-3 bg-gray-50 border-b text-left">Student</th>
                     <th className="p-3 bg-gray-50 border-b text-left">Mood</th>
-                    <th className="p-3 bg-gray-50 border-b text-left">
-                      Learning Style
-                    </th>
-                    <th className="p-3 bg-gray-50 border-b text-left">
-                      Submitted At
-                    </th>
+                    <th className="p-3 bg-gray-50 border-b text-left">Learning Style</th>
+                    <th className="p-3 bg-gray-50 border-b text-left">Status</th>
+                    <th className="p-3 bg-gray-50 border-b text-left">Submitted At</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,14 +203,11 @@ export default function SessionResultsPage() {
                       <td className="p-3 border-b">{r.student_name || "Guest"}</td>
                       <td className="p-3 border-b capitalize">{r.mood || "—"}</td>
                       <td className="p-3 border-b">
-                        <span
-                          className={`px-2 py-1 rounded text-sm ${badge(
-                            r.learning_style
-                          )}`}
-                        >
-                          {r.learning_style || "—"}
+                        <span className={`px-2 py-1 rounded text-sm ${badgeClass(r.learning_style)}`}>
+                          {(r.learning_style || "—")}
                         </span>
                       </td>
+                      <td className="p-3 border-b capitalize">{r.status || "—"}</td>
                       <td className="p-3 border-b">{fmt(r.created_at)}</td>
                     </tr>
                   ))}

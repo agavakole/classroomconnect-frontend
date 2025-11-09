@@ -1,9 +1,8 @@
-// src/pages/StudentHome.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../services/api";
-import { clearStudentToken } from "../auth";
-import { logoutStudentCompletely, getStudentToken } from "../auth";
+import { getStudentToken } from "../auth";
+
 export default function StudentHome() {
   const nav = useNavigate();
   const [profile, setProfile] = useState<any>(null);
@@ -35,19 +34,22 @@ export default function StudentHome() {
       <div className="min-h-screen flex items-center justify-center bg-[#E6F6FF]">
         <div className="text-center">
           <div className="text-6xl mb-4">⏳</div>
-          <p className="text-2xl font-bold text-gray-700">
-            Loading your dashboard…
-          </p>
+          <p className="text-2xl font-bold text-gray-700">Loading your dashboard…</p>
         </div>
       </div>
     );
   }
 
   const logout = () => {
-    logoutStudentCompletely();
-    // this guarantees App will render the Landing/Home (no session left)
+    // Clear ALL student/session state so App won’t bounce you to Welcome
+    localStorage.removeItem("student_token");
+    sessionStorage.removeItem("session");
+    sessionStorage.removeItem("student_full_name");
+    sessionStorage.removeItem("guest_name");
+    // (Leave teacher_token alone)
     nav("/", { replace: true });
   };
+
   return (
     <div className="min-h-screen bg-[#E6F6FF] px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -95,28 +97,20 @@ export default function StudentHome() {
           <h2 className="text-xl font-bold mb-4">Recent Submissions</h2>
           {subs.length === 0 ? (
             <p className="text-gray-600">
-              No submissions yet. Use{" "}
-              <span className="font-semibold">Join a Session</span> when your
-              teacher starts one.
+              No submissions yet. Use <span className="font-semibold">Join a Session</span> when your teacher starts one.
             </p>
           ) : (
             <ul className="divide-y">
               {subs.map((s, i) => (
                 <li key={i} className="py-3 flex items-center justify-between">
                   <div>
-                    <div className="font-semibold">
-                      {s.course_title ?? "Course"}
-                    </div>
+                    <div className="font-semibold">{s.course_title ?? "Course"}</div>
                     <div className="text-sm text-gray-500">
-                      {new Date(s.created_at).toLocaleString()} —{" "}
-                      {s.status ?? "submitted"}
+                      {new Date(s.created_at).toLocaleString()} — {s.status ?? "submitted"}
                     </div>
                   </div>
                   <div className="text-sm text-gray-600">
-                    LS:{" "}
-                    <span className="font-medium">
-                      {s.learning_style ?? "—"}
-                    </span>
+                    LS: <span className="font-medium">{s.learning_style ?? "—"}</span>
                   </div>
                 </li>
               ))}

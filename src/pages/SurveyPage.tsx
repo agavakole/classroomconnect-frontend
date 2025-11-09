@@ -1,33 +1,20 @@
-// src/pages/SurveyPage.tsx
-import { useState, useEffect } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { ProgressBar } from "../components/ProgressBar";
 import { SURVEY_QUESTIONS, ANSWER_OPTIONS } from "../constants/surveyData";
 import type { AnswerOption, Question, BackendQuestion } from "../types";
 import { publicApi, authApi } from "../services/api";
-import { getStudentToken } from "../auth";
-import type { ReactElement } from "react";
+import { getStudentToken } from "../services/api";
 
-/* ---------------- Mood assets ---------------- */
-const MOOD_ASSETS: Record<
-  string,
-  { label: string; img: string; color: string }
-> = {
-  curious: { label: "Curious", img: "/images/curious.png", color: "#22D3EE" },
-  energized: {
-    label: "Energized",
-    img: "/images/energetic.png",
-    color: "#10B981",
-  },
-  happy: { label: "Happy", img: "/images/happy-img.png", color: "#F59E0B" },
-  calm: { label: "Calm", img: "/images/calm-img.png", color: "#8B5CF6" },
-  tired: { label: "Tired", img: "/images/tired.png", color: "#6366F1" },
-  nervous: {
-    label: "Nervous",
-    img: "/images/nervous-img.png",
-    color: "#EF4444",
-  },
+/* ---------- Mood assets (visual only) ---------- */
+const MOOD_ASSETS: Record<string, { label: string; img: string; color: string }> =
+{
+  curious:   { label: "Curious",   img: "/images/curious.png",   color: "#22D3EE" },
+  energized: { label: "Energized", img: "/images/energetic.png", color: "#10B981" },
+  happy:     { label: "Happy",     img: "/images/happy-img.png", color: "#F59E0B" },
+  calm:      { label: "Calm",      img: "/images/calm-img.png",  color: "#8B5CF6" },
+  tired:     { label: "Tired",     img: "/images/tired.png",     color: "#6366F1" },
+  nervous:   { label: "Nervous",   img: "/images/nervous-img.png", color: "#EF4444" },
 };
-const CONFUSE_IMG = "/images/confuse.png";
 const GRADIENTS = [
   { from: "#FFB457", to: "#FF8A00" },
   { from: "#9B8CFF", to: "#6A5BFF" },
@@ -36,27 +23,14 @@ const GRADIENTS = [
   { from: "#F472B6", to: "#EC4899" },
   { from: "#FCD34D", to: "#F59E0B" },
 ];
-const MOOD_CANON: Record<string, string> = {
-  curious: "Curious",
-  energized: "Energized",
-  tired: "Tired",
-  happy: "Happy",
-  calm: "Calm",
-  nervous: "Nervous",
-  neutral: "Neutral",
-};
 const toKey = (s: string) => s.trim().toLowerCase();
 
-/* ---------------- UI bits ---------------- */
+/* ---------- Little UI bits ---------- */
 function MoodChoice({
   value,
   selected,
   onClick,
-}: {
-  value: string;
-  selected: boolean;
-  onClick: (v: string) => void;
-}) {
+}: { value: string; selected: boolean; onClick: (v: string) => void }) {
   const key = toKey(value);
   const asset = MOOD_ASSETS[key] ?? { label: value, img: "", color: "#3B82F6" };
   return (
@@ -67,7 +41,7 @@ function MoodChoice({
         aria-pressed={selected}
         className={[
           "relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36",
-          "rounded-2xl overflow-hidden transition-all duration-200",
+          "rounded-2xl overflow-hidden transition-all",
           "bg-white shadow-md hover:shadow-xl hover:scale-105 active:scale-95",
           selected ? "ring-4 scale-105" : "border-2 border-gray-200",
         ].join(" ")}
@@ -81,9 +55,7 @@ function MoodChoice({
             src={asset.img}
             alt={`${asset.label} mood`}
             className="w-full h-full object-cover"
-            onError={(e) =>
-              ((e.currentTarget as HTMLImageElement).style.display = "none")
-            }
+            onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
           />
         ) : null}
       </button>
@@ -117,9 +89,8 @@ function AnswerTile({
       onClick={onClick}
       className={[
         "relative w-full rounded-[22px] p-4 sm:p-5 text-left",
-        "text-white shadow-[0_8px_20px_rgba(0,0,0,0.10)]",
-        "transition-all duration-200 ease-out",
-        "hover:scale-[1.015] hover:shadow-[0_12px_26px_rgba(0,0,0,0.12)]",
+        "text-white transition-all",
+        "hover:scale-[1.015]",
         "border-2 border-white/50",
         selected ? "ring-4 scale-[1.02]" : "ring-0",
       ].join(" ")}
@@ -127,7 +98,7 @@ function AnswerTile({
         background: `linear-gradient(135deg, ${g.from} 0%, ${g.to} 100%)`,
         boxShadow: selected
           ? `0 0 0 4px ${g.to}80, 0 12px 26px rgba(0,0,0,0.12)`
-          : undefined,
+          : "0 8px 20px rgba(0,0,0,0.10)",
       }}
       aria-pressed={selected}
     >
@@ -143,7 +114,7 @@ function AnswerTile({
   );
 }
 
-/* ---------------- Types & page ---------------- */
+/* ---------- Props ---------- */
 interface SurveyProps {
   studentName: string;
   sessionData?: {
@@ -162,10 +133,111 @@ interface SurveyProps {
   };
 }
 
-export function Survey({
-  studentName,
-  sessionData,
-}: SurveyProps): ReactElement {
+/* ---------- Activity renderers for completion screen ---------- */
+function renderVideo(url: string, title: string) {
+  const embed = url
+    .replace("watch?v=", "embed/")
+    .replace("youtu.be/", "youtube.com/embed/");
+  return (
+    <div className="mt-4">
+      <p className="font-medium text-gray-700 mb-2">🎬 Watch this:</p>
+      <div className="relative w-full rounded-lg overflow-hidden shadow-lg" style={{ paddingBottom: "56.25%" }}>
+        <iframe
+          className="absolute top-0 left-0 w-full h-full"
+          src={embed}
+          title={title || "Recommended video"}
+          frameBorder={0}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
+}
+function renderActivityDetails(a: any) {
+  if (!a) return null;
+
+  /* Canonical backend keys + safe fallbacks for older/hand-typed content_json */
+  const cj = a?.content_json ?? {};
+  const type = String(a?.type || "").toLowerCase();
+
+  const steps: string[] =
+    Array.isArray(cj.script_steps) ? cj.script_steps
+    : Array.isArray(cj.steps) ? cj.steps
+    : Array.isArray(cj.instructions) ? cj.instructions
+    : [];
+
+  const materials: string[] =
+    Array.isArray(cj.materials_needed) ? cj.materials_needed
+    : Array.isArray(cj.materials) ? cj.materials
+    : [];
+
+  const durationSec: number | undefined =
+    typeof cj.duration_sec === "number" ? cj.duration_sec
+    : typeof cj.duration === "number" ? cj.duration
+    : undefined;
+
+  const teacherNotes: string | undefined =
+    cj.notes_for_teacher ?? cj.teacher_notes ?? cj.notes;
+
+  const videoUrl: string | undefined =
+    cj.url || cj.video_url || a?.link || a?.url || cj.file_url;
+  return (
+     <>
+      <h3 className="text-xl font-bold text-green-700 mb-2">{a.name}</h3>
+      <p className="text-gray-700 mb-4">{a.summary}</p>
+      <div className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium mb-2">
+        {a.type}
+      </div>
+      {durationSec ? (
+        <div className="text-sm text-gray-600 mb-2">⏱ {durationSec} sec</div>
+      ) : null}
+
+      {(type === "in-class-task" || type === "breathing-exercise") && (
+        <div className="mt-3 space-y-3">
+          {steps.length > 0 && (
+            <>
+              <p className="font-medium text-gray-700">Steps</p>
+              <ol className="list-decimal pl-6 space-y-1 text-gray-800">
+                {steps.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            </>
+          )}
+          {materials.length > 0 && (
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Materials:</span> {materials.join(", ")}
+            </p>
+          )}
+          {teacherNotes && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Notes:</span> {teacherNotes}
+            </p>
+          )}
+        </div>
+      )}
+
+      {type === "video" && videoUrl ? renderVideo(String(videoUrl), a.name) : null}
+
+      {(type === "worksheet" || type === "article") && (cj.file_url || a?.url) && (
+        <div className="mt-4">
+          <a
+            href={cj.file_url || a?.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
+          >
+            📄 Open file
+          </a>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------- Page ---------- */
+export function Survey({ studentName, sessionData }: SurveyProps): ReactElement {
   const token = getStudentToken();
   const [nameForGreeting, setNameForGreeting] = useState(studentName || "");
 
@@ -176,9 +248,7 @@ export function Survey({
           const p = await authApi.getStudentProfile(token);
           setNameForGreeting(p.full_name || "");
           sessionStorage.setItem("student_full_name", p.full_name || "");
-        } catch {
-          /* ignore profile errors */
-        }
+        } catch {/* ignore */}
       })();
     }
   }, [token, nameForGreeting]);
@@ -197,8 +267,7 @@ export function Survey({
   const questionText = (currentQ as any).text;
 
   const moodPrompt =
-    sessionData?.session?.mood_check_schema?.prompt ??
-    "How are you feeling today?";
+    sessionData?.session?.mood_check_schema?.prompt ?? "How are you feeling today?";
   const moodOptions = sessionData?.session?.mood_check_schema?.options ?? [];
   const answeredCount = Object.keys(answers).length;
 
@@ -236,22 +305,17 @@ export function Survey({
       if (sessionData?.joinToken) {
         const answersMap = toBackendAnswers(backendQuestions, newAnswers);
 
-        if (
-          sessionData?.session?.require_survey &&
-          !Object.keys(answersMap).length
-        ) {
+        if (sessionData?.session?.require_survey && !Object.keys(answersMap).length) {
           alert("Please answer the questions before submitting.");
           return;
         }
 
-   
-        // If the session provided a schema, we must send the original label (stored in `mood`).
-        // If there's no schema, map our UI key to a title-cased canonical value.
+        // If the session gave a mood schema, send the exact label. Otherwise, keep the UI text (or Neutral).
         const moodToSend =
           (sessionData?.session?.mood_check_schema?.options?.length ?? 0) > 0
-            ? mood || "Neutral" // raw label from schema
-            : MOOD_CANON[toKey(mood)] || "Neutral";
-        // Always provide a name – works for both logged-in and guest paths
+            ? mood || "Neutral"
+            : mood || "Neutral";
+
         const displayName = (
           nameForGreeting ||
           studentName ||
@@ -262,7 +326,6 @@ export function Survey({
 
         let submissionResult: any;
 
-        // try as logged-in (still uses the public endpoint, but with is_guest:false)
         if (token) {
           try {
             submissionResult = await publicApi.submitSurvey(
@@ -276,40 +339,29 @@ export function Survey({
               token
             );
           } catch (e: any) {
-            // If backend says it needs a guest name, retry as guest with the same data
             const msg = String(e?.message || "");
-            if (
-              e?.status === 400 &&
-              msg.toUpperCase().includes("GUEST_NAME_REQUIRED")
-            ) {
-              submissionResult = await publicApi.submitSurvey(
-                sessionData.joinToken,
-                {
-                  mood: moodToSend,
-                  answers: answersMap,
-                  is_guest: true,
-                  student_name: displayName || "Student",
-                }
-              );
+            if (e?.status === 400 && msg.toUpperCase().includes("GUEST_NAME_REQUIRED")) {
+              submissionResult = await publicApi.submitSurvey(sessionData.joinToken, {
+                mood: moodToSend,
+                answers: answersMap,
+                is_guest: true,
+                student_name: displayName || "Student",
+              });
             } else {
               throw e;
             }
           }
         } else {
-          // guest path
           if (!displayName) {
             alert("Please enter your name before submitting.");
             return;
           }
-          submissionResult = await publicApi.submitSurvey(
-            sessionData.joinToken,
-            {
-              mood: moodToSend,
-              answers: answersMap,
-              is_guest: true,
-              student_name: displayName,
-            }
-          );
+          submissionResult = await publicApi.submitSurvey(sessionData.joinToken, {
+            mood: moodToSend,
+            answers: answersMap,
+            is_guest: true,
+            student_name: displayName,
+          });
         }
 
         setResult(submissionResult);
@@ -322,13 +374,13 @@ export function Survey({
       console.error("❌ Submission failed:", err);
       alert("Oops! We couldn't save your answers. Please try again!");
     }
-  }; // ← ← IMPORTANT: close handleAnswer here
+  };
 
   const handlePrevious = () => {
     if (currentQuestion > 0) setCurrentQuestion((q) => q - 1);
   };
 
-  /* ---------------- Completion screen ---------------- */
+  /* ---------- Completion screen ---------- */
   if (isComplete) {
     const hasActivity = result?.recommended_activity?.activity;
     return (
@@ -345,160 +397,48 @@ export function Survey({
             <h1 className="text-3xl md:text-5xl font-bold text-gray-700  mb-2">
               Amazing Job, {nameForGreeting}!
             </h1>
-            <p className="text-lg md:text-xl text-gray-700">
-              You've completed the survey!
-            </p>
+            <p className="text-lg md:text-xl text-gray-700">You&apos;ve completed the survey!</p>
           </div>
 
-          {result && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">
-                    Your Learning Style
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600 capitalize">
-                    {result.learning_style === "visual" && "👁️ Visual"}
-                    {result.learning_style === "auditory" && "🎧 Auditory"}
-                    {result.learning_style === "kinesthetic" &&
-                      "✋ Kinesthetic"}
-                    {!result.learning_style && "—"}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">Your Mood</p>
-                  <p className="text-2xl font-bold text-purple-600 capitalize">
-                    😊 {result.mood ?? mood ?? "neutral"}
-                  </p>
-                </div>
-              </div>
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 grid md:grid-cols-2 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Your Learning Style</p>
+              <p className="text-2xl font-bold text-blue-600 capitalize">
+                {result.learning_style
+                  ? (result.learning_style === "visual" && "👁️ Visual") ||
+                    (result.learning_style === "auditory" && "🎧 Auditory") ||
+                    (result.learning_style === "kinesthetic" && "✋ Kinesthetic")
+                  : "—"}
+              </p>
             </div>
-          )}
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Your Mood</p>
+              <p className="text-2xl font-bold text-purple-600 capitalize">
+                😊 {result.mood ?? mood ?? "neutral"}
+              </p>
+            </div>
+          </div>
 
           {hasActivity && (
             <div className="bg-white border-2 border-green-200 rounded-2xl p-6 mb-8">
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Recommended Activity
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-800">Recommended Activity</h2>
               </div>
-
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-green-700 mb-2">
-                  {result.recommended_activity.activity.name}
-                </h3>
-                <p className="text-gray-700 mb-4">
-                  {result.recommended_activity.activity.summary}
-                </p>
-                <div className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
-                  {result.recommended_activity.activity.type}
-                </div>
-
-                {(() => {
-                  const a = result?.recommended_activity?.activity;
-                  const cj = a?.content_json ?? {};
-                  const rawUrl: string | undefined =
-                    cj.url || cj.video_url || a?.link || a?.url;
-                  if (!rawUrl) return null;
-                  const url = String(rawUrl);
-
-                  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-                    const embedSrc = url
-                      .replace("watch?v=", "embed/")
-                      .replace("youtu.be/", "youtube.com/embed/");
-                    return (
-                      <div className="mt-4">
-                        <p className="font-medium text-gray-700 mb-2">
-                          🎬 Watch this:
-                        </p>
-                        <div
-                          className="relative w-full rounded-lg overflow-hidden shadow-lg"
-                          style={{ paddingBottom: "56.25%" }}
-                        >
-                          <iframe
-                            className="absolute top-0 left-0 w-full h-full"
-                            src={embedSrc}
-                            title={a?.name ?? "Recommended video"}
-                            frameBorder={0}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (url.includes("vimeo.com")) {
-                    const id = url.split("/").pop();
-                    const embedSrc = `https://player.vimeo.com/video/${id}`;
-                    return (
-                      <div className="mt-4">
-                        <p className="font-medium text-gray-700 mb-2">
-                          🎬 Watch this:
-                        </p>
-                        <div
-                          className="relative w-full rounded-lg overflow-hidden shadow-lg"
-                          style={{ paddingBottom: "56.25%" }}
-                        >
-                          <iframe
-                            className="absolute top-0 left-0 w-full h-full"
-                            src={embedSrc}
-                            title={a?.name ?? "Recommended video"}
-                            frameBorder={0}
-                            allow="autoplay; fullscreen; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (
-                    url.endsWith(".mp4") ||
-                    url.endsWith(".webm") ||
-                    url.endsWith(".ogg")
-                  ) {
-                    return (
-                      <div className="mt-4">
-                        <video
-                          className="w-full rounded-lg shadow-lg"
-                          src={url}
-                          controls
-                          playsInline
-                        />
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="mt-4">
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
-                      >
-                        <span className="text-xl">▶️</span>
-                        <span>Open Video</span>
-                      </a>
-                    </div>
-                  );
-                })()}
+                {renderActivityDetails(result.recommended_activity.activity)}
               </div>
             </div>
           )}
 
           {result?.message && (
-            <div className="text-center text-gray-600 text-sm">
-              {result.message}
-            </div>
+            <div className="text-center text-gray-600 text-sm">{result.message}</div>
           )}
         </div>
       </div>
     );
   }
 
-  /* ---------------- Survey screen ---------------- */
+  /* ---------- Survey screen ---------- */
   return (
     <div
       className="min-h-screen bg-[#E6F6FF] relative"
@@ -512,24 +452,18 @@ export function Survey({
       <div className="relative z-10 mx-auto w-full px-4 sm:px-5 md:px-6 lg:px-8 py-6 md:py-10 max-w-[900px]">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-3xl font-bold text-cyan-500">
-              Hi {nameForGreeting}!
-            </h2>
-            <p className="text-gray-600">
-              Let's learn about how you learn best!
-            </p>
+            <h2 className="text-3xl font-bold text-cyan-500">Hi {nameForGreeting}!</h2>
+            <p className="text-gray-600">Let&apos;s learn about how you learn best!</p>
           </div>
           <div
             className="text-white px-4 py-2 rounded-full text-sm font-medium shadow-md sm:text-base sm:px-5"
-            style={{
-              background: "linear-gradient(135deg,#6EE7B7 0%,#0AC5FF 100%)",
-            }}
+            style={{ background: "linear-gradient(135deg,#6EE7B7 0%,#0AC5FF 100%)" }}
           >
             Question {currentQuestion + 1} of {questions.length}
           </div>
         </div>
 
-        {/* Mood picker */}
+        {/* Mood picker (from schema) */}
         {moodOptions.length > 0 && (
           <div className="mb-6">
             <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8">
@@ -538,13 +472,13 @@ export function Survey({
               </div>
               <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-12">
                 {moodOptions.map((opt) => {
-                  const key = toKey(opt); // key for visuals only
+                  const key = toKey(opt);
                   return (
                     <MoodChoice
                       key={key}
-                      value={opt} // <-- keep ORIGINAL label here
-                      selected={toKey(mood) === key} // compare by key
-                      onClick={(v) => setMood(v)} // <-- store ORIGINAL label in state
+                      value={opt}               // keep ORIGINAL label
+                      selected={toKey(mood) === key}
+                      onClick={(v) => setMood(v)} // store ORIGINAL in state
                     />
                   );
                 })}
@@ -560,12 +494,10 @@ export function Survey({
 
           <div className="mb-6 text-center">
             <img
-              src={CONFUSE_IMG}
+              src={"/images/confuse.png"}
               alt="Question"
               className="mx-auto w-14 h-14 sm:w-16 sm:h-16 object-contain"
-              onError={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.display = "none")
-              }
+              onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
             />
             <h3 className="mt-3 text-xl sm:text-2xl font-bold text-gray-800">
               {questionText}
@@ -631,3 +563,5 @@ export function Survey({
     </div>
   );
 }
+
+export default Survey;

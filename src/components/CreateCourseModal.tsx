@@ -1,7 +1,7 @@
 // src/components/CreateCourseModal.tsx
 import { useState } from "react";
 import { Modal } from "./Modal";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 
 const COMMON_MOODS = [
   "energized",

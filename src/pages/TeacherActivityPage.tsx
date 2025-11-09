@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 
 type Activity = {
   id: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 import { getActiveSession } from "../utils/activeSession";
 
 type Course = {

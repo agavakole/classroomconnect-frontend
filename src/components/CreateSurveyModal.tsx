@@ -1,7 +1,7 @@
 // src/components/CreateSurveyModal.tsx
 import { useState } from "react";
 import { Modal } from "./Modal";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 
 type Score = { visual: number; auditory: number; kinesthetic: number };
 type Option = { label: string; scores: Score };

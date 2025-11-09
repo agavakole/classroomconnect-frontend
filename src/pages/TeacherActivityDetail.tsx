@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 
 export default function TeacherActivityDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,7 +14,7 @@ export default function TeacherActivityDetail() {
       try {
         setErr("");
         setLoading(true);
-        const data = await teacherApi.getActivity(id);
+        const data = await teacherApi.getActivities(id);
         setItem(data);
       } catch (e: any) {
         setErr(e?.message || "Failed to load activity.");

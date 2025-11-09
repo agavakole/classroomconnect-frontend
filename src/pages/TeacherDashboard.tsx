@@ -1,7 +1,7 @@
 // src/pages/TeacherDashboard.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { teacherApi } from "../services/teacherApi";
+import { publicApi, authApi, teacherApi } from "../services/api";
 import { Modal } from "../components/Modal";
 import CreateSurveyModal from "../components/CreateSurveyModal";
 import CreateActivityModal from "../components/CreateActivityModal";
