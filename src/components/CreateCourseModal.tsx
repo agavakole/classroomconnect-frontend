@@ -3,6 +3,10 @@ import { useState } from "react";
 import { Modal } from "./Modal";
 import { publicApi, authApi, teacherApi } from "../services/api";
 
+/**
+ * Predefined mood options that teachers commonly use
+ * Teachers can also add custom moods
+ */
 const COMMON_MOODS = [
   "energized",
   "curious",
@@ -13,9 +17,9 @@ const COMMON_MOODS = [
 ];
 
 interface CreateCourseModalProps {
-  surveys: any[];
+  surveys: any[]; // List of available surveys from parent (TeacherDashboard)
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: () => void; // Triggers reload of courses in parent
 }
 
 export default function CreateCourseModal({
@@ -23,29 +27,54 @@ export default function CreateCourseModal({
   onClose,
   onSuccess,
 }: CreateCourseModalProps) {
+  // Course title (e.g., "CS 5500 - Software Engineering")
   const [title, setTitle] = useState("");
+  
+  // ID of survey that students must complete when joining
+  // Backend: GET /api/surveys/ to populate this list
   const [selectedSurveyId, setSelectedSurveyId] = useState("");
+  
+  // Mood options students can choose from (e.g., ["energized", "tired", "happy"])
+  // Backend combines mood + learning_style to recommend activities
   const [moodLabels, setMoodLabels] = useState<string[]>([
     "energized",
     "curious",
     "tired",
   ]);
+  
+  // Temporary input for adding custom moods
   const [customMood, setCustomMood] = useState("");
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  /**
+   * Adds a mood to the course's mood list
+   * Normalizes to lowercase and prevents duplicates
+   * 
+   * Backend uses these moods in mood_check_schema when creating sessions
+   * Students select one mood before taking survey
+   */
   const addMood = (mood: string) => {
     const cleaned = mood.trim().toLowerCase();
     if (cleaned && !moodLabels.includes(cleaned)) {
       setMoodLabels([...moodLabels, cleaned]);
     }
-    setCustomMood("");
+    setCustomMood(""); // Clear input after adding
   };
 
+  /**
+   * Removes a mood from the course
+   * Students won't see this mood as an option
+   */
   const removeMood = (mood: string) => {
     setMoodLabels(moodLabels.filter((m) => m !== mood));
   };
 
+  /**
+   * Validates course data before submission
+   * Ensures required fields are filled
+   */
   const validate = () => {
     if (!title.trim()) return "Please enter a course title.";
     if (!selectedSurveyId) return "Please select a survey.";
@@ -53,6 +82,18 @@ export default function CreateCourseModal({
     return "";
   };
 
+  /**
+   * Submits course to backend
+   * Backend: POST /api/courses/
+   * 
+   * Creates course with:
+   * - Title (shown to teacher)
+   * - Survey assignment (students take this when joining)
+   * - Mood labels (students pick one mood per session)
+   * 
+   * Backend also auto-creates learning_style_categories based on survey structure
+   * Teacher can then map (learning_style + mood) → activity recommendations
+   */
   const handleSave = async () => {
     setError("");
     const msg = validate();
@@ -69,8 +110,8 @@ export default function CreateCourseModal({
 
     try {
       setSaving(true);
-      await teacherApi.createCourse(payload);
-      onSuccess();
+      await teacherApi.createCourse(payload); // POST to backend
+      onSuccess(); // Reload courses in TeacherDashboard
     } catch (e: any) {
       setError(e?.message || "Failed to create course.");
     } finally {
@@ -81,12 +122,14 @@ export default function CreateCourseModal({
   return (
     <Modal isOpen={true} onClose={onClose} title="Create Course" size="lg">
       <div className="space-y-6">
+        {/* Error display */}
         {error && (
           <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
+        {/* Course title input */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
             Course Title *
@@ -99,11 +142,13 @@ export default function CreateCourseModal({
           />
         </div>
 
+        {/* Survey selection dropdown */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
             Select Survey *
           </label>
           {surveys.length === 0 ? (
+            // Show warning if no surveys exist yet
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
               No surveys available. Please create a survey first.
             </div>
@@ -124,6 +169,7 @@ export default function CreateCourseModal({
           )}
         </div>
 
+        {/* Mood labels configuration */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
             Mood Labels *
@@ -132,6 +178,7 @@ export default function CreateCourseModal({
             Students will select one of these moods.
           </p>
 
+          {/* Display current mood labels as removable badges */}
           <div className="flex flex-wrap gap-2 mb-3">
             {moodLabels.map((mood) => (
               <span
@@ -139,6 +186,7 @@ export default function CreateCourseModal({
                 className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium"
               >
                 {mood}
+                {/* Remove mood button */}
                 <button
                   onClick={() => removeMood(mood)}
                   className="text-indigo-500 hover:text-indigo-700 font-bold"
@@ -149,9 +197,11 @@ export default function CreateCourseModal({
             ))}
           </div>
 
+          {/* Quick add buttons for common moods */}
           <div className="mb-3">
             <p className="text-sm text-gray-600 mb-2">Quick add:</p>
             <div className="flex flex-wrap gap-2">
+              {/* Show only moods not already added */}
               {COMMON_MOODS.filter((m) => !moodLabels.includes(m)).map(
                 (mood) => (
                   <button
@@ -166,6 +216,7 @@ export default function CreateCourseModal({
             </div>
           </div>
 
+          {/* Custom mood input */}
           <div className="flex gap-2">
             <input
               value={customMood}
@@ -188,6 +239,7 @@ export default function CreateCourseModal({
           </div>
         </div>
 
+        {/* Action buttons */}
         <div className="flex gap-3 pt-4 border-t">
           <button
             onClick={handleSave}

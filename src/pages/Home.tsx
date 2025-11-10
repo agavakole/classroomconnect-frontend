@@ -2,23 +2,46 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getActiveSession } from "../utils/activeSession";
-import ActiveSessionQR from "../components/ActiveSessionQr";
+import ActiveSessionQr from "../components/ActiveSessionQr";
 
+/**
+ * Landing page shown to visitors (no active session)
+ * Displays:
+ * - Marketing copy about the platform
+ * - QR code if teacher started a session in this browser
+ * - Navigation to login/signup/join
+ * 
+ * Backend connection: None directly
+ * Uses localStorage/sessionStorage to detect active sessions
+ */
 export default function Home() {
   const navigate = useNavigate();
 
-  // If a teacher started a session in this browser, show a real QR.
+  /**
+   * Join token for displaying QR code
+   * Can come from two sources:
+   * 1. Teacher started session in this browser (localStorage: active_session)
+   * 2. Student resolved a join token (sessionStorage: session)
+   */
   const [joinToken, setJoinToken] = useState<string | null>(null);
 
   useEffect(() => {
+    /**
+     * Checks both storage locations for join token
+     * Teacher sessions persist in localStorage
+     * Student sessions are temporary in sessionStorage
+     */
     const readTokens = () => {
-      // 1) If a TEACHER started a session in this browser
+      // Check if a TEACHER started a session in this browser
+      // getActiveSession reads from localStorage: active_session
       const active = getActiveSession(); // { session_id, join_token, course_id, ... }
       if (active?.join_token) {
         setJoinToken(String(active.join_token));
         return;
       }
-      // 2) If we came here as a STUDENT after resolving a join
+      
+      // Check if we came here as a STUDENT after resolving a join token
+      // This reads from sessionStorage: session
       try {
         const raw = sessionStorage.getItem("session");
         const s = raw ? JSON.parse(raw) : null; // { joinToken, session: {...} }
@@ -29,7 +52,9 @@ export default function Home() {
     };
 
     readTokens();
-    // live-update if other tabs/pages start/end sessions
+    
+    // Listen for storage changes (if another tab starts/ends sessions)
+    // Keeps QR code in sync across browser tabs
     const onStorage = (e: StorageEvent) => {
       if (e.key === "active_session" || e.key === "session") readTokens();
     };
@@ -37,12 +62,20 @@ export default function Home() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Build the QR target
+  /**
+   * Builds full join URL from token
+   * Students scan QR or click link to join session
+   * URL format: https://yourdomain.com/join/{joinToken}
+   */
   const joinUrl = useMemo(() => {
     return joinToken ? `${window.location.origin}/join/${joinToken}` : "";
   }, [joinToken]);
 
-  // If you’re using the simple PNG fallback:
+  /**
+   * Fallback QR code using external API service
+   * Used if ActiveSessionQR component fails
+   * Alternative to QRCodeCanvas library
+   */
   const qrUrl = joinToken
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
         joinUrl
@@ -65,15 +98,18 @@ export default function Home() {
     `,
       }}
     >
-      {/* NAVBAR */}
+      {/* NAVBAR - sticky header with logo and auth buttons */}
       <header className="w-full border-b border-white/60 bg-white/70 backdrop-blur-sm">
         <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+          {/* Logo - clickable to reload home */}
           <button
             onClick={() => navigate("/")}
             className="text-2xl sm:text-3xl font-extrabold text-gray-900"
           >
             Class<span className="text-[#0AC5FF]">Connect</span>
           </button>
+          
+          {/* Auth buttons - hidden on mobile, shown on desktop */}
           <div className="hidden sm:flex items-center gap-2">
             <button
               onClick={() => navigate("/login")}
@@ -91,11 +127,11 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO */}
+      {/* HERO SECTION - main content area */}
       <main className="flex-1">
         <section className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-16 sm:pt-20 md:pt-24 xl:pt-28 pb-16">
           <div className="grid xl:grid-cols-2 gap-10 items-start">
-            {/* 1) LEFT: Copy */}
+            {/* LEFT SIDE: Marketing copy */}
             <div className="mt-2 order-2 xl:order-1 bg-white/25 rounded-2xl p-6 backdrop-blur-sm">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 Check in fast.
@@ -107,6 +143,7 @@ export default function Home() {
                 get a personalized activity. Teachers see the class picture at a
                 glance.
               </p>
+              {/* Link to teacher dashboard */}
               <div className="mt-4 text-sm text-gray-900">
                 Are you a teacher?{" "}
                 <button
@@ -118,7 +155,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 2) RIGHT: Card with QR */}
+            {/* RIGHT SIDE: Demo card with QR code */}
             <div className="relative order-2 xl:order-2 mt-16">
               <div
                 className="
@@ -128,11 +165,12 @@ export default function Home() {
                   shadow-[0_20px_50px_rgba(0,0,0,0.18)]
                 "
               >
+                {/* Card header */}
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#6EE7B7] to-[#0AC5FF]" />
                   <div>
                     <p className="text-lg font-bold text-gray-900">
-                      Today’s Session
+                      Today's Session
                     </p>
                     <p className="text-gray-700 text-sm">
                       {joinToken
@@ -142,16 +180,19 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Grid showing QR and featured activity */}
                 <div className="mt-6 grid grid-cols-2 gap-4">
-                  {/* Glass sub-card: QR box */}
+                  {/* QR CODE BOX */}
                   <div className="rounded-2xl p-4 text-center text-gray-700 flex items-center justify-center border border-black/10 bg-white/45">
                     {joinToken ? (
-                      <ActiveSessionQR
+                      // Show real QR if session active
+                      <ActiveSessionQr
                         size={180}
                         showMeta={false}
                         className="rounded-lg"
                       />
                     ) : (
+                      // Show placeholder if no session
                       <div>
                         <div className="font-semibold mb-1">QR preview</div>
                         <div className="text-xs">
@@ -161,7 +202,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Glass sub-card: Featured activity */}
+                  {/* FEATURED ACTIVITY PREVIEW */}
                   <div className="rounded-2xl p-4 border border-black/10 bg-white/70">
                     <p className="text-sm text-gray-600 mb-1">
                       Featured activity
@@ -173,6 +214,7 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Feature badges */}
                 <div className="mt-6 grid sm:grid-cols-3 gap-3">
                   <span className="rounded-xl bg-white/70 text-[#0369A1] px-3 py-2 text-sm font-semibold text-center ring-1 ring-white/60">
                     Mood check
@@ -185,21 +227,25 @@ export default function Home() {
                   </span>
                 </div>
 
+                {/* Tagline */}
                 <p className="mt-6 text-gray-800 text-center">
                   Instant, student-friendly flow with zero friction.
                 </p>
               </div>
             </div>
 
-            {/* 3) BUTTONS */}
+            {/* CALL-TO-ACTION BUTTONS */}
             <div className="order-3 w-full">
               <div className="flex flex-col sm:flex-row gap-3">
+                {/* Primary: Join with code */}
                 <button
                   onClick={() => navigate("/join")}
                   className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_24px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_32px_rgba(38,132,255,0.45)] transition"
                 >
                   Join with code / QR
                 </button>
+                
+                {/* Secondary actions */}
                 <button
                   onClick={() => navigate("/signup")}
                   className="px-6 py-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
@@ -218,7 +264,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* FOOTER */}
+      {/* FOOTER - copyright and quick links */}
       <footer className="border-t border-white/60 bg-white/70 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-gray-600 text-sm">

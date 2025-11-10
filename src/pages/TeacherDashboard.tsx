@@ -1,4 +1,4 @@
-// src/pages/TeacherDashboard.tsx - CORRECT VERSION
+// src/pages/TeacherDashboard.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { teacherApi } from "../services/api";
@@ -6,36 +6,64 @@ import CreateSurveyModal from "../components/CreateSurveyModal";
 import CreateActivityModal from "../components/CreateActivityModal";
 import CreateCourseModal from "../components/CreateCourseModal";
 
+/**
+ * Main teacher dashboard - central hub for managing educational content
+ * 
+ * Features:
+ * - View/create surveys (learning style assessments)
+ * - View/create activities (videos, worksheets, exercises)
+ * - View/create courses (containers linking surveys + activities)
+ * - Start sessions via "Start Session" button on course cards
+ * 
+ * Backend connections:
+ * - GET /api/surveys/ - Load all teacher's surveys
+ * - GET /api/activities/ - Load all teacher's activities
+ * - GET /api/courses/ - Load all teacher's courses
+ */
 export default function TeacherDashboard() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation(); // Used for modal backgroundLocation state
 
+  // Data arrays fetched from backend
   const [surveys, setSurveys] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal visibility state
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showCourseModal, setShowCourseModal] = useState(false);
 
+  /**
+   * On mount: fetch all teacher data from backend
+   * Runs once when component loads
+   */
   useEffect(() => {
     loadData();
   }, []);
 
+  /**
+   * Fetches surveys, activities, courses in parallel
+   * Backend: Multiple GET requests with teacher JWT token
+   * 
+   * If 401 error (unauthorized) → redirect to login
+   * Teacher's token may have expired
+   */
   const loadData = async () => {
     try {
       setLoading(true);
       const [surveysData, activitiesData, coursesData] = await Promise.all([
-        teacherApi.getSurveys(),
-        teacherApi.getActivities(),
-        teacherApi.getCourses(),
+        teacherApi.getSurveys(),      // GET /api/surveys/
+        teacherApi.getActivities(),   // GET /api/activities/
+        teacherApi.getCourses(),      // GET /api/courses/
       ]);
       setSurveys(surveysData);
       setActivities(activitiesData);
       setCourses(coursesData);
     } catch (err: any) {
       console.error("Failed to load data:", err);
+      // Redirect to login if authentication fails
       if (err instanceof Error && err.message.includes("401")) {
         navigate("/teacher/login");
       }
@@ -44,14 +72,22 @@ export default function TeacherDashboard() {
     }
   };
 
+  /**
+   * Logs out teacher by removing JWT token
+   * Frontend-only operation, no backend call needed
+   */
   const handleLogout = () => {
-    teacherApi.logout();
+    teacherApi.logout(); // Removes token from localStorage
     navigate("/teacher/login");
   };
 
+  /**
+   * Modal success handlers - called after successful creation
+   * Close modal and reload data to show new item
+   */
   const handleSurveyCreated = () => {
     setShowSurveyModal(false);
-    loadData();
+    loadData(); // Refresh to show newly created survey
   };
   const handleActivityCreated = () => {
     setShowActivityModal(false);
@@ -62,13 +98,14 @@ export default function TeacherDashboard() {
     loadData();
   };
 
-  // --- shared styles to match Home ---
+  // Shared CSS classes for consistent styling
   const panel = "bg-white/95 ring-1 ring-gray-200 shadow-sm";
   const primaryBtn =
     "px-4 py-2 rounded-xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_20px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_28px_rgba(38,132,255,0.45)] transition";
   const subtleBtn =
     "px-4 py-2 rounded-xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition";
 
+  // Loading screen while fetching data
   if (loading) {
     return (
       <div
@@ -101,15 +138,18 @@ export default function TeacherDashboard() {
         `,
       }}
     >
-      {/* Header (frosted, like Home nav) */}
+      {/* HEADER - sticky navigation bar */}
       <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          {/* Logo - clickable to go home */}
           <button
             onClick={() => navigate("/")}
             className="text-2xl font-extrabold text-gray-900"
           >
             Class<span className="text-[#0AC5FF]">Connect</span>
           </button>
+          
+          {/* Right side buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/teacher/profile")}
@@ -127,7 +167,7 @@ export default function TeacherDashboard() {
         </div>
       </header>
 
-      {/* Page heading / actions */}
+      {/* PAGE HEADING - title and create buttons */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 pt-8">
         <div className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
@@ -139,6 +179,7 @@ export default function TeacherDashboard() {
                 Manage surveys, activities, and courses.
               </p>
             </div>
+            {/* Quick create buttons */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowSurveyModal(true)}
@@ -163,10 +204,11 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* MAIN CONTENT - grid layout with surveys, activities, courses */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Surveys */}
+          
+          {/* SURVEYS SECTION */}
           <section className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Surveys</h2>
@@ -186,6 +228,8 @@ export default function TeacherDashboard() {
                   <li
                     key={s.id}
                     className="rounded-2xl ring-1 ring-gray-200 bg-white p-4 hover:shadow-md transition cursor-pointer"
+                    // Opens survey detail modal
+                    // backgroundLocation preserves dashboard in background
                     onClick={() =>
                       navigate(`/teacher/surveys/${s.id}`, {
                         state: { backgroundLocation: location },
@@ -209,7 +253,7 @@ export default function TeacherDashboard() {
             )}
           </section>
 
-          {/* Activities */}
+          {/* ACTIVITIES SECTION */}
           <section className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Activities</h2>
@@ -227,6 +271,7 @@ export default function TeacherDashboard() {
               <ul className="space-y-3">
                 {activities.map((a) => (
                   <li key={a.id}>
+                    {/* Link opens activity detail modal */}
                     <Link
                       to={`/teacher/activities/${a.id}`}
                       state={{ backgroundLocation: location }}
@@ -252,7 +297,7 @@ export default function TeacherDashboard() {
             )}
           </section>
 
-          {/* Courses */}
+          {/* COURSES SECTION - spans full width on large screens */}
           <section className={`rounded-3xl p-6 sm:p-8 lg:col-span-2 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Courses</h2>
@@ -272,7 +317,7 @@ export default function TeacherDashboard() {
                   <div
                     key={c.id}
                     className="rounded-2xl ring-1 ring-gray-200 bg-white p-5 hover:shadow-lg transition"
-                    // keep the card click ONLY for opening the course modal
+                    // Card click opens course detail modal
                     onClick={() =>
                       navigate(`/teacher/courses/${c.id}`, {
                         state: { backgroundLocation: location },
@@ -281,6 +326,7 @@ export default function TeacherDashboard() {
                   >
                     <h3 className="font-semibold text-gray-900">{c.title}</h3>
 
+                    {/* Display mood labels as badges */}
                     {c.mood_labels?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {c.mood_labels.map((m: string) => (
@@ -295,17 +341,19 @@ export default function TeacherDashboard() {
                     )}
 
                     {/* 
-                      IMPORTANT: DON'T pass backgroundLocation here!
-                      We want to navigate to a FULL PAGE, not open over the dashboard.
-                      Only pass courseId so the "← Course" button knows where to return.
+                      START SESSION BUTTON
+                      IMPORTANT: Does NOT pass backgroundLocation
+                      This navigates to full-page session view, not a modal
+                      
+                      Passes:
+                      - fromDashboard: true (so back button knows where we came from)
+                      - courseId: for the back button to reopen course modal
                     */}
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // Prevent card click from firing
                         navigate(`/teacher/courses/${c.id}/session`, {
                           state: {
-                            // ❌ DO NOT pass backgroundLocation from dashboard!
-                            // ✅ Only pass the course ID for the back button
                             fromDashboard: true,
                             courseId: c.id,
                           },
@@ -323,7 +371,7 @@ export default function TeacherDashboard() {
         </div>
       </main>
 
-      {/* Modals */}
+      {/* MODALS - rendered conditionally based on state */}
       {showSurveyModal && (
         <CreateSurveyModal
           onClose={() => setShowSurveyModal(false)}
@@ -338,7 +386,7 @@ export default function TeacherDashboard() {
       )}
       {showCourseModal && (
         <CreateCourseModal
-          surveys={surveys}
+          surveys={surveys} // Pass surveys for dropdown
           onClose={() => setShowCourseModal(false)}
           onSuccess={handleCourseCreated}
         />
@@ -347,7 +395,10 @@ export default function TeacherDashboard() {
   );
 }
 
-/* ---------- Small presentational helper ---------- */
+/**
+ * Empty state component - shown when no items exist
+ * Reusable across surveys, activities, courses sections
+ */
 function Empty({ message }: { message: string }) {
   return (
     <div className="rounded-2xl ring-1 ring-gray-200 bg-white p-8 text-center text-gray-600">

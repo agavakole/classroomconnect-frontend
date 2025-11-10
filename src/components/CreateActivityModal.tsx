@@ -3,61 +3,76 @@ import { useState } from "react";
 import { Modal } from "./Modal";
 import { teacherApi } from "../services/api";
 
+/**
+ * Activity types supported by the backend
+ * Each type has different content_json structure
+ */
 type ActivityType =
-  | "video"
-  | "worksheet"
-  | "breathing-exercise"
-  | "article"
-  | "in-class-task";
+  | "video"        // YouTube/Vimeo links with duration
+  | "worksheet"    // PDF/file downloads
+  | "breathing-exercise"  // Step-by-step calming exercises
+  | "article"      // Reading materials
+  | "in-class-task"; // Hands-on activities with materials list
 
 interface CreateActivityModalProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: () => void; // Triggers reload of activities in parent
 }
 
 export default function CreateActivityModal({
   onClose,
   onSuccess,
 }: CreateActivityModalProps) {
-  const [name, setName] = useState("");
-  const [summary, setSummary] = useState("");
-  const [type, setType] = useState<ActivityType>("video");
-  const [tags, setTags] = useState("");
+  // Basic activity metadata
+  const [name, setName] = useState(""); // Activity title shown to students
+  const [summary, setSummary] = useState(""); // Brief description
+  const [type, setType] = useState<ActivityType>("video"); // Determines content fields
+  const [tags, setTags] = useState(""); // Comma-separated (e.g., "visual,group,speaking")
 
-  // video
-  const [videoUrl, setVideoUrl] = useState("");
-  const [duration, setDuration] = useState(""); // seconds, optional
-  const [videoNotes, setVideoNotes] = useState("");
+  // Video-specific fields
+  const [videoUrl, setVideoUrl] = useState(""); // YouTube/Vimeo URL
+  const [duration, setDuration] = useState(""); // Duration in seconds
+  const [videoNotes, setVideoNotes] = useState(""); // Teacher notes about video
 
-  // files
-  const [fileUrl, setFileUrl] = useState("");
+  // File-based activities (worksheet/article)
+  const [fileUrl, setFileUrl] = useState(""); // Link to PDF/file
 
-  // script/steps types
-  const [scriptSteps, setScriptSteps] = useState<string[]>([""]);
-  const [materials, setMaterials] = useState<string[]>([""]);
-  const [teacherNotes, setTeacherNotes] = useState("");
+  // Script/steps activities (in-class-task, breathing-exercise)
+  const [scriptSteps, setScriptSteps] = useState<string[]>([""]); // Array of instruction steps
+  const [materials, setMaterials] = useState<string[]>([""]); // Required materials list
+  const [teacherNotes, setTeacherNotes] = useState(""); // General notes for teacher
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ---- helpers -------------------------------------------------------------
-
+  /**
+   * Converts comma-separated tags string to array
+   * Trims whitespace and removes empty values
+   */
   const toTagsArray = (s: string) =>
     s
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
 
-  // Build a content_json that matches the backend:
-  // - video:        { url, duration?, notes? }
-  // - in-class-task / breathing-exercise: { steps, materials?, duration?, notes? }
-  // - worksheet/article: { file_url, duration?, notes? }
+  /**
+   * Builds content_json object based on activity type
+   * Backend schema varies by type:
+   * 
+   * - video: { url, duration?, notes? }
+   * - in-class-task/breathing-exercise: { steps[], materials[]?, duration?, notes? }
+   * - worksheet/article: { file_url, duration?, notes? }
+   * 
+   * Duration is always in seconds (e.g., 300 = 5 minutes)
+   */
   const buildContentJson = () => {
+    // Parse duration string to number if provided
     const dur =
       duration && !Number.isNaN(Number(duration))
         ? Number(duration)
         : undefined;
 
+    // VIDEO: YouTube/Vimeo embed
     if (type === "video") {
       const cj: any = {
         url: videoUrl.trim(),
@@ -67,6 +82,7 @@ export default function CreateActivityModal({
       return cj;
     }
 
+    // TASK/EXERCISE: Step-by-step instructions
     if (type === "in-class-task" || type === "breathing-exercise") {
       const steps = scriptSteps.map((s) => s.trim()).filter(Boolean);
       const mats = materials.map((m) => m.trim()).filter(Boolean);
@@ -77,13 +93,17 @@ export default function CreateActivityModal({
       return cj;
     }
 
-    // worksheet/article
+    // WORKSHEET/ARTICLE: File download
     const cj: any = { file_url: fileUrl.trim() };
     if (dur !== undefined) cj.duration = dur;
     if (teacherNotes.trim()) cj.notes = teacherNotes.trim();
     return cj;
   };
 
+  /**
+   * Validates activity data before submission
+   * Ensures required fields are filled based on activity type
+   */
   const validate = (): string => {
     if (!name.trim()) return "Please enter an activity name.";
     if (!summary.trim()) return "Please enter a short summary.";
@@ -105,8 +125,15 @@ export default function CreateActivityModal({
     return "";
   };
 
-  // ---- submit --------------------------------------------------------------
-
+  /**
+   * Submits activity to backend
+   * Backend: POST /api/activities/
+   * 
+   * Created activity can then be:
+   * - Assigned to course recommendation mappings
+   * - Shown to students based on learning_style + mood
+   * - Viewed in teacher's activity library
+   */
   const handleSave = async () => {
     setError("");
     const v = validate();
@@ -115,37 +142,38 @@ export default function CreateActivityModal({
       return;
     }
 
+    // Build final payload for backend
     const payload = {
       name: name.trim(),
       summary: summary.trim(),
-      type, // already in correct backend form (e.g., "in-class-task")
+      type, // Backend recognizes: video, worksheet, breathing-exercise, article, in-class-task
       tags: toTagsArray(tags),
-      content_json: buildContentJson(),
+      content_json: buildContentJson(), // Type-specific content structure
     };
 
     try {
       setSaving(true);
-      await teacherApi.createActivity(payload);
-      onSuccess();
+      await teacherApi.createActivity(payload); // POST to backend
+      onSuccess(); // Reload activities list in parent
     } catch (e: any) {
-      // show real message instead of [object Object]
+      // Convert error object to readable string
       setError(String(e?.message || "Failed to create activity."));
     } finally {
       setSaving(false);
     }
   };
 
-  // ---- UI ------------------------------------------------------------------
-
   return (
     <Modal isOpen={true} onClose={onClose} title="Create Activity" size="xl">
       <div className="space-y-6">
+        {/* Error display */}
         {error && (
           <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
+        {/* Basic info: name and type */}
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-gray-700 font-semibold mb-2">
@@ -163,6 +191,7 @@ export default function CreateActivityModal({
             <label className="block text-gray-700 font-semibold mb-2">
               Type *
             </label>
+            {/* Activity type selector - changes which fields are shown */}
             <select
               value={type}
               onChange={(e) => setType(e.target.value as ActivityType)}
@@ -177,6 +206,7 @@ export default function CreateActivityModal({
           </div>
         </div>
 
+        {/* Summary - shown to students when activity is recommended */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
             Summary *
@@ -190,6 +220,7 @@ export default function CreateActivityModal({
           />
         </div>
 
+        {/* Tags - used for filtering/organizing activities */}
         <div>
           <label className="block text-gray-700 font-semibold mb-2">
             Tags (comma-separated)
@@ -202,8 +233,9 @@ export default function CreateActivityModal({
           />
         </div>
 
-        {/* Type-specific fields */}
+        {/* Type-specific fields - only show relevant inputs based on selected type */}
 
+        {/* VIDEO TYPE: URL, duration, notes */}
         {type === "video" && (
           <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold text-gray-800">Video Details</h3>
@@ -230,6 +262,7 @@ export default function CreateActivityModal({
           </div>
         )}
 
+        {/* WORKSHEET/ARTICLE TYPE: File URL, duration, notes */}
         {(type === "worksheet" || type === "article") && (
           <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold text-gray-800">File Details</h3>
@@ -256,10 +289,12 @@ export default function CreateActivityModal({
           </div>
         )}
 
+        {/* TASK/EXERCISE TYPE: Step-by-step instructions, materials, duration, notes */}
         {(type === "breathing-exercise" || type === "in-class-task") && (
           <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold text-gray-800">Instructions</h3>
 
+            {/* Dynamic step inputs - can add/remove steps */}
             {scriptSteps.map((step, i) => (
               <div key={i} className="flex gap-2">
                 <span className="text-gray-500 mt-2">{i + 1}.</span>
@@ -273,6 +308,7 @@ export default function CreateActivityModal({
                   placeholder="Step…"
                   className="flex-1 px-3 py-2 rounded-lg border-2 border-gray-200 focus:border-green-500 outline-none"
                 />
+                {/* Remove step button (only if more than one step) */}
                 {scriptSteps.length > 1 && (
                   <button
                     type="button"
@@ -287,6 +323,7 @@ export default function CreateActivityModal({
               </div>
             ))}
 
+            {/* Add more steps button */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -297,6 +334,7 @@ export default function CreateActivityModal({
               </button>
             </div>
 
+            {/* Materials and duration inputs */}
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-gray-700 font-semibold mb-1">
@@ -330,6 +368,7 @@ export default function CreateActivityModal({
               </div>
             </div>
 
+            {/* Teacher notes */}
             <textarea
               value={teacherNotes}
               onChange={(e) => setTeacherNotes(e.target.value)}
@@ -340,6 +379,7 @@ export default function CreateActivityModal({
           </div>
         )}
 
+        {/* Action buttons */}
         <div className="flex gap-3 pt-4 border-t">
           <button
             onClick={handleSave}

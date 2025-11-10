@@ -1,17 +1,25 @@
+// src/pages/SessionResultsPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { teacherApi } from "../services/api";
 
+/**
+ * Type for individual student submission row
+ */
 type Row = {
   id?: string;
   student_name?: string;
   student_full_name?: string;
   mood?: string;             // e.g., "energized"
-  learning_style?: string;   // arbitrary label from backend (e.g., "visual", "active learner", etc.)
+  learning_style?: string;   // e.g., "visual", "active", "balanced"
   status?: string;           // "completed" | "skipped"
   created_at?: string;
 };
 
+/**
+ * Returns color class for learning style badge
+ * Provides visual distinction between different styles
+ */
 function styleColor(key: string) {
   const k = key.toLowerCase();
   if (k.includes("visual")) return "text-blue-600";
@@ -24,6 +32,10 @@ function styleColor(key: string) {
   return "text-gray-700";
 }
 
+/**
+ * Returns emoji for learning style
+ * Makes the dashboard more visual and engaging
+ */
 function styleEmoji(key: string) {
   const k = key.toLowerCase();
   if (k.includes("visual")) return "👁️";
@@ -36,6 +48,9 @@ function styleEmoji(key: string) {
   return "🎓";
 }
 
+/**
+ * Returns badge styling classes for learning style
+ */
 function badgeClass(ls?: string) {
   const k = (ls || "").toLowerCase();
   if (k.includes("visual")) return "bg-blue-100 text-blue-700";
@@ -48,15 +63,40 @@ function badgeClass(ls?: string) {
   return "bg-gray-100 text-gray-700";
 }
 
+/**
+ * Real-time session results dashboard
+ * 
+ * Features:
+ * - Live-updating table of student submissions
+ * - Summary statistics (total, breakdown by learning style)
+ * - Auto-refresh every 6 seconds
+ * - Shows mood, learning style, submission status
+ * 
+ * Backend connection:
+ * - GET /api/sessions/{session_id}/submissions - Fetched repeatedly
+ * 
+ * Data flow:
+ * 1. Student submits survey via POST /api/public/join/{token}/submit
+ * 2. Backend calculates learning_style from survey responses
+ * 3. Backend stores submission with mood, learning_style, student_name
+ * 4. This page polls backend every 6s to show new submissions
+ */
 export default function SessionResultsPage() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
 
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<Row[]>([]); // All submissions
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [sessionInfo, setSessionInfo] = useState<{ require_survey?: boolean } | null>(null);
 
+  /**
+   * Effect: Load submissions and set up auto-refresh
+   * Fetches data immediately, then every 6 seconds
+   * 
+   * Auto-refresh allows teacher to watch submissions arrive in real-time
+   * as students join and complete surveys during class
+   */
   useEffect(() => {
     let timer: number;
 
@@ -65,20 +105,22 @@ export default function SessionResultsPage() {
         if (!sessionId) throw new Error("Missing sessionId");
         setErr("");
 
+        // Backend: GET /api/sessions/{session_id}/submissions
         const data = await teacherApi.getSessionSubmissions(sessionId);
         const items = Array.isArray(data?.items) ? data.items : [];
 
-        // Try to get session info (if your backend returns it)
-        // You might need to add a separate endpoint: teacherApi.getSession(sessionId)
+        // Store session metadata if backend returns it
         if (data?.session) {
           setSessionInfo(data.session);
         }
 
+        // Normalize submission data structure
+        // Backend may use different field names, normalize to consistent format
         const normalized: Row[] = items.map((it: any) => ({
           id: it.id ?? undefined,
           student_name: it.student_full_name || it.student_name || "Guest",
           mood: (it.mood || "").toLowerCase(),
-          learning_style: (it.learning_style || "").toLowerCase(), // keep lowercase for grouping; display will be capitalized
+          learning_style: (it.learning_style || "").toLowerCase(),
           status: it.status || "completed",
           created_at: it.created_at,
         }));
@@ -93,29 +135,41 @@ export default function SessionResultsPage() {
         }
       } finally {
         setLoading(false);
-        // auto-refresh every 6s so teachers can watch results roll in live
+        // Schedule next refresh in 6 seconds
         timer = window.setTimeout(load, 6000);
       }
     };
 
-    load();
+    load(); // Initial load
+    
+    // Cleanup: cancel scheduled refresh when component unmounts
     return () => window.clearTimeout(timer);
   }, [sessionId]);
 
-  // Dynamic buckets based on whatever labels backend sends
+  /**
+   * Calculates learning style distribution
+   * Groups submissions by learning_style and counts each
+   * Returns sorted array: most common styles first
+   */
   const buckets = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of rows) {
       const key = (r.learning_style || "not assessed").toLowerCase();
       map.set(key, (map.get(key) || 0) + 1);
     }
-    return [...map.entries()].sort((a, b) => b[1] - a[1]); // sorted by count desc
+    return [...map.entries()].sort((a, b) => b[1] - a[1]); // Sort by count descending
   }, [rows]);
 
-  const topBuckets = buckets.slice(0, 3); // show top 3 after "Total"
+  // Show top 3 learning styles in summary tiles
+  const topBuckets = buckets.slice(0, 3);
 
+  /**
+   * Formats ISO timestamp for display
+   * Converts "2024-01-15T10:30:00Z" → "1/15/2024, 10:30:00 AM"
+   */
   const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "—");
 
+  // Loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
@@ -129,6 +183,7 @@ export default function SessionResultsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50">
+      {/* HEADER - navigation bar */}
       <header className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
@@ -138,12 +193,14 @@ export default function SessionResultsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            {/* Manual refresh button */}
             <button
               onClick={() => window.location.reload()}
               className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
             >
               ↻ Refresh
             </button>
+            {/* Back button */}
             <button
               onClick={() => navigate(-1)}
               className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
@@ -154,14 +211,16 @@ export default function SessionResultsPage() {
         </div>
       </header>
 
+      {/* MAIN CONTENT */}
       <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Error display */}
         {err && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 p-3">
             {err}
           </div>
         )}
 
-        {/* Info banner about survey requirement */}
+        {/* INFO BANNER - shown when survey not required */}
         {sessionInfo?.require_survey === false && (
           <div className="mb-6 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
             <div className="flex gap-3">
@@ -180,13 +239,15 @@ export default function SessionResultsPage() {
           </div>
         )}
 
-        {/* Summary tiles: total + top 3 style buckets */}
+        {/* SUMMARY TILES - total submissions + top 3 learning styles */}
         <div className="grid sm:grid-cols-4 gap-3 mb-6">
+          {/* Total tile */}
           <div className="p-4 bg-white rounded-xl shadow">
             <div className="text-sm text-gray-500">Total submissions</div>
             <div className="text-2xl font-bold">{rows.length}</div>
           </div>
 
+          {/* Top 3 learning style tiles */}
           {topBuckets.map(([label, count]) => (
             <div key={label} className="p-4 bg-white rounded-xl shadow">
               <div className={`text-sm ${styleColor(label)} flex items-center gap-2`}>
@@ -201,15 +262,16 @@ export default function SessionResultsPage() {
             </div>
           ))}
 
-          {/* If fewer than 3 buckets, fill the grid for consistent layout */}
+          {/* Padding tiles if fewer than 3 buckets exist */}
           {Array.from({ length: Math.max(0, 3 - topBuckets.length) }).map((_, i) => (
             <div key={`pad-${i}`} className="p-4 bg-white rounded-xl shadow opacity-40" />
           ))}
         </div>
 
-        {/* Table */}
+        {/* SUBMISSIONS TABLE */}
         <div className="bg-white rounded-2xl shadow p-6">
           {rows.length === 0 ? (
+            // Empty state
             <div className="text-gray-600">
               No submissions yet. Keep this page open; it auto-refreshes every 6 seconds.
             </div>
@@ -231,8 +293,13 @@ export default function SessionResultsPage() {
                     
                     return (
                       <tr key={r.id || i}>
+                        {/* Student name */}
                         <td className="p-3 border-b">{r.student_name || "Guest"}</td>
+                        
+                        {/* Mood */}
                         <td className="p-3 border-b capitalize">{r.mood || "—"}</td>
+                        
+                        {/* Learning style - badge or "Not Assessed" */}
                         <td className="p-3 border-b">
                           {hasLearningStyle ? (
                             <span className={`px-2 py-1 rounded text-sm ${badgeClass(r.learning_style)}`}>
@@ -243,6 +310,7 @@ export default function SessionResultsPage() {
                               <span className="px-2 py-1 rounded text-sm bg-gray-100 text-gray-500 italic">
                                 Not Assessed
                               </span>
+                              {/* Info icon with tooltip */}
                               <span 
                                 className="text-xs text-gray-400 cursor-help" 
                                 title="Survey was not required for this session"
@@ -252,7 +320,11 @@ export default function SessionResultsPage() {
                             </div>
                           )}
                         </td>
+                        
+                        {/* Status */}
                         <td className="p-3 border-b capitalize">{r.status || "—"}</td>
+                        
+                        {/* Timestamp */}
                         <td className="p-3 border-b">{fmt(r.created_at)}</td>
                       </tr>
                     );
@@ -263,7 +335,7 @@ export default function SessionResultsPage() {
           )}
         </div>
 
-        {/* Help text at bottom */}
+        {/* Help text */}
         <div className="mt-4 text-sm text-gray-600 text-center">
           💡 This page auto-refreshes every 6 seconds to show new submissions in real-time.
         </div>

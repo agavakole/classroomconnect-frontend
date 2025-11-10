@@ -1,14 +1,18 @@
+// src/pages/TeacherSurveyDetail.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { teacherApi } from "../services/api";
 import { Modal } from "../components/Modal";
 
+/**
+ * Type definitions for backend survey structure
+ */
 type BackendOption = {
   option_id?: string | number;
   text: string;
-  vis?: number;
-  aud?: number;
-  kin?: number;
+  vis?: number;      // Visual score
+  aud?: number;      // Auditory score
+  kin?: number;      // Kinesthetic score
 };
 
 type BackendQuestion = {
@@ -19,16 +23,30 @@ type BackendQuestion = {
 
 type BackendSurvey = {
   survey_id?: string;
-  id?: string; // just in case your API uses id
+  id?: string;
   title: string;
   questions: BackendQuestion[];
   created_at?: string;
   updated_at?: string;
 };
 
+/**
+ * Survey detail modal - shows survey questions and scoring
+ * 
+ * Features:
+ * - Display all survey questions
+ * - Show answer options with learning style scores
+ * - Read-only view (no editing)
+ * 
+ * Backend connection:
+ * - GET /api/surveys/{surveyId} - Fetch survey details
+ * 
+ * Opened as modal from TeacherDashboard when clicking survey card
+ * Modal shows over dashboard background
+ */
 export default function TeacherSurveyDetail() {
   const navigate = useNavigate();
-  // accept either /:surveyId or /:id
+  // Accept either /:surveyId or /:id parameter format
   const { surveyId, id } = useParams<{ surveyId?: string; id?: string }>();
   const effectiveId = surveyId ?? id;
 
@@ -36,17 +54,24 @@ export default function TeacherSurveyDetail() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
+  /**
+   * On mount: fetch survey data from backend
+   * Loads complete survey with questions, options, and scores
+   */
   useEffect(() => {
     let cancelled = false;
+    
     const load = async () => {
       if (!effectiveId) {
         setErr("Missing survey id");
         setLoading(false);
         return;
       }
+      
       try {
         setErr("");
         setLoading(true);
+        // Backend: GET /api/surveys/{surveyId}
         const data = await teacherApi.getSurveyById(effectiveId);
         if (!cancelled) setSurvey(data);
       } catch (e: any) {
@@ -62,18 +87,26 @@ export default function TeacherSurveyDetail() {
         if (!cancelled) setLoading(false);
       }
     };
+    
     load();
+    
+    // Cleanup: prevent state updates if component unmounts
     return () => {
       cancelled = true;
     };
   }, [effectiveId]);
 
-  // ✨ NEW: simple mount animation state
+  /**
+   * Mount animation state
+   * Creates smooth fade-in effect when modal appears
+   */
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(id);
   }, []);
+  
+  // CSS classes for animation (opacity + transform)
   const anim = mounted
     ? "opacity-100 translate-y-0 scale-100"
     : "opacity-0 translate-y-2 scale-[0.98]";
@@ -81,11 +114,13 @@ export default function TeacherSurveyDetail() {
   return (
     <Modal
       isOpen={true}
-      onClose={() => navigate(-1)}
+      onClose={() => navigate(-1)} // Go back to previous page
       title="Survey"
       size="xl"
     >
+      {/* Animated container */}
       <div className={`transition-all duration-300 ease-out ${anim}`}>
+        {/* Error display */}
         {err && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 p-3">
             {err}
@@ -98,6 +133,7 @@ export default function TeacherSurveyDetail() {
           <div className="text-gray-600">Not found.</div>
         ) : (
           <div className="space-y-6">
+            {/* Survey header */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{survey.title}</h2>
               {survey.created_at && (
@@ -107,16 +143,25 @@ export default function TeacherSurveyDetail() {
               )}
             </div>
 
+            {/* Questions list */}
             <div className="space-y-6">
               {survey.questions?.map((q, qi) => (
                 <div key={q.question_id ?? qi} className="border rounded-xl p-4">
+                  {/* Question text */}
                   <div className="font-semibold text-gray-800 mb-3">
                     Q{qi + 1}. {q.text}
                   </div>
+                  
+                  {/* Options grid - shows answer choices with scores */}
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {q.options?.map((op, oi) => (
                       <div key={op.option_id ?? oi} className="rounded-lg border bg-gray-50 p-3">
+                        {/* Option text */}
                         <div className="font-medium text-gray-800">{op.text}</div>
+                        
+                        {/* Learning style scores
+                            These determine how this answer affects learning style calculation
+                            Backend sums all scores to determine dominant style */}
                         <div className="mt-2 flex flex-wrap gap-2 text-xs">
                           <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                             Vis: {op.vis ?? 0}
@@ -135,6 +180,7 @@ export default function TeacherSurveyDetail() {
               ))}
             </div>
 
+            {/* Footer - close button */}
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => navigate(-1)}
