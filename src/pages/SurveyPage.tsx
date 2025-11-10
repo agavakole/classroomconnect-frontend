@@ -1,3 +1,4 @@
+// src/pages/SurveyPage.tsx
 import { useEffect, useState, type ReactElement } from "react";
 import { ProgressBar } from "../components/ProgressBar";
 import { SURVEY_QUESTIONS, ANSWER_OPTIONS } from "../constants/surveyData";
@@ -6,14 +7,24 @@ import { publicApi, authApi } from "../services/api";
 import { getStudentToken } from "../services/api";
 
 /* ---------- Mood assets (visual only) ---------- */
-const MOOD_ASSETS: Record<string, { label: string; img: string; color: string }> =
-{
-  curious:   { label: "Curious",   img: "/images/curious.png",   color: "#22D3EE" },
-  energized: { label: "Energized", img: "/images/energetic.png", color: "#10B981" },
-  happy:     { label: "Happy",     img: "/images/happy-img.png", color: "#F59E0B" },
-  calm:      { label: "Calm",      img: "/images/calm-img.png",  color: "#8B5CF6" },
-  tired:     { label: "Tired",     img: "/images/tired.png",     color: "#6366F1" },
-  nervous:   { label: "Nervous",   img: "/images/nervous-img.png", color: "#EF4444" },
+const MOOD_ASSETS: Record<
+  string,
+  { label: string; img: string; color: string }
+> = {
+  curious: { label: "Curious", img: "/images/curious.png", color: "#22D3EE" },
+  energized: {
+    label: "Energized",
+    img: "/images/energetic.png",
+    color: "#10B981",
+  },
+  happy: { label: "Happy", img: "/images/happy-img.png", color: "#F59E0B" },
+  calm: { label: "Calm", img: "/images/calm-img.png", color: "#8B5CF6" },
+  tired: { label: "Tired", img: "/images/tired.png", color: "#6366F1" },
+  nervous: {
+    label: "Nervous",
+    img: "/images/nervous-img.png",
+    color: "#EF4444",
+  },
 };
 const GRADIENTS = [
   { from: "#FFB457", to: "#FF8A00" },
@@ -25,12 +36,23 @@ const GRADIENTS = [
 ];
 const toKey = (s: string) => s.trim().toLowerCase();
 
+/* ---------- Shared styles (match app pattern) ---------- */
+const panel = "bg-white ring-1 ring-gray-200 rounded-3xl shadow-sm";
+const primaryBtn =
+  "px-5 py-3 rounded-2xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_20px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_28px_rgba(38,132,255,0.45)] transition";
+const subtleBtn =
+  "px-5 py-3 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition";
+
 /* ---------- Little UI bits ---------- */
 function MoodChoice({
   value,
   selected,
   onClick,
-}: { value: string; selected: boolean; onClick: (v: string) => void }) {
+}: {
+  value: string;
+  selected: boolean;
+  onClick: (v: string) => void;
+}) {
   const key = toKey(value);
   const asset = MOOD_ASSETS[key] ?? { label: value, img: "", color: "#3B82F6" };
   return (
@@ -55,7 +77,9 @@ function MoodChoice({
             src={asset.img}
             alt={`${asset.label} mood`}
             className="w-full h-full object-cover"
-            onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
+            onError={(e) =>
+              ((e.currentTarget as HTMLImageElement).style.display = "none")
+            }
           />
         ) : null}
       </button>
@@ -141,7 +165,10 @@ function renderVideo(url: string, title: string) {
   return (
     <div className="mt-4">
       <p className="font-medium text-gray-700 mb-2">🎬 Watch this:</p>
-      <div className="relative w-full rounded-lg overflow-hidden shadow-lg" style={{ paddingBottom: "56.25%" }}>
+      <div
+        className="relative w-full rounded-lg overflow-hidden shadow-lg"
+        style={{ paddingBottom: "56.25%" }}
+      >
         <iframe
           className="absolute top-0 left-0 w-full h-full"
           src={embed}
@@ -157,25 +184,29 @@ function renderVideo(url: string, title: string) {
 function renderActivityDetails(a: any) {
   if (!a) return null;
 
-  /* Canonical backend keys + safe fallbacks for older/hand-typed content_json */
   const cj = a?.content_json ?? {};
   const type = String(a?.type || "").toLowerCase();
 
-  const steps: string[] =
-    Array.isArray(cj.script_steps) ? cj.script_steps
-    : Array.isArray(cj.steps) ? cj.steps
-    : Array.isArray(cj.instructions) ? cj.instructions
+  const steps: string[] = Array.isArray(cj.script_steps)
+    ? cj.script_steps
+    : Array.isArray(cj.steps)
+    ? cj.steps
+    : Array.isArray(cj.instructions)
+    ? cj.instructions
     : [];
 
-  const materials: string[] =
-    Array.isArray(cj.materials_needed) ? cj.materials_needed
-    : Array.isArray(cj.materials) ? cj.materials
+  const materials: string[] = Array.isArray(cj.materials_needed)
+    ? cj.materials_needed
+    : Array.isArray(cj.materials)
+    ? cj.materials
     : [];
 
   const durationSec: number | undefined =
-    typeof cj.duration_sec === "number" ? cj.duration_sec
-    : typeof cj.duration === "number" ? cj.duration
-    : undefined;
+    typeof cj.duration_sec === "number"
+      ? cj.duration_sec
+      : typeof cj.duration === "number"
+      ? cj.duration
+      : undefined;
 
   const teacherNotes: string | undefined =
     cj.notes_for_teacher ?? cj.teacher_notes ?? cj.notes;
@@ -183,7 +214,7 @@ function renderActivityDetails(a: any) {
   const videoUrl: string | undefined =
     cj.url || cj.video_url || a?.link || a?.url || cj.file_url;
   return (
-     <>
+    <>
       <h3 className="text-xl font-bold text-green-700 mb-2">{a.name}</h3>
       <p className="text-gray-700 mb-4">{a.summary}</p>
       <div className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium mb-2">
@@ -207,7 +238,8 @@ function renderActivityDetails(a: any) {
           )}
           {materials.length > 0 && (
             <p className="text-sm text-gray-700">
-              <span className="font-medium">Materials:</span> {materials.join(", ")}
+              <span className="font-medium">Materials:</span>{" "}
+              {materials.join(", ")}
             </p>
           )}
           {teacherNotes && (
@@ -220,24 +252,28 @@ function renderActivityDetails(a: any) {
 
       {type === "video" && videoUrl ? renderVideo(String(videoUrl), a.name) : null}
 
-      {(type === "worksheet" || type === "article") && (cj.file_url || a?.url) && (
-        <div className="mt-4">
-          <a
-            href={cj.file_url || a?.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
-          >
-            📄 Open file
-          </a>
-        </div>
-      )}
+      {(type === "worksheet" || type === "article") &&
+        (cj.file_url || a?.url) && (
+          <div className="mt-4">
+            <a
+              href={cj.file_url || a?.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
+            >
+              📄 Open file
+            </a>
+          </div>
+        )}
     </>
   );
 }
 
 /* ---------- Page ---------- */
-export function Survey({ studentName, sessionData }: SurveyProps): ReactElement {
+export function Survey({
+  studentName,
+  sessionData,
+}: SurveyProps): ReactElement {
   const token = getStudentToken();
   const [nameForGreeting, setNameForGreeting] = useState(studentName || "");
 
@@ -248,7 +284,9 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
           const p = await authApi.getStudentProfile(token);
           setNameForGreeting(p.full_name || "");
           sessionStorage.setItem("student_full_name", p.full_name || "");
-        } catch {/* ignore */}
+        } catch {
+          /* ignore */
+        }
       })();
     }
   }, [token, nameForGreeting]);
@@ -259,12 +297,18 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
   const [mood, setMood] = useState("");
   const [result, setResult] = useState<any>(null);
 
+  // Respect teacher setting:
+  const shouldAskSurvey = sessionData?.session?.require_survey ?? true;
+
   const backendQuestions = sessionData?.session?.survey?.questions;
-  const questions: (Question | BackendQuestion)[] =
-    backendQuestions ?? SURVEY_QUESTIONS;
-  const currentQ = questions[currentQuestion];
-  const isBackendQuestion = "question_id" in currentQ;
-  const questionText = (currentQ as any).text;
+  const questions: (Question | BackendQuestion)[] = shouldAskSurvey
+    ? (backendQuestions ?? SURVEY_QUESTIONS)
+    : [];
+  const hasAnyQuestions = questions.length > 0;
+
+  const currentQ = hasAnyQuestions ? questions[currentQuestion] : undefined;
+  const isBackendQuestion = currentQ ? "question_id" in currentQ : false;
+  const questionText = (currentQ as any)?.text ?? "";
 
   const moodPrompt =
     sessionData?.session?.mood_check_schema?.prompt ?? "How are you feeling today?";
@@ -292,25 +336,17 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
     return out;
   }
 
-  const handleAnswer = async (optionIndex: number) => {
-    const newAnswers = { ...answers, [currentQuestion]: optionIndex };
-    setAnswers(newAnswers);
-
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((q) => q + 1);
-      return;
-    }
-
+  // Centralized submit (works for both question and mood-only modes)
+  async function submitNow(newAnswers: Record<number, number> = {}) {
     try {
       if (sessionData?.joinToken) {
         const answersMap = toBackendAnswers(backendQuestions, newAnswers);
 
-        if (sessionData?.session?.require_survey && !Object.keys(answersMap).length) {
+        if (shouldAskSurvey && !Object.keys(answersMap).length) {
           alert("Please answer the questions before submitting.");
           return;
         }
 
-        // If the session gave a mood schema, send the exact label. Otherwise, keep the UI text (or Neutral).
         const moodToSend =
           (sessionData?.session?.mood_check_schema?.options?.length ?? 0) > 0
             ? mood || "Neutral"
@@ -374,6 +410,18 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
       console.error("❌ Submission failed:", err);
       alert("Oops! We couldn't save your answers. Please try again!");
     }
+  }
+
+  const handleAnswer = async (optionIndex: number) => {
+    const newAnswers = { ...answers, [currentQuestion]: optionIndex };
+    setAnswers(newAnswers);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((q) => q + 1);
+      return;
+    }
+    // Last question → submit
+    await submitNow(newAnswers);
   };
 
   const handlePrevious = () => {
@@ -383,39 +431,43 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
   /* ---------- Completion screen ---------- */
   if (isComplete) {
     const hasActivity = result?.recommended_activity?.activity;
+
+    const mascotSrc = "/images/happy-img.png";
+
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 md:p-8"
+        className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 bg-[position:center_105%] lg:bg-[position:center_100%] xl:bg-[position:center_60%]"
         style={{
           backgroundImage: "url('/images/3d-image.png')",
           backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
         }}
       >
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-3xl w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-700  mb-2">
-              Amazing Job, {nameForGreeting}!
-            </h1>
-            <p className="text-lg md:text-xl text-gray-700">You&apos;ve completed the survey!</p>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 grid md:grid-cols-2 gap-4">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Your Learning Style</p>
-              <p className="text-2xl font-bold text-blue-600 capitalize">
-                {result.learning_style
-                  ? (result.learning_style === "visual" && "👁️ Visual") ||
-                    (result.learning_style === "auditory" && "🎧 Auditory") ||
-                    (result.learning_style === "kinesthetic" && "✋ Kinesthetic")
-                  : "—"}
-              </p>
+        <div className={`${panel} max-w-4xl w-full p-16 sm:p-10`}>
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-10">
+            <div className="mb-6 h-28 w-28 md:h-32 md:w-32 rounded-3xl ring-1 ring-gray-100 bg-white flex items-center justify-center">
+              <img
+                src={mascotSrc}
+                alt="Happy"
+                className="w-24 h-24 object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/images/energetic.png";
+                }}
+              />
             </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Your Mood</p>
-              <p className="text-2xl font-bold text-purple-600 capitalize">
-                😊 {result.mood ?? mood ?? "neutral"}
-              </p>
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">
+                Amazing job, {nameForGreeting || "friend"}!
+              </h1>
+              <p className="text-gray-700 mt-1">You finished the survey, high five!</p>
+              <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-2">
+                <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                  Learning Style: {result?.learning_style ?? "—"}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
+                  Mood: {result?.mood ?? mood ?? "neutral"}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -434,11 +486,16 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
             <div className="text-center text-gray-600 text-sm">{result.message}</div>
           )}
         </div>
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="/student/home" className={subtleBtn}>
+            ← Back
+          </a>
+        </div>
       </div>
     );
   }
 
-  /* ---------- Survey screen ---------- */
+  /* ---------- Survey (or mood-only) screen ---------- */
   return (
     <div
       className="min-h-screen bg-[#E6F6FF] relative"
@@ -452,15 +509,23 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
       <div className="relative z-10 mx-auto w-full px-4 sm:px-5 md:px-6 lg:px-8 py-6 md:py-10 max-w-[900px]">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-3xl font-bold text-cyan-500">Hi {nameForGreeting}!</h2>
+            <h2 className="text-3xl font-bold text-cyan-500">
+              Hi {nameForGreeting}!
+            </h2>
             <p className="text-gray-600">Let&apos;s learn about how you learn best!</p>
           </div>
-          <div
-            className="text-white px-4 py-2 rounded-full text-sm font-medium shadow-md sm:text-base sm:px-5"
-            style={{ background: "linear-gradient(135deg,#6EE7B7 0%,#0AC5FF 100%)" }}
-          >
-            Question {currentQuestion + 1} of {questions.length}
-          </div>
+
+          {/* Only show question counter if we actually have questions */}
+          {hasAnyQuestions && (
+            <div
+              className="text-white px-4 py-2 rounded-full text-sm font-medium shadow-md sm:text-base sm:px-5"
+              style={{
+                background: "linear-gradient(135deg,#6EE7B7 0%,#0AC5FF 100%)",
+              }}
+            >
+              Question {Math.min(currentQuestion + 1, questions.length)} of {questions.length}
+            </div>
+          )}
         </div>
 
         {/* Mood picker (from schema) */}
@@ -476,9 +541,9 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
                   return (
                     <MoodChoice
                       key={key}
-                      value={opt}               // keep ORIGINAL label
+                      value={opt}
                       selected={toKey(mood) === key}
-                      onClick={(v) => setMood(v)} // store ORIGINAL in state
+                      onClick={(v) => setMood(v)}
                     />
                   );
                 })}
@@ -487,78 +552,107 @@ export function Survey({ studentName, sessionData }: SurveyProps): ReactElement 
           </div>
         )}
 
-        <div className="w-full bg-white rounded-3xl md:rounded-[32px] shadow-[4px_8px_28px_rgba(0,0,0,0.08)] p-6 sm:p-8 md:p-10">
-          <p className="text-2xl text-gray-700 mb-8 text-center">
-            There are NO wrong answers! Just pick what feels right for you!
-          </p>
-
-          <div className="mb-6 text-center">
-            <img
-              src={"/images/confuse.png"}
-              alt="Question"
-              className="mx-auto w-14 h-14 sm:w-16 sm:h-16 object-contain"
-              onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
-            />
-            <h3 className="mt-3 text-xl sm:text-2xl font-bold text-gray-800">
-              {questionText}
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-8">
-            {(isBackendQuestion
-              ? (currentQ as BackendQuestion).options.map((op, idx) => ({
-                  text: op.text,
-                  emoji: ["🎨", "🔊", "✋", "🧠"][idx % 4],
-                  idx,
-                }))
-              : (ANSWER_OPTIONS as AnswerOption[]).map((op, idx) => ({
-                  text: op.text,
-                  emoji: op.emoji,
-                  idx,
-                }))
-            ).map((o) => (
-              <AnswerTile
-                key={o.idx}
-                text={o.text}
-                emoji={o.emoji}
-                index={o.idx}
-                selected={answers[currentQuestion] === o.idx}
-                onClick={() => handleAnswer(o.idx)}
-              />
-            ))}
-          </div>
-
-          <div className="mt-3 mb-5">
-            <ProgressBar current={answeredCount} total={questions.length} />
-          </div>
-
-          <div className="pt-4 border-t border-gray-100">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* If no questions (require_survey === false), show only a Continue button */}
+        {!hasAnyQuestions ? (
+          <div className={`${panel} p-6 sm:p-8 md:p-10`}>
+            <p className="text-gray-700 text-center mb-4">
+              Thanks! If your teacher didn’t require a survey today, you can continue after
+              selecting your mood.
+            </p>
+            <div className="flex justify-center">
               <button
-                onClick={handlePrevious}
-                disabled={currentQuestion === 0}
-                className={[
-                  "w-full sm:w-auto",
-                  "px-4 py-3 rounded-xl text-sm sm:text-base font-medium",
-                  "transition-colors duration-150",
-                  currentQuestion === 0
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-sm",
-                ].join(" ")}
+                onClick={() => submitNow({})}
+                className={primaryBtn}
+                disabled={
+                  (sessionData?.session?.mood_check_schema?.options?.length ?? 0) > 0 && !mood
+                }
+                title={
+                  ((sessionData?.session?.mood_check_schema?.options?.length ?? 0) > 0 && !mood)
+                    ? "Pick a mood to continue"
+                    : undefined
+                }
               >
-                ← Previous
+                Continue
               </button>
+            </div>
+          </div>
+        ) : (
+          // Full survey UI (when questions are present)
+          <div className="w-full bg-white rounded-3xl md:rounded-[32px] shadow-[4px_8px_28px_rgba(0,0,0,0.08)] p-6 sm:p-8 md:p-10">
+            <p className="text-2xl text-gray-700 mb-8 text-center">
+              There are NO wrong answers! Just pick what feels right for you!
+            </p>
 
-              <div className="text-center text-gray-600 text-sm sm:text-base font-medium">
-                {answeredCount === 0
-                  ? "Let's start! 🌟"
-                  : answeredCount === questions.length
-                  ? "All done! 🎉"
-                  : `${answeredCount} done! Keep going! ⭐`}
+            <div className="mb-6 text-center">
+              <img
+                src={"/images/confuse.png"}
+                alt="Question"
+                className="mx-auto w-14 h-14 sm:w-16 sm:h-16 object-contain"
+                onError={(e) =>
+                  ((e.currentTarget as HTMLImageElement).style.display = "none")
+                }
+              />
+              <h3 className="mt-3 text-xl sm:text-2xl font-bold text-gray-800">
+                {questionText}
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-8">
+              {(isBackendQuestion
+                ? (currentQ as BackendQuestion).options.map((op, idx) => ({
+                    text: op.text,
+                    emoji: ["🎨", "🔊", "✋", "🧠"][idx % 4],
+                    idx,
+                  }))
+                : (ANSWER_OPTIONS as AnswerOption[]).map((op, idx) => ({
+                    text: op.text,
+                    emoji: op.emoji,
+                    idx,
+                  }))
+              ).map((o) => (
+                <AnswerTile
+                  key={o.idx}
+                  text={o.text}
+                  emoji={o.emoji}
+                  index={o.idx}
+                  selected={answers[currentQuestion] === o.idx}
+                  onClick={() => handleAnswer(o.idx)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-3 mb-5">
+              <ProgressBar current={answeredCount} total={questions.length} />
+            </div>
+
+            <div className="pt-4 border-t border-gray-100">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentQuestion === 0}
+                  className={[
+                    "w-full sm:w-auto",
+                    "px-4 py-3 rounded-xl text-sm sm:text-base font-medium",
+                    "transition-colors duration-150",
+                    currentQuestion === 0
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-sm",
+                  ].join(" ")}
+                >
+                  ← Previous
+                </button>
+
+                <div className="text-center text-gray-600 text-sm sm:text-base font-medium">
+                  {answeredCount === 0
+                    ? "Let's start! 🌟"
+                    : answeredCount === questions.length
+                    ? "All done! 🎉"
+                    : `${answeredCount} done! Keep going! ⭐`}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -33,10 +33,18 @@ async function parseOrText(res: Response): Promise<{ json: any; text: string }> 
     return { json: null, text };
   }
 }
+
 function fail(res: Response, msg: string): never {
   const err: any = new Error(msg);
   err.status = res.status;
+  err.code = msg; // simple code string we can check
   throw err;
+}
+
+/* Exposed helper so pages can check for ended-session errors */
+export function isSessionEndedError(e: any): boolean {
+  const msg = String(e?.message || e?.code || "");
+  return e?.status === 410 || e?.status === 403 || /SESSION_ENDED/i.test(msg);
 }
 
 /* =========================================================
@@ -47,11 +55,7 @@ const withAuth = (token?: string | null): HeaderRecord =>
   token ? { Authorization: `Bearer ${token}` } : {};
 const toHeaderRecord = (h?: HeadersInit): HeaderRecord => {
   if (!h) return {};
-  if (h instanceof Headers) {
-    const out: HeaderRecord = {};
-    h.forEach((v, k) => (out[k] = v));
-    return out;
-  }
+  if (h instanceof Headers) return Object.fromEntries(h.entries());
   if (Array.isArray(h)) return Object.fromEntries(h);
   return { ...h };
 };
@@ -77,6 +81,12 @@ async function request(url: string, opts: RequestOpts = {}) {
     credentials: rest.credentials ?? "include",
   });
 
+  // Map ended/forbidden sessions to a consistent code
+  if (res.status === 410 || res.status === 403) {
+    const { json, text } = await parseOrText(res);
+    fail(res, json?.detail || text || "SESSION_ENDED");
+  }
+
   const { json, text } = await parseOrText(res);
   if (!res.ok) fail(res, json?.detail ?? text ?? `HTTP_${res.status}`);
   return json;
@@ -86,8 +96,21 @@ async function request(url: string, opts: RequestOpts = {}) {
  * PUBLIC (no-auth)
  * =======================================================*/
 export const publicApi = {
-  getSession(joinToken: string) {
-    return request(`${API_BASE_URL}/api/public/join/${joinToken}`, { method: "GET" });
+  async getSession(joinToken: string) {
+    const data = await request(`${API_BASE_URL}/api/public/join/${joinToken}`, {
+      method: "GET",
+    });
+
+    // Defensive client-side guard if backend includes a status
+    const status = data?.session?.status?.toLowerCase?.();
+    if (status && status !== "active") {
+      const e: any = new Error("SESSION_ENDED");
+      e.status = 410;
+      e.code = "SESSION_ENDED";
+      throw e;
+    }
+
+    return data;
   },
 
   async submitSurvey(
@@ -108,8 +131,8 @@ export const publicApi = {
         token: authToken,
       });
     } catch (e: any) {
+      // In dev, an auth header can trigger 401/CORS; retry without token
       if (authToken && (e?.status === 401 || e?.name === "TypeError")) {
-        // retry without auth header in dev
         return await request(`${API_BASE_URL}/api/public/join/${joinToken}/submit`, {
           method: "POST",
           body: JSON.stringify(data),
@@ -143,12 +166,10 @@ export const authApi = {
   },
 
   getStudentProfile(token: string) {
-    return request(`${API_BASE_URL}/api/students/me`, { method: "GET", token }) as Promise<{
-      id: string;
-      email: string;
-      full_name: string;
-      created_at: string;
-    }>;
+    return request(`${API_BASE_URL}/api/students/me`, {
+      method: "GET",
+      token,
+    }) as Promise<{ id: string; email: string; full_name: string; created_at: string }>;
   },
 
   getStudentSubmissions(token: string) {
@@ -273,7 +294,7 @@ export const teacherApi = {
       body: JSON.stringify({ mappings }),
     });
   },
-
+  
   /* Sessions */
   createSession(courseId: string, requireSurvey = true) {
     // keep your existing route shape
@@ -284,13 +305,13 @@ export const teacherApi = {
     });
   },
 
-  // NOTE: this endpoint is TEACHER-ONLY. Call it only when a teacher token exists.
+  // TEACHER-ONLY.
+  
+
   async getSessionSubmissions(sessionId: string) {
     const t = teacherToken();
-    if (!t) {
-      // prevent accidental student calls that cause 403 spam
-      throw new Error("TEACHER_AUTH_REQUIRED");
-    }
+    if (!t) throw new Error("TEACHER_AUTH_REQUIRED");
+
     const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}/submissions`, {
       method: "GET",
       headers: { Accept: "application/json", ...withAuth(t) },
@@ -300,4 +321,12 @@ export const teacherApi = {
     if (!res.ok) fail(res, json?.detail ?? text ?? "SUBMISSIONS_FAILED");
     return json;
   },
+  endSession(sessionId: string) {
+  return request(`${API_BASE}/sessions/${sessionId}/end`, {
+    method: "POST",
+    token: getTeacherToken(), // or teacherToken() in your file
+  });
+
+  
+},
 };

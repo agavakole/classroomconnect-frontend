@@ -1,6 +1,5 @@
 // src/main.tsx
 import React from "react";
-
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter,
@@ -8,7 +7,6 @@ import {
   Route,
   Navigate,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 
 import App from "./App";
@@ -20,69 +18,43 @@ import StartSessionPage from "./pages/StartSessionPage";
 import SessionResultsPage from "./pages/SessionResultsPage";
 import TeacherActivitiesPage from "./pages/TeacherActivityPage";
 import TeacherActivityDetail from "./pages/TeacherActivityDetail";
-
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
-import StudentHome from "./pages/StudentHome"; // NEW
-import "./index.css";         
-function DevBootToHome() {
-  const nav = useNavigate();
-  const loc = useLocation();
-
-  React.useEffect(() => {
-    if (import.meta.env.DEV && loc.pathname !== "/") {
-      nav("/", { replace: true });
-    }
-  }, [loc.pathname, nav]);
-
-  return null;
-}
+import StudentHome from "./pages/StudentHome";
+import "./index.css";
 
 function RequireTeacher({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("teacher_token");
   return token ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {/* Public student flow container (Home → Join → Welcome → Survey) */}
-        <Route path="/" element={<App />} />
+/**
+ * Modal routes pattern:
+ * - Render the "background" UI using backgroundLocation (the page you came from).
+ * - If backgroundLocation exists, also render the modal routes on top.
+ */
+function ModalSwitch() {
+  const location = useLocation();
+  const state = location.state as { backgroundLocation?: Location } | undefined;
 
-        {/* Auth (single entry for both roles) */}
+  return (
+    <>
+      {/* Background: render the previous route, or the current route if none */}
+      <Routes location={state?.backgroundLocation || location}>
+        {/* Public / student flow */}
+        <Route path="/" element={<App />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
-        {/* Student area */}
         <Route path="/student/home" element={<StudentHome />} />
-
-        {/* Public join */}
         <Route path="/join" element={<JoinSession />} />
         <Route path="/join/:joinToken" element={<JoinSession />} />
 
-        {/* Teacher area (protected) */}
+        {/* Teacher pages (non-modal “pages”) */}
         <Route
           path="/teacher/dashboard"
           element={
             <RequireTeacher>
               <TeacherDashboard />
-            </RequireTeacher>
-          }
-        />
-        <Route
-          path="/teacher/surveys/:id"
-          element={
-            <RequireTeacher>
-              <TeacherSurveyDetail />
-            </RequireTeacher>
-          }
-        />
-        <Route
-          path="/teacher/courses/:id"
-          element={
-            <RequireTeacher>
-              <TeacherCourseDetail />
             </RequireTeacher>
           }
         />
@@ -103,28 +75,55 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           }
         />
         <Route
-  path="/teacher/activities"
-  element={
-    <RequireTeacher>
-      <TeacherActivitiesPage />
-    </RequireTeacher>
-  }
-/>
-<Route
-  path="/teacher/activities/:id"
-  element={
-    <RequireTeacher>
-      <TeacherActivityDetail />
-    </RequireTeacher>
-  }
-/>
-          <Route path="/join" element={<JoinSession />} />
-  <Route path="/join/:joinToken" element={<JoinSession />} />
-
+          path="/teacher/activities"
+          element={
+            <RequireTeacher>
+              <TeacherActivitiesPage />
+            </RequireTeacher>
+          }
+        />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* Foreground: only render these when we have a background page to sit on top of */}
+      {state?.backgroundLocation && (
+        <Routes>
+          <Route
+            path="/teacher/surveys/:id"
+            element={
+              <RequireTeacher>
+                <TeacherSurveyDetail />
+              </RequireTeacher>
+            }
+          />
+          <Route
+            path="/teacher/activities/:id"
+            element={
+              <RequireTeacher>
+                <TeacherActivityDetail />
+              </RequireTeacher>
+            }
+          />
+          <Route
+            path="/teacher/courses/:id"
+            element={
+              <RequireTeacher>
+                <TeacherCourseDetail />
+              </RequireTeacher>
+            }
+          />
+        </Routes>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ModalSwitch />
     </BrowserRouter>
   </React.StrictMode>
 );

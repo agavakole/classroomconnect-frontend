@@ -47,12 +47,15 @@ export function Login() {
 
   return (
     <div
-      className="min-h-screen bg-[#E6F6FF] relative flex items-center justify-center px-4"
+      className="min-h-screen bg-[#E6F6FF] relative flex items-center justify-center px-4
+      bg-no-repeat bg-cover
+    bg-[position:center_105%]    /* slight push on mobile/tablet */
+    lg:bg-[position:center_100%] /* more on large screens */
+    xl:bg-[position:center_60%] "
       style={{
         backgroundImage: "url('/images/3d-image.png')",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "bottom center",
-        backgroundSize: "cover",
+       
+       
       }}
     >
       <div className="relative z-10 w-full max-w-md">

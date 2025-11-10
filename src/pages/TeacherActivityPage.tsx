@@ -24,7 +24,7 @@ export default function TeacherActivitiesPage() {
         // you already have teacherApi.getActivities(type?, tag?)
         const res = await teacherApi.getActivities();
         // backend may return {items} or array – normalize:
-        const arr: Activity[] = Array.isArray(res) ? res : (res?.items ?? []);
+        const arr: Activity[] = Array.isArray(res) ? res : res?.items ?? [];
         setItems(arr);
       } catch (e: any) {
         setErr(e?.message || "Failed to load activities.");
@@ -34,10 +34,11 @@ export default function TeacherActivitiesPage() {
     })();
   }, []);
 
-  const filtered = items.filter(a =>
-    (a.name || "").toLowerCase().includes(q.toLowerCase()) ||
-    (a.summary || "").toLowerCase().includes(q.toLowerCase()) ||
-    (a.tags || []).some(t => t.toLowerCase().includes(q.toLowerCase()))
+  const filtered = items.filter(
+    (a) =>
+      (a.name || "").toLowerCase().includes(q.toLowerCase()) ||
+      (a.summary || "").toLowerCase().includes(q.toLowerCase()) ||
+      (a.tags || []).some((t) => t.toLowerCase().includes(q.toLowerCase()))
   );
 
   return (
@@ -75,21 +76,31 @@ export default function TeacherActivitiesPage() {
         ) : (
           <ul className="grid md:grid-cols-2 gap-4">
             {filtered.map((a) => (
-              <li key={a.id} className="bg-white rounded-2xl p-5 shadow border border-gray-100">
+              <li
+                key={a.id}
+                className="bg-white rounded-2xl p-5 shadow border border-gray-100"
+              >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-lg font-semibold text-gray-900">{a.name}</div>
-                    <div className="text-sm text-gray-500">{a.type ?? "activity"}</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {a.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {a.type ?? "activity"}
+                    </div>
                   </div>
                   <Link
-                    to={`/teacher/activities/${a.id}`}
-                    className="px-3 py-2 rounded-lg bg-black text-white text-sm"
-                  >
-                    View
-                  </Link>
+  to={`/teacher/activities/${a.id}`}
+  state={{ returnTo: "/teacher/dashboard" }}   // ← add this
+  className="px-3 py-2 rounded-lg bg-black text-white text-sm"
+>
+  View
+</Link>
                 </div>
                 {a.summary && (
-                  <p className="mt-3 text-gray-700 text-sm line-clamp-3">{a.summary}</p>
+                  <p className="mt-3 text-gray-700 text-sm line-clamp-3">
+                    {a.summary}
+                  </p>
                 )}
                 {a.tags && a.tags.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">

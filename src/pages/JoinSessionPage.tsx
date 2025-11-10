@@ -117,7 +117,16 @@ export default function JoinSession() {
   }, [tokenFromPath]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#E6F6FF] px-4">
+    <div className="min-h-screen bg-[#E6F6FF] relative flex items-center justify-center px-4
+      bg-no-repeat bg-cover
+    bg-[position:center_105%]    /* slight push on mobile/tablet */
+    lg:bg-[position:center_100%] /* more on large screens */
+    xl:bg-[position:center_60%] "
+      style={{
+        backgroundImage: "url('/images/3d-image.png')",
+       
+       
+      }}>
       <div className="bg-white/90 rounded-2xl p-8 shadow max-w-lg w-full">
         <button
           onClick={() => navigate("/")}
@@ -141,7 +150,7 @@ export default function JoinSession() {
           <button
             onClick={() => token && resolveAndGo(token)}
             disabled={!token || loading}
-            className="w-full py-3 rounded-xl bg-black text-white disabled:opacity-60"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white disabled:opacity-60"
           >
             {loading ? "Joining..." : "Join"}
           </button>

@@ -1,6 +1,8 @@
 // src/pages/Home.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { getActiveSession } from "../utils/activeSession";
+import ActiveSessionQR from "../components/ActiveSessionQr";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -9,20 +11,41 @@ export default function Home() {
   const [joinToken, setJoinToken] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("session");
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (s?.joinToken) setJoinToken(String(s.joinToken));
-    } catch {
-      /* ignore */
-    }
+    const readTokens = () => {
+      // 1) If a TEACHER started a session in this browser
+      const active = getActiveSession(); // { session_id, join_token, course_id, ... }
+      if (active?.join_token) {
+        setJoinToken(String(active.join_token));
+        return;
+      }
+      // 2) If we came here as a STUDENT after resolving a join
+      try {
+        const raw = sessionStorage.getItem("session");
+        const s = raw ? JSON.parse(raw) : null; // { joinToken, session: {...} }
+        setJoinToken(s?.joinToken ?? null);
+      } catch {
+        setJoinToken(null);
+      }
+    };
+
+    readTokens();
+    // live-update if other tabs/pages start/end sessions
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "active_session" || e.key === "session") readTokens();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Simple QR without extra libs
+  // Build the QR target
+  const joinUrl = useMemo(() => {
+    return joinToken ? `${window.location.origin}/join/${joinToken}` : "";
+  }, [joinToken]);
+
+  // If you’re using the simple PNG fallback:
   const qrUrl = joinToken
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-        `${window.location.origin}/join/${joinToken}`
+        joinUrl
       )}`
     : null;
 
@@ -31,13 +54,13 @@ export default function Home() {
       className="
     min-h-screen flex flex-col relative
     bg-no-repeat bg-cover
-    bg-[position:center_105%]    /* slight push on mobile/tablet */
-    lg:bg-[position:center_100%] /* more on large screens */
-    xl:bg-[position:center_60%] /* even more on desktop */
+    bg-[position:center_105%]
+    lg:bg-[position:center_100%]
+    xl:bg-[position:center_60%]
   "
       style={{
         backgroundImage: `
-      linear-gradient(to bottom right, rgba(255,255,255,0.20), rgba(255,255,255,0.68)),
+      linear-gradient(to bottom right, rgba(255,255,255,0), rgba(255,255,255,0.10)),
       url('/images/3d-image.png')
     `,
       }}
@@ -72,8 +95,8 @@ export default function Home() {
       <main className="flex-1">
         <section className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 pt-16 sm:pt-20 md:pt-24 xl:pt-28 pb-16">
           <div className="grid xl:grid-cols-2 gap-10 items-start">
-            {/* 1) LEFT: Copy (no buttons) */}
-            <div className="mt-2 order-2 xl:order-1">
+            {/* 1) LEFT: Copy */}
+            <div className="mt-2 order-2 xl:order-1 bg-white/25 rounded-2xl p-6 backdrop-blur-sm">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 Check in fast.
                 <br />
@@ -94,8 +117,9 @@ export default function Home() {
                 </button>
               </div>
             </div>
-            {/* Right: Card with QR */}
-           <div className="relative order-2 xl:order-2 mt-16">
+
+            {/* 2) RIGHT: Card with QR */}
+            <div className="relative order-2 xl:order-2 mt-16">
               <div
                 className="
                   rounded-3xl p-6 sm:p-8
@@ -121,11 +145,11 @@ export default function Home() {
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   {/* Glass sub-card: QR box */}
                   <div className="rounded-2xl p-4 text-center text-gray-700 flex items-center justify-center border border-black/10 bg-white/45">
-                    {qrUrl ? (
-                      <img
-                        src={qrUrl}
-                        alt="Session QR"
-                        className="w-[210px] h-[210px] object-contain"
+                    {joinToken ? (
+                      <ActiveSessionQR
+                        size={180}
+                        showMeta={false}
+                        className="rounded-lg"
                       />
                     ) : (
                       <div>
@@ -166,7 +190,8 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            {/* 3) BUTTONS — mobile: after the card; desktop: below the text (same left column) */}
+
+            {/* 3) BUTTONS */}
             <div className="order-3 w-full">
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
