@@ -1,4 +1,4 @@
-// src/pages/TeacherDashboard.tsx
+// src/pages/TeacherDashboard.tsx - CORRECT VERSION
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { teacherApi } from "../services/api";
@@ -63,8 +63,7 @@ export default function TeacherDashboard() {
   };
 
   // --- shared styles to match Home ---
-  const panel =
-  "bg-white/95 ring-1 ring-gray-200 shadow-sm";
+  const panel = "bg-white/95 ring-1 ring-gray-200 shadow-sm";
   const primaryBtn =
     "px-4 py-2 rounded-xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_20px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_28px_rgba(38,132,255,0.45)] transition";
   const subtleBtn =
@@ -78,7 +77,7 @@ export default function TeacherDashboard() {
         bg-[position:center_160%]"
         style={{
           backgroundImage: `
-            linear-gradient(to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.88)),
+            linear-gradient(to bottom right, rgba(255,255,255,0.60), rgba(255,255,255,0.60)),
             url('/images/3d-image.png')
           `,
         }}
@@ -97,7 +96,7 @@ export default function TeacherDashboard() {
       "
       style={{
         backgroundImage: `
-          linear-gradient(to bottom right, rgba(255,255,255,0.10), rgba(255,255,255,0.30)),
+          linear-gradient(to bottom right, rgba(255,255,255,0.30), rgba(255,255,255,0.40)),
           url('/images/3d-image.png')
         `,
       }}
@@ -118,7 +117,10 @@ export default function TeacherDashboard() {
             >
               Profile
             </button>
-            <button onClick={handleLogout} className="px-4 py-2 rounded-xl hover:bg-gray-200">
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-xl hover:bg-gray-200"
+            >
               Logout
             </button>
           </div>
@@ -127,9 +129,7 @@ export default function TeacherDashboard() {
 
       {/* Page heading / actions */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 pt-8">
-        <div
-          className={`rounded-3xl p-6 sm:p-8 ${panel}`}
-        >
+        <div className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
@@ -140,13 +140,22 @@ export default function TeacherDashboard() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => setShowSurveyModal(true)} className={primaryBtn}>
+              <button
+                onClick={() => setShowSurveyModal(true)}
+                className={primaryBtn}
+              >
                 ➕ New Survey
               </button>
-              <button onClick={() => setShowActivityModal(true)} className={subtleBtn}>
+              <button
+                onClick={() => setShowActivityModal(true)}
+                className={subtleBtn}
+              >
                 ➕ New Activity
               </button>
-              <button onClick={() => setShowCourseModal(true)} className={subtleBtn}>
+              <button
+                onClick={() => setShowCourseModal(true)}
+                className={subtleBtn}
+              >
                 ➕ New Course
               </button>
             </div>
@@ -161,7 +170,10 @@ export default function TeacherDashboard() {
           <section className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Surveys</h2>
-              <button onClick={() => setShowSurveyModal(true)} className={subtleBtn}>
+              <button
+                onClick={() => setShowSurveyModal(true)}
+                className={subtleBtn}
+              >
                 Create
               </button>
             </div>
@@ -174,8 +186,11 @@ export default function TeacherDashboard() {
                   <li
                     key={s.id}
                     className="rounded-2xl ring-1 ring-gray-200 bg-white p-4 hover:shadow-md transition cursor-pointer"
-                    onClick={() => navigate(`/teacher/surveys/${s.id}`, { state: { backgroundLocation: location } })
-}
+                    onClick={() =>
+                      navigate(`/teacher/surveys/${s.id}`, {
+                        state: { backgroundLocation: location },
+                      })
+                    }
                   >
                     <div className="flex items-start justify-between">
                       <h3 className="font-semibold text-gray-900">{s.title}</h3>
@@ -198,7 +213,10 @@ export default function TeacherDashboard() {
           <section className={`rounded-3xl p-6 sm:p-8 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Activities</h2>
-              <button onClick={() => setShowActivityModal(true)} className={subtleBtn}>
+              <button
+                onClick={() => setShowActivityModal(true)}
+                className={subtleBtn}
+              >
                 Create
               </button>
             </div>
@@ -216,7 +234,9 @@ export default function TeacherDashboard() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{a.name}</h3>
+                          <h3 className="font-semibold text-gray-900">
+                            {a.name}
+                          </h3>
                           <p className="text-sm text-gray-700 line-clamp-2">
                             {a.summary}
                           </p>
@@ -236,7 +256,10 @@ export default function TeacherDashboard() {
           <section className={`rounded-3xl p-6 sm:p-8 lg:col-span-2 ${panel}`}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-bold text-gray-900">Courses</h2>
-              <button onClick={() => setShowCourseModal(true)} className={subtleBtn}>
+              <button
+                onClick={() => setShowCourseModal(true)}
+                className={subtleBtn}
+              >
                 Create
               </button>
             </div>
@@ -248,11 +271,16 @@ export default function TeacherDashboard() {
                 {courses.map((c) => (
                   <div
                     key={c.id}
-                    className="rounded-2xl ring-1 ring-gray-200 bg-white p-5 hover:shadow-lg transition cursor-pointer"
-                    onClick={() => navigate(`/teacher/courses/${c.id}`, { state: { backgroundLocation: location } })
-}
+                    className="rounded-2xl ring-1 ring-gray-200 bg-white p-5 hover:shadow-lg transition"
+                    // keep the card click ONLY for opening the course modal
+                    onClick={() =>
+                      navigate(`/teacher/courses/${c.id}`, {
+                        state: { backgroundLocation: location },
+                      })
+                    }
                   >
                     <h3 className="font-semibold text-gray-900">{c.title}</h3>
+
                     {c.mood_labels?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {c.mood_labels.map((m: string) => (
@@ -265,12 +293,25 @@ export default function TeacherDashboard() {
                         ))}
                       </div>
                     )}
+
+                    {/* 
+                      IMPORTANT: DON'T pass backgroundLocation here!
+                      We want to navigate to a FULL PAGE, not open over the dashboard.
+                      Only pass courseId so the "← Course" button knows where to return.
+                    */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/teacher/courses/${c.id}/session`, { state: { returnTo: location } });
+                        navigate(`/teacher/courses/${c.id}/session`, {
+                          state: {
+                            // ❌ DO NOT pass backgroundLocation from dashboard!
+                            // ✅ Only pass the course ID for the back button
+                            fromDashboard: true,
+                            courseId: c.id,
+                          },
+                        });
                       }}
-                      className={`w-full mt-4 ${primaryBtn}`}
+                      className="w-full mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00C6FF] to-[#0072FF] text-white font-semibold shadow-[0_10px_20px_rgba(38,132,255,0.35)] hover:shadow-[0_14px_28px_rgba(38,132,255,0.45)] transition"
                     >
                       Start Session
                     </button>

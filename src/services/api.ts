@@ -18,7 +18,7 @@ export const clearAllAuth = () => {
 export const getStudentToken = () => localStorage.getItem("student_token");
 export const getTeacherToken = () => localStorage.getItem("teacher_token");
 
-/* (Optional) convenience flags for your pages */
+/* Convenience flags */
 export const isStudentAuthed = () => !!getStudentToken();
 export const isTeacherAuthed = () => !!getTeacherToken();
 
@@ -37,18 +37,17 @@ async function parseOrText(res: Response): Promise<{ json: any; text: string }> 
 function fail(res: Response, msg: string): never {
   const err: any = new Error(msg);
   err.status = res.status;
-  err.code = msg; // simple code string we can check
+  err.code = msg;
   throw err;
 }
 
-/* Exposed helper so pages can check for ended-session errors */
 export function isSessionEndedError(e: any): boolean {
   const msg = String(e?.message || e?.code || "");
   return e?.status === 410 || e?.status === 403 || /SESSION_ENDED/i.test(msg);
 }
 
 /* =========================================================
- * Headers helpers (TS-safe)
+ * Headers helpers
  * =======================================================*/
 type HeaderRecord = Record<string, string>;
 const withAuth = (token?: string | null): HeaderRecord =>
@@ -81,7 +80,6 @@ async function request(url: string, opts: RequestOpts = {}) {
     credentials: rest.credentials ?? "include",
   });
 
-  // Map ended/forbidden sessions to a consistent code
   if (res.status === 410 || res.status === 403) {
     const { json, text } = await parseOrText(res);
     fail(res, json?.detail || text || "SESSION_ENDED");
@@ -101,7 +99,6 @@ export const publicApi = {
       method: "GET",
     });
 
-    // Defensive client-side guard if backend includes a status
     const status = data?.session?.status?.toLowerCase?.();
     if (status && status !== "active") {
       const e: any = new Error("SESSION_ENDED");
@@ -109,7 +106,6 @@ export const publicApi = {
       e.code = "SESSION_ENDED";
       throw e;
     }
-
     return data;
   },
 
@@ -131,7 +127,6 @@ export const publicApi = {
         token: authToken,
       });
     } catch (e: any) {
-      // In dev, an auth header can trigger 401/CORS; retry without token
       if (authToken && (e?.status === 401 || e?.name === "TypeError")) {
         return await request(`${API_BASE_URL}/api/public/join/${joinToken}/submit`, {
           method: "POST",
@@ -294,10 +289,13 @@ export const teacherApi = {
       body: JSON.stringify({ mappings }),
     });
   },
-  
-  /* Sessions */
+
+  /* ------------------- Sessions (match your OpenAPI) ------------------- */
+
+  /** Create/Start a session for a course
+   * POST /api/sessions/{course_id}/sessions
+   */
   createSession(courseId: string, requireSurvey = true) {
-    // keep your existing route shape
     return request(`${API_BASE}/sessions/${courseId}/sessions`, {
       method: "POST",
       token: teacherToken(),
@@ -305,28 +303,23 @@ export const teacherApi = {
     });
   },
 
-  // TEACHER-ONLY.
-  
-
+  /** Get session submissions
+   * GET /api/sessions/{session_id}/submissions
+   */
   async getSessionSubmissions(sessionId: string) {
-    const t = teacherToken();
-    if (!t) throw new Error("TEACHER_AUTH_REQUIRED");
-
-    const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}/submissions`, {
+    return request(`${API_BASE}/sessions/${sessionId}/submissions`, {
       method: "GET",
-      headers: { Accept: "application/json", ...withAuth(t) },
-      credentials: "include",
+      token: teacherToken(),
     });
-    const { json, text } = await parseOrText(res);
-    if (!res.ok) fail(res, json?.detail ?? text ?? "SUBMISSIONS_FAILED");
-    return json;
   },
-  endSession(sessionId: string) {
-  return request(`${API_BASE}/sessions/${sessionId}/end`, {
-    method: "POST",
-    token: getTeacherToken(), // or teacherToken() in your file
-  });
 
-  
-},
+  /** End/Close a session
+   * POST /api/sessions/{session_id}/close
+   */
+  endSession(sessionId: string) {
+    return request(`${API_BASE}/sessions/${sessionId}/close`, {
+      method: "POST",
+      token: teacherToken(),
+    });
+  },
 };

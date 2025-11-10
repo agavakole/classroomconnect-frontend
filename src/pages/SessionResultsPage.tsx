@@ -55,6 +55,7 @@ export default function SessionResultsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [sessionInfo, setSessionInfo] = useState<{ require_survey?: boolean } | null>(null);
 
   useEffect(() => {
     let timer: number;
@@ -66,6 +67,12 @@ export default function SessionResultsPage() {
 
         const data = await teacherApi.getSessionSubmissions(sessionId);
         const items = Array.isArray(data?.items) ? data.items : [];
+
+        // Try to get session info (if your backend returns it)
+        // You might need to add a separate endpoint: teacherApi.getSession(sessionId)
+        if (data?.session) {
+          setSessionInfo(data.session);
+        }
 
         const normalized: Row[] = items.map((it: any) => ({
           id: it.id ?? undefined,
@@ -99,7 +106,7 @@ export default function SessionResultsPage() {
   const buckets = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of rows) {
-      const key = (r.learning_style || "unknown").toLowerCase();
+      const key = (r.learning_style || "not assessed").toLowerCase();
       map.set(key, (map.get(key) || 0) + 1);
     }
     return [...map.entries()].sort((a, b) => b[1] - a[1]); // sorted by count desc
@@ -154,6 +161,25 @@ export default function SessionResultsPage() {
           </div>
         )}
 
+        {/* Info banner about survey requirement */}
+        {sessionInfo?.require_survey === false && (
+          <div className="mb-6 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+            <div className="flex gap-3">
+              <span className="text-2xl">ℹ️</span>
+              <div>
+                <p className="font-semibold text-blue-900 mb-1">
+                  Survey Not Required for This Session
+                </p>
+                <p className="text-blue-800 text-sm">
+                  Students only provided their name and mood. Learning styles show as "Not Assessed" 
+                  because no survey was completed. To get learning style data, create a new session 
+                  with "Require baseline survey" checked.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Summary tiles: total + top 3 style buckets */}
         <div className="grid sm:grid-cols-4 gap-3 mb-6">
           <div className="p-4 bg-white rounded-xl shadow">
@@ -165,7 +191,9 @@ export default function SessionResultsPage() {
             <div key={label} className="p-4 bg-white rounded-xl shadow">
               <div className={`text-sm ${styleColor(label)} flex items-center gap-2`}>
                 <span className="text-xl">{styleEmoji(label)}</span>
-                <span className="capitalize">{label}</span>
+                <span className="capitalize">
+                  {label === "" || label === "not assessed" ? "Not Assessed" : label}
+                </span>
               </div>
               <div className={`text-2xl font-bold ${styleColor(label)} mt-1`}>
                 {count}
@@ -198,23 +226,46 @@ export default function SessionResultsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={r.id || i}>
-                      <td className="p-3 border-b">{r.student_name || "Guest"}</td>
-                      <td className="p-3 border-b capitalize">{r.mood || "—"}</td>
-                      <td className="p-3 border-b">
-                        <span className={`px-2 py-1 rounded text-sm ${badgeClass(r.learning_style)}`}>
-                          {(r.learning_style || "—")}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b capitalize">{r.status || "—"}</td>
-                      <td className="p-3 border-b">{fmt(r.created_at)}</td>
-                    </tr>
-                  ))}
+                  {rows.map((r, i) => {
+                    const hasLearningStyle = r.learning_style && r.learning_style !== "" && r.learning_style !== "—";
+                    
+                    return (
+                      <tr key={r.id || i}>
+                        <td className="p-3 border-b">{r.student_name || "Guest"}</td>
+                        <td className="p-3 border-b capitalize">{r.mood || "—"}</td>
+                        <td className="p-3 border-b">
+                          {hasLearningStyle ? (
+                            <span className={`px-2 py-1 rounded text-sm ${badgeClass(r.learning_style)}`}>
+                              {r.learning_style}
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 rounded text-sm bg-gray-100 text-gray-500 italic">
+                                Not Assessed
+                              </span>
+                              <span 
+                                className="text-xs text-gray-400 cursor-help" 
+                                title="Survey was not required for this session"
+                              >
+                                ⓘ
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 border-b capitalize">{r.status || "—"}</td>
+                        <td className="p-3 border-b">{fmt(r.created_at)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
+        </div>
+
+        {/* Help text at bottom */}
+        <div className="mt-4 text-sm text-gray-600 text-center">
+          💡 This page auto-refreshes every 6 seconds to show new submissions in real-time.
         </div>
       </main>
     </div>

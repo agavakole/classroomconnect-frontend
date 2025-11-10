@@ -1,6 +1,6 @@
-// src/pages/TeacherCourseDetail.tsx
+// src/pages/TeacherCourseDetail.tsx - COMPLETE FINAL FIX
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { teacherApi } from "../services/api";
 import { getActiveSession } from "../utils/activeSession";
 import { Modal } from "../components/Modal";
@@ -17,6 +17,7 @@ type Mapping = { learning_style: string; mood: string; activity_id: string };
 
 export default function TeacherCourseDetail() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
 
   const [course, setCourse] = useState<Course | null>(null);
@@ -79,12 +80,33 @@ export default function TeacherCourseDetail() {
     }
   };
 
+  const handleClose = () => {
+    // When closing modal, go to the background location (dashboard)
+    const state = location.state as { backgroundLocation?: Location };
+    
+    if (state?.backgroundLocation?.pathname) {
+      navigate(state.backgroundLocation.pathname);
+    } else {
+      navigate("/teacher/dashboard");
+    }
+  };
+
+  const handleOpenSession = () => {
+  // Go to a full-page route → DO NOT include backgroundLocation here.
+  navigate(`/teacher/courses/${id}/session`, {
+    state: {
+      // This is enough for StartSessionPage to reopen the course modal later.
+      courseModalPath: `/teacher/courses/${id}`,
+    },
+  });
+};
+
   const active = getActiveSession();
 
   return (
     <Modal
       isOpen={true}
-      onClose={() => navigate(-1)}
+      onClose={handleClose}
       title="Course"
       size="xl"
     >
@@ -97,7 +119,7 @@ export default function TeacherCourseDetail() {
           </p>
           <div className="flex justify-end">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleClose}
               className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
             >
               Close
@@ -128,7 +150,7 @@ export default function TeacherCourseDetail() {
                 {saving ? "Saving…" : "Save Recommendations"}
               </button>
               <button
-                onClick={() => navigate(`/teacher/courses/${id}/session`)}
+                onClick={handleOpenSession}
                 className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 hover:border-[#0072FF] font-semibold transition"
               >
                 Open Session View
@@ -217,14 +239,14 @@ export default function TeacherCourseDetail() {
                 <table className="w-full border-separate border-spacing-0 text-sm">
                   <thead>
                     <tr>
-                      <th className="sticky left-0 z-10 bg-white font-semibold text-left p-3 ring-1 ring-gray-200 rounded-l-xl">
+                      <th className="sticky left-0 z-10 bg-white font-semibold text-left p-3 ring-1 ring-gray-200 rounded-tl-xl">
                         Learning Style / Mood
                       </th>
                       {course.mood_labels.map((mood, i, arr) => (
                         <th
                           key={mood}
                           className={`p-3 text-center font-semibold capitalize bg-gray-100 ring-1 ring-gray-200 ${
-                            i === arr.length - 1 ? "rounded-r-xl" : ""
+                            i === arr.length - 1 ? "rounded-tr-xl" : ""
                           }`}
                         >
                           {mood}
@@ -233,9 +255,11 @@ export default function TeacherCourseDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {course.learning_style_categories.map((style) => (
+                    {course.learning_style_categories.map((style, styleIdx, styleArr) => (
                       <tr key={style}>
-                        <td className="sticky left-0 z-10 bg-white font-semibold p-3 ring-1 ring-gray-200 capitalize">
+                        <td className={`sticky left-0 z-10 bg-white font-semibold p-3 ring-1 ring-gray-200 capitalize ${
+                          styleIdx === styleArr.length - 1 ? "rounded-bl-xl" : ""
+                        }`}>
                           {style === "visual" && "👁️ Visual"}
                           {style === "auditory" && "🎧 Auditory"}
                           {style === "kinesthetic" && "✋ Kinesthetic"}
@@ -244,7 +268,9 @@ export default function TeacherCourseDetail() {
                         {course.mood_labels.map((mood, i, arr) => {
                           const key = `${style}-${mood}`;
                           const selected = recommendations[key] || "";
-                          const rounded = i === arr.length - 1 ? "rounded-r-xl" : "";
+                          const isLastRow = styleIdx === styleArr.length - 1;
+                          const isLastCol = i === arr.length - 1;
+                          const rounded = isLastRow && isLastCol ? "rounded-br-xl" : "";
                           return (
                             <td key={mood} className={`p-2 ring-1 ring-gray-200 ${rounded}`}>
                               <select
@@ -287,7 +313,7 @@ export default function TeacherCourseDetail() {
 
           <div className="pt-2 flex justify-end">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleClose}
               className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
             >
               Close

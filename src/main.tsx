@@ -1,4 +1,4 @@
-// src/main.tsx
+// src/main.tsx - FINAL FIX FOR ROUTE MATCHING
 import React from "react";
 import ReactDOM from "react-dom/client";
 import {
@@ -25,21 +25,16 @@ import "./index.css";
 
 function RequireTeacher({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("teacher_token");
-  return token ? <>{children}</> : <Navigate to="/login" replace />;
+  return token ? <>{children}</> : <Navigate to="/teacher/login" replace />;
 }
 
-/**
- * Modal routes pattern:
- * - Render the "background" UI using backgroundLocation (the page you came from).
- * - If backgroundLocation exists, also render the modal routes on top.
- */
 function ModalSwitch() {
   const location = useLocation();
   const state = location.state as { backgroundLocation?: Location } | undefined;
 
   return (
     <>
-      {/* Background: render the previous route, or the current route if none */}
+      {/* Background routes */}
       <Routes location={state?.backgroundLocation || location}>
         {/* Public / student flow */}
         <Route path="/" element={<App />} />
@@ -49,7 +44,11 @@ function ModalSwitch() {
         <Route path="/join" element={<JoinSession />} />
         <Route path="/join/:joinToken" element={<JoinSession />} />
 
-        {/* Teacher pages (non-modal “pages”) */}
+        {/* Teacher auth routes */}
+        <Route path="/teacher/login" element={<Login />} />
+        <Route path="/teacher/signup" element={<Signup />} />
+
+        {/* Teacher dashboard */}
         <Route
           path="/teacher/dashboard"
           element={
@@ -58,6 +57,11 @@ function ModalSwitch() {
             </RequireTeacher>
           }
         />
+
+        {/* 
+          CRITICAL: Session route MUST come BEFORE the course modal route!
+          More specific routes should be listed first.
+        */}
         <Route
           path="/teacher/courses/:id/session"
           element={
@@ -66,6 +70,8 @@ function ModalSwitch() {
             </RequireTeacher>
           }
         />
+
+        {/* Results */}
         <Route
           path="/teacher/sessions/:sessionId/results"
           element={
@@ -74,6 +80,8 @@ function ModalSwitch() {
             </RequireTeacher>
           }
         />
+
+        {/* Activities */}
         <Route
           path="/teacher/activities"
           element={
@@ -87,7 +95,12 @@ function ModalSwitch() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Foreground: only render these when we have a background page to sit on top of */}
+      {/* 
+        Modal routes - Only render when backgroundLocation exists
+        IMPORTANT: The course detail route pattern /teacher/courses/:id 
+        is LESS specific than /teacher/courses/:id/session, so React Router
+        will match the session route first in the background routes above.
+      */}
       {state?.backgroundLocation && (
         <Routes>
           <Route

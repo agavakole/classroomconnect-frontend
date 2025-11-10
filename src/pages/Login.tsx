@@ -53,7 +53,10 @@ export function Login() {
     lg:bg-[position:center_100%] /* more on large screens */
     xl:bg-[position:center_60%] "
       style={{
-        backgroundImage: "url('/images/3d-image.png')",
+        backgroundImage: `
+      linear-gradient(to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.50)),
+      url('/images/3d-image.png')
+    `,
        
        
       }}

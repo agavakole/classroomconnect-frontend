@@ -60,7 +60,7 @@ export default function Home() {
   "
       style={{
         backgroundImage: `
-      linear-gradient(to bottom right, rgba(255,255,255,0), rgba(255,255,255,0.10)),
+      linear-gradient(to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.50)),
       url('/images/3d-image.png')
     `,
       }}

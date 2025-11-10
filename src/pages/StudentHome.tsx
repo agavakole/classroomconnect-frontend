@@ -117,7 +117,7 @@ export default function StudentHome() {
     xl:bg-[position:center_60%] "
       style={{
         backgroundImage: `
-          linear-gradient(to bottom right, rgba(255,255,255,0.10), rgba(255,255,255,0.30)),
+          linear-gradient(to bottom right, rgba(255,255,255,0.50), rgba(255,255,255,0.50)),
           url('/images/3d-image.png')
         `,
       }}
