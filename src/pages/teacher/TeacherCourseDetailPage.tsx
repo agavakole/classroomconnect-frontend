@@ -26,6 +26,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
+  autoGenerateCourseRecommendations,
   getCourse,
   getCourseRecommendations,
   updateCourse,
@@ -111,6 +112,30 @@ export function TeacherCourseDetailPage() {
     },
   })
 
+  const autoGenerateMutation = useMutation({
+    mutationFn: () =>
+      autoGenerateCourseRecommendations(courseId ?? '', {
+        temperature: 0.3,
+        activity_limit: 25,
+      }),
+    onSuccess: (payload) => {
+      const mapping: Record<string, string> = {}
+      payload.mappings.forEach(({ learning_style, mood, activity_id }) => {
+        const key = makeCellKey(learning_style ?? null, mood)
+        mapping[key] = activity_id
+      })
+      setSelectedCell(null)
+      setCellAssignments(mapping)
+      toast({
+        title: 'AI recommendation map applied',
+        description: 'Review the assignments before saving.',
+        status: 'success',
+        duration: 4000,
+        isClosable: true,
+      })
+    },
+  })
+
   const courseUpdateMutation = useMutation({
     mutationFn: () =>
       updateCourse(courseId ?? '', {
@@ -124,7 +149,7 @@ export function TeacherCourseDetailPage() {
   })
 
   const handleAssignActivity = (activityId: string) => {
-    if (!selectedCell) return
+    if (!selectedCell || autoGenerateMutation.isPending) return
     setCellAssignments((prev) => ({ ...prev, [selectedCell]: activityId }))
   }
 
@@ -152,6 +177,14 @@ export function TeacherCourseDetailPage() {
   const hasCourseChanges =
     courseTitle.trim() !== (courseQuery.data?.title ?? '') ||
     baselineSurveyId !== (courseQuery.data?.baseline_survey_id ?? '')
+
+  const isMapLocked = autoGenerateMutation.isPending
+  const autoGenerateErrorMessage =
+    autoGenerateMutation.error instanceof ApiError
+      ? autoGenerateMutation.error.message
+      : autoGenerateMutation.isError
+        ? 'Unable to generate recommendations.'
+        : null
 
   return (
     <Stack spacing={6}>
@@ -229,10 +262,42 @@ export function TeacherCourseDetailPage() {
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
         <Card>
           <CardHeader>
-            <Heading size="md">Recommendation map</Heading>
-            <Text fontSize="sm" color="gray.500">
-              Tap a cell to select it, then choose an activity on the right.
-            </Text>
+            <Stack
+              direction={{ base: 'column', md: 'row' }}
+              justify="space-between"
+              alignItems={{ base: 'flex-start', md: 'center' }}
+              spacing={3}
+            >
+              <Box>
+                <Heading size="md">Recommendation map</Heading>
+                <Text fontSize="sm" color="gray.500">
+                  Tap a cell to select it, then choose an activity on the right.
+                </Text>
+              </Box>
+              <Button
+                colorScheme="purple"
+                onClick={() => autoGenerateMutation.mutate()}
+                isLoading={autoGenerateMutation.isPending}
+                isDisabled={!courseId || autoGenerateMutation.isPending}
+                size="sm"
+              >
+                AI map
+              </Button>
+            </Stack>
+            {autoGenerateErrorMessage ? (
+              <Alert status="error" mt={3}>
+                <AlertIcon />
+                <AlertDescription>{autoGenerateErrorMessage}</AlertDescription>
+              </Alert>
+            ) : null}
+            {isMapLocked ? (
+              <Alert status="info" mt={3}>
+                <AlertIcon />
+                <AlertDescription>
+                  Generating recommendations… Editing is disabled until this completes.
+                </AlertDescription>
+              </Alert>
+            ) : null}
           </CardHeader>
           <CardBody>
             <Stack spacing={6}>
@@ -252,10 +317,14 @@ export function TeacherCourseDetailPage() {
                           borderWidth="1px"
                           borderRadius="xl"
                           p={3}
-                          cursor="pointer"
+                          cursor={isMapLocked ? 'not-allowed' : 'pointer'}
                           bg={hasActivity ? 'purple.50' : 'white'}
                           borderColor={isActive ? 'brand.500' : 'gray.200'}
-                          onClick={() => setSelectedCell(key)}
+                          opacity={isMapLocked ? 0.6 : 1}
+                          onClick={() => {
+                            if (isMapLocked) return
+                            setSelectedCell(key)
+                          }}
                         >
                           <Stack spacing={1}>
                             <Text fontSize="sm" color="gray.500">
@@ -299,7 +368,8 @@ export function TeacherCourseDetailPage() {
                       p={3}
                       borderColor={isSelected ? 'brand.500' : 'gray.200'}
                       bg={isSelected ? 'brand.50' : 'white'}
-                      cursor="pointer"
+                      cursor={isMapLocked ? 'not-allowed' : 'pointer'}
+                      opacity={isMapLocked ? 0.6 : 1}
                       onClick={() => handleAssignActivity(activity.id)}
                     >
                       <Stack spacing={1}>
@@ -337,6 +407,7 @@ export function TeacherCourseDetailPage() {
         alignSelf="flex-start"
         onClick={() => saveMutation.mutate()}
         isLoading={saveMutation.isPending}
+        isDisabled={isMapLocked}
       >
         Save mappings
       </Button>

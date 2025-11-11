@@ -102,6 +102,66 @@ make dev
 -   **CourseRecommendation**: Mapping of `(learning_style, mood)` to an `Activity` with fallback
     support (style default, mood default, random course activity).
 
+## AI-Powered Recommendations
+
+Teachers can ask the platform to auto-generate `(learning_style, mood) → activity` mappings using any
+OpenRouter model. Configure the integration via environment variables (set both in
+`.env.example.docker` and `.env.dev.docker`):
+
+```bash
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_DEFAULT_MODEL=openrouter/meta/llama-3.1-8b-instruct
+OPENROUTER_API_BASE=https://openrouter.ai/api/v1/chat/completions
+```
+
+At runtime the backend fetches the course learning styles, mood labels, and the newest activities
+(`activity_limit`, default 25), builds a prompt, and calls OpenRouter. The service does **not**
+persist changes; it simply returns the AI suggestion set so the UI can review/edit before applying.
+
+### API Flow
+
+1. `POST /api/courses/{course_id}/recommendations/auto`
+
+    - Auth: teacher JWT
+    - Optional body (all fields optional; `{}` works):
+        ```json
+        {
+        	"model": "openrouter/meta/llama-3.1-8b-instruct",
+        	"temperature": 0.2,
+        	"activity_limit": 25
+        }
+        ```
+    - Response (`200 OK`):
+        ```json
+        {
+        	"mappings": [
+        		{
+        			"learning_style": "Active learner",
+        			"mood": "Happy",
+        			"activity_id": "…"
+        		},
+        		{
+        			"learning_style": "Active learner",
+        			"mood": "Sad",
+        			"activity_id": "…"
+        		}
+        		// one entry per style × mood combination
+        	]
+        }
+        ```
+    - Typical error responses:
+        - `502 AI_RECOMMENDER_INVALID_PAYLOAD` – model didn’t return valid JSON.
+        - `502 AI_RECOMMENDER_INCOMPLETE_COMBINATIONS` – model skipped a style/mood pair.
+        - `503 AI_RECOMMENDER_NOT_CONFIGURED` – missing `OPENROUTER_API_KEY`.
+
+2. `PATCH /api/courses/{course_id}/recommendations`
+    - Apply the mappings you like (either raw from AI or with manual tweaks). The backend enforces
+      that activity IDs exist and that the learning style / mood names belong to the course.
+
+Because the AI endpoint only reads data, teachers can run it multiple times and compare outputs
+without affecting existing manual mappings. Once satisfied, invoke the regular PATCH endpoint to
+persist the recommendations.
+
 ## API Reference
 
 **Base URL:** `http://localhost:8000`
@@ -488,7 +548,9 @@ Unless noted, success responses use `200 OK`.
     			"prompt": "How are you feeling heading into class?",
     			"options": ["energized", "curious", "tired"]
     		},
-    		"survey_snapshot_json": { "survey_id": "c51a1d83-0c8-4cc3-a3f9-151ad5fb5f09" },
+    		"survey_snapshot_json": {
+    			"survey_id": "c51a1d83-0c8-4cc3-a3f9-151ad5fb5f09"
+    		},
     		"started_at": "2024-03-06T17:30:00+00:00",
     		"closed_at": null,
     		"join_token": "4W3L6uA9gqX2Y1bK",
@@ -826,8 +888,8 @@ These routes are meant for local development and automated tests.
 -   Request body:
     ```json
     {
-        "password": "changeme",
-        "seed_variant": "seed"
+    	"password": "changeme",
+    	"seed_variant": "seed"
     }
     ```
     -   `seed_variant` (optional) chooses the script: `"seed"` (default, loads full demo data) or `"seed_deploy_test"` (loads the lightweight deploy-test dataset).
@@ -841,161 +903,161 @@ These routes are meant for local development and automated tests.
 
 ### teachers
 
-| Column        | Type            | Notes                                                       |
-| ------------- | --------------- | ----------------------------------------------------------- |
-| `id`          | UUID (text)     | Primary key generated with `uuid4()`.                       |
-| `email`       | VARCHAR(255)    | Unique + indexed.                                           |
-| `password_hash` | VARCHAR(255) | BCrypt hash produced by `hash_password()`.                  |
-| `full_name`   | VARCHAR(255)    | Nullable for legacy records.                                |
-| `created_at`  | TIMESTAMPTZ     | Defaults to `now()`.                                        |
+| Column          | Type         | Notes                                      |
+| --------------- | ------------ | ------------------------------------------ |
+| `id`            | UUID (text)  | Primary key generated with `uuid4()`.      |
+| `email`         | VARCHAR(255) | Unique + indexed.                          |
+| `password_hash` | VARCHAR(255) | BCrypt hash produced by `hash_password()`. |
+| `full_name`     | VARCHAR(255) | Nullable for legacy records.               |
+| `created_at`    | TIMESTAMPTZ  | Defaults to `now()`.                       |
 
-- Relationships: `courses` (one-to-many), `activities` (one-to-many).
+-   Relationships: `courses` (one-to-many), `activities` (one-to-many).
 
 ### students
 
-| Column        | Type         | Notes                                                       |
-| ------------- | ------------ | ----------------------------------------------------------- |
-| `id`          | UUID (text)  | Primary key generated with `uuid4()`.                       |
-| `email`       | VARCHAR(255) | Unique + indexed.                                           |
-| `password_hash` | VARCHAR(255) | BCrypt hash.                                            |
-| `full_name`   | VARCHAR(255) | Required.                                                   |
-| `created_at`  | TIMESTAMPTZ  | Defaults to `now()`.                                        |
+| Column          | Type         | Notes                                 |
+| --------------- | ------------ | ------------------------------------- |
+| `id`            | UUID (text)  | Primary key generated with `uuid4()`. |
+| `email`         | VARCHAR(255) | Unique + indexed.                     |
+| `password_hash` | VARCHAR(255) | BCrypt hash.                          |
+| `full_name`     | VARCHAR(255) | Required.                             |
+| `created_at`    | TIMESTAMPTZ  | Defaults to `now()`.                  |
 
-- Relationships: `submissions` (one-to-many), `course_profiles` (one-to-many).
+-   Relationships: `submissions` (one-to-many), `course_profiles` (one-to-many).
 
 ### activity_types
 
-| Column                | Type         | Notes                                             |
-| --------------------- | ------------ | ------------------------------------------------- |
-| `type_name`           | VARCHAR(100) | Primary key.                                      |
-| `description`         | VARCHAR(1024)| Required human-readable description.              |
-| `required_fields`     | JSON         | Array of field identifiers that must be supplied. |
-| `optional_fields`     | JSON         | Array of optional field identifiers.              |
-| `example_content_json`| JSON         | Sample payload structure (nullable).              |
-| `created_at`          | TIMESTAMPTZ  | Defaults to `now()`.                              |
-| `updated_at`          | TIMESTAMPTZ  | Auto-updated on change.                           |
+| Column                 | Type          | Notes                                             |
+| ---------------------- | ------------- | ------------------------------------------------- |
+| `type_name`            | VARCHAR(100)  | Primary key.                                      |
+| `description`          | VARCHAR(1024) | Required human-readable description.              |
+| `required_fields`      | JSON          | Array of field identifiers that must be supplied. |
+| `optional_fields`      | JSON          | Array of optional field identifiers.              |
+| `example_content_json` | JSON          | Sample payload structure (nullable).              |
+| `created_at`           | TIMESTAMPTZ   | Defaults to `now()`.                              |
+| `updated_at`           | TIMESTAMPTZ   | Auto-updated on change.                           |
 
-- Relationships: `activities` (one-to-many).
+-   Relationships: `activities` (one-to-many).
 
 ### activities
 
-| Column         | Type         | Notes                                                                 |
-| -------------- | ------------ | --------------------------------------------------------------------- |
-| `id`           | UUID (text)  | Primary key generated with `uuid4()`.                                 |
-| `name`         | VARCHAR(255) | Activity display name.                                                |
-| `summary`      | VARCHAR(1024)| Short description for catalog views.                                  |
-| `type`         | VARCHAR(100) | FK → `activity_types.type_name` (`RESTRICT` on delete).               |
-| `tags`         | JSON         | String array used for filtering.                                      |
-| `content_json` | JSON         | Author-supplied payload honoring the activity type schema.            |
-| `creator_id`   | UUID (text)  | Nullable FK → `teachers.id` (`SET NULL`).                             |
-| `creator_name` | VARCHAR(255) | Stored snapshot of the author’s name.                                 |
-| `creator_email`| VARCHAR(255) | Stored snapshot of the author’s email.                                |
-| `created_at`   | TIMESTAMPTZ  | Defaults to `now()`.                                                  |
-| `updated_at`   | TIMESTAMPTZ  | Auto-updated on change.                                               |
+| Column          | Type          | Notes                                                      |
+| --------------- | ------------- | ---------------------------------------------------------- |
+| `id`            | UUID (text)   | Primary key generated with `uuid4()`.                      |
+| `name`          | VARCHAR(255)  | Activity display name.                                     |
+| `summary`       | VARCHAR(1024) | Short description for catalog views.                       |
+| `type`          | VARCHAR(100)  | FK → `activity_types.type_name` (`RESTRICT` on delete).    |
+| `tags`          | JSON          | String array used for filtering.                           |
+| `content_json`  | JSON          | Author-supplied payload honoring the activity type schema. |
+| `creator_id`    | UUID (text)   | Nullable FK → `teachers.id` (`SET NULL`).                  |
+| `creator_name`  | VARCHAR(255)  | Stored snapshot of the author’s name.                      |
+| `creator_email` | VARCHAR(255)  | Stored snapshot of the author’s email.                     |
+| `created_at`    | TIMESTAMPTZ   | Defaults to `now()`.                                       |
+| `updated_at`    | TIMESTAMPTZ   | Auto-updated on change.                                    |
 
-- Relationships: `activity_type` (many-to-one), `creator` (many-to-one), `recommendations` (one-to-many cascade delete).
+-   Relationships: `activity_type` (many-to-one), `creator` (many-to-one), `recommendations` (one-to-many cascade delete).
 
 ### surveys (survey_template)
 
-| Column         | Type         | Notes                                                                  |
-| -------------- | ------------ | ---------------------------------------------------------------------- |
-| `id`           | UUID (text)  | Primary key generated with `uuid4()`.                                  |
-| `title`        | VARCHAR(255) | Unique + indexed survey title.                                         |
-| `questions_json` | JSON      | Array of question objects persisted as authored.                        |
-| `creator_name` | VARCHAR(255) | Stored display name of the author.                                     |
-| `creator_id`   | UUID (text)  | Nullable FK → `teachers.id` (`CASCADE`).                               |
-| `creator_email`| VARCHAR(255) | Optional email snapshot.                                               |
-| `created_at`   | TIMESTAMPTZ  | Defaults to `now()`.                                                   |
+| Column           | Type         | Notes                                            |
+| ---------------- | ------------ | ------------------------------------------------ |
+| `id`             | UUID (text)  | Primary key generated with `uuid4()`.            |
+| `title`          | VARCHAR(255) | Unique + indexed survey title.                   |
+| `questions_json` | JSON         | Array of question objects persisted as authored. |
+| `creator_name`   | VARCHAR(255) | Stored display name of the author.               |
+| `creator_id`     | UUID (text)  | Nullable FK → `teachers.id` (`CASCADE`).         |
+| `creator_email`  | VARCHAR(255) | Optional email snapshot.                         |
+| `created_at`     | TIMESTAMPTZ  | Defaults to `now()`.                             |
 
-- Relationships: `sessions` (one-to-many), `creator` (`Teacher` via `creator_id`).
+-   Relationships: `sessions` (one-to-many), `creator` (`Teacher` via `creator_id`).
 
 ### courses
 
-| Column                    | Type         | Notes                                                                                 |
-| ------------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| `id`                      | UUID (text)  | Primary key generated with `uuid4()`.                                                 |
-| `title`                   | VARCHAR(255) | Teacher-scoped course title.                                                          |
-| `teacher_id`              | UUID (text)  | FK → `teachers.id` (`CASCADE`).                                                       |
-| `baseline_survey_id`      | UUID (text)  | Nullable FK → `surveys.id` (`SET NULL`).                                              |
-| `learning_style_categories` | JSON      | Cached list of categories extracted from the baseline survey.                         |
-| `mood_labels`             | JSON         | Course-specific mood options displayed to participants.                               |
-| `requires_rebaseline`     | BOOLEAN      | Flag forcing the next session to include the baseline survey.                         |
-| `created_at`              | TIMESTAMPTZ  | Defaults to `now()`.                                                                  |
-| `updated_at`              | TIMESTAMPTZ  | Auto-updated on change.                                                               |
+| Column                      | Type         | Notes                                                         |
+| --------------------------- | ------------ | ------------------------------------------------------------- |
+| `id`                        | UUID (text)  | Primary key generated with `uuid4()`.                         |
+| `title`                     | VARCHAR(255) | Teacher-scoped course title.                                  |
+| `teacher_id`                | UUID (text)  | FK → `teachers.id` (`CASCADE`).                               |
+| `baseline_survey_id`        | UUID (text)  | Nullable FK → `surveys.id` (`SET NULL`).                      |
+| `learning_style_categories` | JSON         | Cached list of categories extracted from the baseline survey. |
+| `mood_labels`               | JSON         | Course-specific mood options displayed to participants.       |
+| `requires_rebaseline`       | BOOLEAN      | Flag forcing the next session to include the baseline survey. |
+| `created_at`                | TIMESTAMPTZ  | Defaults to `now()`.                                          |
+| `updated_at`                | TIMESTAMPTZ  | Auto-updated on change.                                       |
 
-- Constraints: `Unique(teacher_id, title)` ensures course titles are unique per teacher; `Index(ix_course_teacher_id)` accelerates teacher lookups.
-- Relationships: `teacher`, `sessions`, `recommendations`, `student_profiles`.
+-   Constraints: `Unique(teacher_id, title)` ensures course titles are unique per teacher; `Index(ix_course_teacher_id)` accelerates teacher lookups.
+-   Relationships: `teacher`, `sessions`, `recommendations`, `student_profiles`.
 
 ### sessions (class_session)
 
-| Column               | Type         | Notes                                                                            |
-| -------------------- | ------------ | -------------------------------------------------------------------------------- |
-| `id`                 | UUID (text)  | Primary key generated with `uuid4()`.                                            |
-| `course_id`          | UUID (text)  | FK → `courses.id` (`CASCADE`).                                                   |
-| `survey_template_id` | UUID (text)  | Nullable FK → `surveys.id` (`RESTRICT`).                                         |
-| `require_survey`     | BOOLEAN      | Whether the session enforces the baseline survey.                                |
-| `mood_check_schema`  | JSON         | Prompt + options displayed to participants.                                      |
-| `survey_snapshot_json` | JSON       | Immutable snapshot of the survey used during the session.                        |
-| `started_at`         | TIMESTAMPTZ  | Defaults to `now()`.                                                             |
-| `closed_at`          | TIMESTAMPTZ  | Null until `/close` is called.                                                   |
-| `join_token`         | VARCHAR(16)  | Unique join token used by the mobile/web join flow.                              |
+| Column                 | Type        | Notes                                                     |
+| ---------------------- | ----------- | --------------------------------------------------------- |
+| `id`                   | UUID (text) | Primary key generated with `uuid4()`.                     |
+| `course_id`            | UUID (text) | FK → `courses.id` (`CASCADE`).                            |
+| `survey_template_id`   | UUID (text) | Nullable FK → `surveys.id` (`RESTRICT`).                  |
+| `require_survey`       | BOOLEAN     | Whether the session enforces the baseline survey.         |
+| `mood_check_schema`    | JSON        | Prompt + options displayed to participants.               |
+| `survey_snapshot_json` | JSON        | Immutable snapshot of the survey used during the session. |
+| `started_at`           | TIMESTAMPTZ | Defaults to `now()`.                                      |
+| `closed_at`            | TIMESTAMPTZ | Null until `/close` is called.                            |
+| `join_token`           | VARCHAR(16) | Unique join token used by the mobile/web join flow.       |
 
-- Relationships: `course`, `survey_template`, `submissions`.
+-   Relationships: `course`, `survey_template`, `submissions`.
 
 ### submissions
 
-| Column             | Type         | Notes                                                                                              |
-| ------------------ | ------------ | -------------------------------------------------------------------------------------------------- |
-| `id`               | UUID (text)  | Primary key generated with `uuid4()`.                                                              |
-| `session_id`       | UUID (text)  | FK → `sessions.id` (`CASCADE`).                                                                     |
-| `course_id`        | UUID (text)  | FK → `courses.id` (`CASCADE`).                                                                      |
-| `student_id`       | UUID (text)  | Nullable FK → `students.id` (`CASCADE`).                                                           |
-| `guest_name`       | VARCHAR(255) | Required when `student_id` is null.                                                                |
-| `guest_id`         | UUID (text)  | Required when `student_id` is null (stable guest identifier).                                      |
-| `mood`             | VARCHAR(50)  | Mood option selected by the participant.                                                           |
-| `answers_json`     | JSON         | Optional answers keyed by question id.                                                             |
-| `total_scores`     | JSON         | Optional aggregate learning style scores.                                                          |
-| `is_baseline_update` | BOOLEAN    | True when the submission captured a new learning style profile.                                    |
-| `status`           | VARCHAR(20)  | `"completed"` or `"skipped"` (currently always `"completed"`).                                     |
-| `created_at`       | TIMESTAMPTZ  | Defaults to `now()`.                                                                               |
-| `updated_at`       | TIMESTAMPTZ  | Auto-updated on change.                                                                            |
+| Column               | Type         | Notes                                                           |
+| -------------------- | ------------ | --------------------------------------------------------------- |
+| `id`                 | UUID (text)  | Primary key generated with `uuid4()`.                           |
+| `session_id`         | UUID (text)  | FK → `sessions.id` (`CASCADE`).                                 |
+| `course_id`          | UUID (text)  | FK → `courses.id` (`CASCADE`).                                  |
+| `student_id`         | UUID (text)  | Nullable FK → `students.id` (`CASCADE`).                        |
+| `guest_name`         | VARCHAR(255) | Required when `student_id` is null.                             |
+| `guest_id`           | UUID (text)  | Required when `student_id` is null (stable guest identifier).   |
+| `mood`               | VARCHAR(50)  | Mood option selected by the participant.                        |
+| `answers_json`       | JSON         | Optional answers keyed by question id.                          |
+| `total_scores`       | JSON         | Optional aggregate learning style scores.                       |
+| `is_baseline_update` | BOOLEAN      | True when the submission captured a new learning style profile. |
+| `status`             | VARCHAR(20)  | `"completed"` or `"skipped"` (currently always `"completed"`).  |
+| `created_at`         | TIMESTAMPTZ  | Defaults to `now()`.                                            |
+| `updated_at`         | TIMESTAMPTZ  | Auto-updated on change.                                         |
 
-- Constraints: `Check(ck_submission_student_or_guest)` enforces exactly one of `(student_id)` or `(guest_name, guest_id)`; `Unique(session_id, student_id)` and `Unique(session_id, guest_id)` prevent duplicate submissions per participant.
-- Relationships: `session`, `course`, `student`.
+-   Constraints: `Check(ck_submission_student_or_guest)` enforces exactly one of `(student_id)` or `(guest_name, guest_id)`; `Unique(session_id, student_id)` and `Unique(session_id, guest_id)` prevent duplicate submissions per participant.
+-   Relationships: `session`, `course`, `student`.
 
 ### course_student_profiles
 
-| Column                | Type         | Notes                                                                                 |
-| --------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| `id`                  | UUID (text)  | Primary key generated with `uuid4()`.                                                 |
-| `course_id`           | UUID (text)  | FK → `courses.id` (`CASCADE`).                                                        |
-| `student_id`          | UUID (text)  | Nullable FK → `students.id` (`CASCADE`).                                              |
-| `guest_id`            | UUID (text)  | Nullable guest identifier (paired with `student_id` being null).                      |
-| `latest_submission_id` | UUID (text)| Nullable FK → `submissions.id` (`SET NULL`).                                          |
-| `profile_category`    | VARCHAR(100) | Current learning style label.                                                         |
-| `profile_scores_json` | JSON         | Persisted aggregate scores used to derive the profile.                                |
-| `first_captured_at`   | TIMESTAMPTZ  | Defaults to `now()`.                                                                  |
-| `updated_at`          | TIMESTAMPTZ  | Auto-updated on change.                                                               |
-| `is_current`          | BOOLEAN      | True when the row represents the active profile for the participant.                  |
+| Column                 | Type         | Notes                                                                |
+| ---------------------- | ------------ | -------------------------------------------------------------------- |
+| `id`                   | UUID (text)  | Primary key generated with `uuid4()`.                                |
+| `course_id`            | UUID (text)  | FK → `courses.id` (`CASCADE`).                                       |
+| `student_id`           | UUID (text)  | Nullable FK → `students.id` (`CASCADE`).                             |
+| `guest_id`             | UUID (text)  | Nullable guest identifier (paired with `student_id` being null).     |
+| `latest_submission_id` | UUID (text)  | Nullable FK → `submissions.id` (`SET NULL`).                         |
+| `profile_category`     | VARCHAR(100) | Current learning style label.                                        |
+| `profile_scores_json`  | JSON         | Persisted aggregate scores used to derive the profile.               |
+| `first_captured_at`    | TIMESTAMPTZ  | Defaults to `now()`.                                                 |
+| `updated_at`           | TIMESTAMPTZ  | Auto-updated on change.                                              |
+| `is_current`           | BOOLEAN      | True when the row represents the active profile for the participant. |
 
-- Constraints: `Unique(course_id, student_id, is_current)` and `Unique(course_id, guest_id, is_current)` guarantee only one current profile per participant per course.
-- Relationships: `course`, `student`, `latest_submission`.
+-   Constraints: `Unique(course_id, student_id, is_current)` and `Unique(course_id, guest_id, is_current)` guarantee only one current profile per participant per course.
+-   Relationships: `course`, `student`, `latest_submission`.
 
 ### course_recommendations
 
-| Column         | Type         | Notes                                                                                     |
-| -------------- | ------------ | ----------------------------------------------------------------------------------------- |
-| `id`           | UUID (text)  | Primary key generated with `uuid4()`.                                                     |
-| `course_id`    | UUID (text)  | FK → `courses.id` (`CASCADE`).                                                            |
-| `learning_style` | VARCHAR(100) | Nullable learning style filter (treats null/empty as wildcard).                       |
-| `mood`         | VARCHAR(100) | Nullable mood filter (null/empty = wildcard).                                             |
-| `activity_id`  | UUID (text)  | FK → `activities.id` (`CASCADE`).                                                         |
-| `is_auto`      | BOOLEAN      | True when system-generated default; manual entries remain `false`.                        |
-| `created_at`   | TIMESTAMPTZ  | Defaults to `now()`.                                                                      |
-| `updated_at`   | TIMESTAMPTZ  | Auto-updated on change.                                                                   |
+| Column           | Type         | Notes                                                              |
+| ---------------- | ------------ | ------------------------------------------------------------------ |
+| `id`             | UUID (text)  | Primary key generated with `uuid4()`.                              |
+| `course_id`      | UUID (text)  | FK → `courses.id` (`CASCADE`).                                     |
+| `learning_style` | VARCHAR(100) | Nullable learning style filter (treats null/empty as wildcard).    |
+| `mood`           | VARCHAR(100) | Nullable mood filter (null/empty = wildcard).                      |
+| `activity_id`    | UUID (text)  | FK → `activities.id` (`CASCADE`).                                  |
+| `is_auto`        | BOOLEAN      | True when system-generated default; manual entries remain `false`. |
+| `created_at`     | TIMESTAMPTZ  | Defaults to `now()`.                                               |
+| `updated_at`     | TIMESTAMPTZ  | Auto-updated on change.                                            |
 
-- Constraints: `Unique(course_id, learning_style, mood)` ensures each (style, mood) combination maps to a single activity; `Index(ix_course_recommendations_course)` supports lookups by course.
-- Relationships: `course`, `activity`.
+-   Constraints: `Unique(course_id, learning_style, mood)` ensures each (style, mood) combination maps to a single activity; `Index(ix_course_recommendations_course)` supports lookups by course.
+-   Relationships: `course`, `activity`.
 
 Refer to `alembic/versions/` for migration history and DDL definitions.
 
@@ -1005,12 +1067,12 @@ Scripts live in `scripts/` and are documented in `scripts/README.md`.
 
 Quick summary:
 
-| Command           | Description                                                                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `make db-migrate`          | Run Alembic migrations (executes inside container when available).                                                           |
-| `make db-seed [script.py]` | Clean + seed the DB (defaults to `scripts/seed.py`; pass `seed_deploy_test.py` for the catalog-only dataset).              |
-| `make db-clean`            | Truncate every application table (metadata-driven, preserves schema).                                                       |
-| `make db-status`           | Display record counts across all application tables.                                                                        |
+| Command                    | Description                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `make db-migrate`          | Run Alembic migrations (executes inside container when available).                                            |
+| `make db-seed [script.py]` | Clean + seed the DB (defaults to `scripts/seed.py`; pass `seed_deploy_test.py` for the catalog-only dataset). |
+| `make db-clean`            | Truncate every application table (metadata-driven, preserves schema).                                         |
+| `make db-status`           | Display record counts across all application tables.                                                          |
 
 The default seed script (`scripts/seed.py`) is idempotent: rerunning it skips existing activity
 types, activities, and recommendations, updating only what is missing. The catalog-only variant

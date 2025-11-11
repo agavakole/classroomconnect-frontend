@@ -127,6 +127,8 @@ export interface CourseRecommendationUpdatePayload {
   }>
 }
 
+export type CourseRecommendationAutoResponse = CourseRecommendationUpdatePayload
+
 export interface SurveyTemplate {
   id: string
   title: string

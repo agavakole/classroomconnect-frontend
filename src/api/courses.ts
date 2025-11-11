@@ -1,6 +1,7 @@
 import { apiClient } from './client'
 import type {
   Course,
+  CourseRecommendationAutoResponse,
   CourseRecommendationUpdatePayload,
   CourseRecommendationsResponse,
 } from './types'
@@ -52,6 +53,25 @@ export function updateCourseRecommendations(
     `/api/courses/${courseId}/recommendations`,
     {
       method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export interface AutoGenerateRecommendationsPayload {
+  model?: string
+  temperature?: number
+  activity_limit?: number
+}
+
+export function autoGenerateCourseRecommendations(
+  courseId: string,
+  payload: AutoGenerateRecommendationsPayload = {},
+) {
+  return apiClient<CourseRecommendationAutoResponse>(
+    `/api/courses/${courseId}/recommendations/auto`,
+    {
+      method: 'POST',
       body: JSON.stringify(payload),
     },
   )
