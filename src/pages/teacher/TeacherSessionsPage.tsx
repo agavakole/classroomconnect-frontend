@@ -8,10 +8,8 @@ import {
   Button,
   Card,
   CardBody,
-  FormControl,
   FormLabel,
   Heading,
-  Select,
   Stack,
   Text,
   HStack,
@@ -20,6 +18,8 @@ import {
   SimpleGrid,
   Flex,
   Avatar,
+  Wrap,
+  WrapItem,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -78,33 +78,36 @@ export function TeacherSessionsPage() {
               </Heading>
             </HStack>
 
-            <FormControl>
+            <Box>
               <FormLabel fontWeight="600" fontSize="sm" mb={2}>
-                Choose a course to view its sessions
+                Tap a course to view its sessions
               </FormLabel>
-              <Select
-                placeholder={
-                  coursesQuery.isLoading ? 'Loading courses...' : 'Select a course'
-                }
-                value={courseId}
-                onChange={(event) => setCourseId(event.target.value)}
-                size="lg"
-                borderRadius="xl"
-                border="2px solid"
-                borderColor="gray.200"
-                _hover={{ borderColor: 'brand.300' }}
-                _focus={{
-                  borderColor: 'brand.400',
-                  boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
-                }}
-              >
-                {coursesQuery.data?.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.title}
-                  </option>
-                ))}
-              </Select>
-            </FormControl>
+              {coursesQuery.isLoading ? (
+                <Text color="gray.500">Loading courses...</Text>
+              ) : coursesQuery.data?.length ? (
+                <Wrap spacing={3}>
+                  {coursesQuery.data.map((course) => {
+                    const isSelected = courseId === course.id
+                    return (
+                      <WrapItem key={course.id}>
+                        <Button
+                          variant={isSelected ? 'solid' : 'outline'}
+                          colorScheme="brand"
+                          borderRadius="xl"
+                          fontWeight="600"
+                          onClick={() => setCourseId(course.id)}
+                          borderWidth={isSelected ? undefined : '2px'}
+                        >
+                          {course.title}
+                        </Button>
+                      </WrapItem>
+                    )
+                  })}
+                </Wrap>
+              ) : (
+                <Text color="gray.500">No courses available yet.</Text>
+              )}
+            </Box>
 
             {selectedCourse && (
               <HStack

@@ -11,7 +11,6 @@ import {
   FormLabel,
   Heading,
   Input,
-  Select,
   Stack,
   Switch,
   Text,
@@ -21,6 +20,8 @@ import {
   Badge,
   Divider,
   FormHelperText,
+  Wrap,
+  WrapItem,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -125,30 +126,31 @@ export function TeacherSessionCreatePage() {
                   <FormLabel fontWeight="600" fontSize="sm" mb={2}>
                     Which course is this session for?
                   </FormLabel>
-                  <Select
-                    placeholder={
-                      coursesQuery.isLoading
-                        ? 'Loading courses...'
-                        : 'Choose a course'
-                    }
-                    value={courseId}
-                    onChange={(event) => setCourseId(event.target.value)}
-                    size="lg"
-                    borderRadius="xl"
-                    border="2px solid"
-                    borderColor="gray.200"
-                    _hover={{ borderColor: 'brand.300' }}
-                    _focus={{
-                      borderColor: 'brand.400',
-                      boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
-                    }}
-                  >
-                    {coursesQuery.data?.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.title}
-                      </option>
-                    ))}
-                  </Select>
+                  {coursesQuery.isLoading ? (
+                    <Text color="gray.500">Loading courses...</Text>
+                  ) : coursesQuery.data?.length ? (
+                    <Wrap spacing={3}>
+                      {coursesQuery.data.map((course) => {
+                        const isSelected = courseId === course.id
+                        return (
+                          <WrapItem key={course.id}>
+                            <Button
+                              variant={isSelected ? 'solid' : 'outline'}
+                              colorScheme="brand"
+                              borderRadius="xl"
+                              fontWeight="600"
+                              borderWidth={isSelected ? undefined : '2px'}
+                              onClick={() => setCourseId(course.id)}
+                            >
+                              {course.title}
+                            </Button>
+                          </WrapItem>
+                        )
+                      })}
+                    </Wrap>
+                  ) : (
+                    <Text color="gray.500">No courses available yet.</Text>
+                  )}
                   <FormHelperText fontSize="sm" color="gray.600">
                     Students will join this course's session
                   </FormHelperText>

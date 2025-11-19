@@ -36,6 +36,7 @@ import {
   FiActivity,
   FiTrendingUp,
   FiExternalLink,
+  FiLink,
 } from 'react-icons/fi'
 import {
   closeSession,
@@ -94,6 +95,10 @@ export function TeacherSessionDashboardPage() {
   }, [sessionListQuery.data, sessionId])
 
   const isSessionOpen = !sessionMeta?.closed_at
+  const joinUrl = useMemo(() => {
+    if (!sessionMeta?.join_token || typeof window === 'undefined') return ''
+    return `${window.location.origin}/session/run/${sessionMeta.join_token}`
+  }, [sessionMeta?.join_token])
 
   // Real-time updates every 3 seconds
   useEffect(() => {
@@ -118,14 +123,22 @@ export function TeacherSessionDashboardPage() {
     closeMutation.mutate()
   }
 
-  const handleCopyLink = async () => {
-    if (!sessionMeta) return
-    const joinUrl = `${window.location.origin}/session/run/${sessionMeta.join_token}`
+  const copyToClipboard = async (value: string, successTitle: string, successDescription: string) => {
+    if (!value) return
     try {
-      await navigator.clipboard.writeText(joinUrl)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+      } else {
+        const tempInput = document.createElement('input')
+        tempInput.value = value
+        document.body.appendChild(tempInput)
+        tempInput.select()
+        document.execCommand('copy')
+        document.body.removeChild(tempInput)
+      }
       toast({
-        title: 'Link copied! 🎉',
-        description: 'Students can now join the session',
+        title: successTitle,
+        description: successDescription,
         status: 'success',
         duration: 2000,
         isClosable: true,
@@ -139,6 +152,20 @@ export function TeacherSessionDashboardPage() {
         isClosable: true,
       })
     }
+  }
+
+  const handleCopyToken = async () => {
+    if (!sessionMeta?.join_token) return
+    await copyToClipboard(
+      sessionMeta.join_token,
+      'Token copied! 🔑',
+      'Share this token with your students',
+    )
+  }
+
+  const handleCopyJoinLink = async () => {
+    if (!joinUrl) return
+    await copyToClipboard(joinUrl, 'Link copied! 🎉', 'Students can now join the session')
   }
 
   const handleOpenShareScreen = () => {
@@ -334,32 +361,62 @@ export function TeacherSessionDashboardPage() {
                   Open Join Screen
                 </Button>
 
-                <VStack spacing={2} w="full">
-                  <HStack w="full" justify="center" spacing={2}>
-                    <Badge
-                      fontSize="lg"
-                      px={4}
-                      py={2}
-                      borderRadius="xl"
-                      colorScheme="brand"
-                      fontWeight="800"
-                    >
-                      {sessionMeta.join_token}
-                    </Badge>
-                    <Tooltip label="Copy join link">
-                      <IconButton
-                        aria-label="Copy link"
-                        icon={<Icon as={FiCopy} />}
-                        onClick={handleCopyLink}
+                <VStack spacing={4} w="full">
+                  <VStack spacing={2} w="full">
+                    <HStack w="full" justify="center" spacing={2}>
+                      <Badge
+                        fontSize="lg"
+                        px={4}
+                        py={2}
+                        borderRadius="xl"
                         colorScheme="brand"
-                        variant="ghost"
-                        size="lg"
-                      />
-                    </Tooltip>
-                  </HStack>
-                  <Text fontSize="sm" color="gray.500">
-                    Or share the join token above
-                  </Text>
+                        fontWeight="800"
+                        fontFamily="mono"
+                        textTransform="none"
+                      >
+                        {sessionMeta.join_token}
+                      </Badge>
+                      <Tooltip label="Copy token">
+                        <IconButton
+                          aria-label="Copy token"
+                          icon={<Icon as={FiCopy} />}
+                          onClick={handleCopyToken}
+                          colorScheme="brand"
+                          variant="ghost"
+                          size="lg"
+                        />
+                      </Tooltip>
+                    </HStack>
+                    <Text fontSize="sm" color="gray.500">
+                      Or share the join token above
+                    </Text>
+                  </VStack>
+
+                  <Box
+                    w="full"
+                    p={4}
+                    borderRadius="xl"
+                    border="2px solid"
+                    borderColor="gray.100"
+                    bg="gray.50"
+                  >
+                    <VStack align="stretch" spacing={3}>
+                      <Text fontSize="sm" fontWeight="700" color="gray.600">
+                        Join Link
+                      </Text>
+                      <Button
+                        leftIcon={<Icon as={FiLink} />}
+                        variant="outline"
+                        colorScheme="brand"
+                        borderRadius="xl"
+                        fontWeight="600"
+                        onClick={handleCopyJoinLink}
+                        isDisabled={!joinUrl}
+                      >
+                        Copy Join Link
+                      </Button>
+                    </VStack>
+                  </Box>
                 </VStack>
               </VStack>
             </CardBody>

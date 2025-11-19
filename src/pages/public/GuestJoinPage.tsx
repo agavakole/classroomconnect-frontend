@@ -202,7 +202,6 @@ export function GuestJoinPage() {
                       borderRadius="xl"
                       border="2px solid"
                       borderColor="gray.200"
-                      textTransform="uppercase"
                       fontFamily="mono"
                       fontSize="lg"
                       fontWeight="700"

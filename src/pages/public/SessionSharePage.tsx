@@ -2,17 +2,19 @@
 import {
   Badge,
   Box,
-  Button,
   Icon,
+  IconButton,
   Stack,
   Text,
   useToast,
   VStack,
+  HStack,
+  Button,
 } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
-import { FiCopy } from 'react-icons/fi'
+import { FiCopy, FiLink } from 'react-icons/fi'
 
 export function SessionSharePage() {
   const [searchParams] = useSearchParams()
@@ -24,21 +26,21 @@ export function SessionSharePage() {
     return `${window.location.origin}/session/run/${joinToken}`
   }, [joinToken])
 
-  const handleCopyLink = async () => {
-    if (!joinLink) return
+  const copyValue = async (value: string, successTitle: string) => {
+    if (!value) return
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(joinLink)
+        await navigator.clipboard.writeText(value)
       } else {
         const tempInput = document.createElement('input')
-        tempInput.value = joinLink
+        tempInput.value = value
         document.body.appendChild(tempInput)
         tempInput.select()
         document.execCommand('copy')
         document.body.removeChild(tempInput)
       }
       toast({
-        title: 'Join link copied',
+        title: successTitle,
         status: 'success',
         duration: 2000,
         isClosable: true,
@@ -53,6 +55,9 @@ export function SessionSharePage() {
       })
     }
   }
+
+  const handleCopyToken = () => copyValue(joinToken, 'Join token copied')
+  const handleCopyLink = () => copyValue(joinLink, 'Join link copied')
 
   if (!joinToken) {
     return (
@@ -117,33 +122,60 @@ export function SessionSharePage() {
           <QRCode value={joinLink} size={260} />
         </Box>
 
-        <VStack spacing={2} w="full">
-          <Text fontSize="sm" fontWeight="700" color="gray.500" textTransform="uppercase">
-            Join Token
-          </Text>
-          <Badge
-            fontSize="2xl"
-            px={6}
-            py={3}
-            borderRadius="xl"
-            colorScheme="brand"
-            fontWeight="800"
-          >
-            {joinToken}
-          </Badge>
-        </VStack>
+        <VStack spacing={4} w="full">
+          <VStack spacing={2} w="full">
+            <Text fontSize="sm" fontWeight="700" color="gray.500">
+              Join Token
+            </Text>
+            <HStack spacing={3} justify="center">
+              <Badge
+                fontSize="2xl"
+                px={6}
+                py={3}
+                borderRadius="xl"
+                colorScheme="brand"
+                fontWeight="800"
+                fontFamily="mono"
+                textTransform="none"
+              >
+                {joinToken}
+              </Badge>
+              <IconButton
+                aria-label="Copy token"
+                icon={<Icon as={FiCopy} />}
+                colorScheme="brand"
+                variant="ghost"
+                onClick={handleCopyToken}
+              />
+            </HStack>
+          </VStack>
 
-        <Button
-          leftIcon={<Icon as={FiCopy} />}
-          colorScheme="brand"
-          size="lg"
-          borderRadius="xl"
-          fontWeight="700"
-          w="full"
-          onClick={handleCopyLink}
-        >
-          Copy Join Link
-        </Button>
+          <Box
+            w="full"
+            p={4}
+            borderRadius="xl"
+            border="2px solid"
+            borderColor="gray.100"
+            bg="gray.50"
+          >
+            <VStack align="stretch" spacing={3}>
+              <Text fontSize="sm" fontWeight="700" color="gray.600">
+                Join Link
+              </Text>
+              <Button
+                leftIcon={<Icon as={FiLink} />}
+                variant="outline"
+                colorScheme="brand"
+                borderRadius="xl"
+                fontWeight="600"
+                onClick={handleCopyLink}
+                isDisabled={!joinLink}
+              >
+                Copy Join Link
+              </Button>
+            </VStack>
+          </Box>
+        </VStack>
       </VStack>
     </Box>
   )
