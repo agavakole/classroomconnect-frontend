@@ -22,7 +22,6 @@ import {
   MenuItem,
   MenuDivider,
   useBreakpointValue,
-  Badge,
 } from '@chakra-ui/react'
 import {
   NavLink,
@@ -51,41 +50,75 @@ interface NavItem {
   label: string
   to: string
   icon: any
-  section?: string
+  section?: 'courses' | 'surveys' | 'sessions' | 'activities'
   excludePrefixes?: string[]
 }
 
 const navItems: NavItem[] = [
-  { label: 'Courses', to: '/teacher/courses', icon: FiBook, section: 'courses' },
-  { 
-    label: 'Survey templates', 
-    to: '/teacher/surveys', 
-    icon: FiClipboard, 
+  // Courses
+  {
+    label: 'Courses',
+    to: '/teacher/courses',
+    icon: FiBook,
+    section: 'courses',
+  },
+
+  // Surveys
+  {
+    label: 'Survey templates',
+    to: '/teacher/surveys',
+    icon: FiClipboard,
     section: 'surveys',
-    excludePrefixes: ['/teacher/surveys/new']
+    excludePrefixes: ['/teacher/surveys/new'],
   },
-  { label: 'Create survey', to: '/teacher/surveys/new', icon: FiPlus, section: 'surveys' },
-  { 
-    label: 'Session library', 
-    to: '/teacher/sessions', 
-    icon: FiPlayCircle, 
+  {
+    label: 'Create survey',
+    to: '/teacher/surveys/new',
+    icon: FiPlus,
+    section: 'surveys',
+  },
+
+  // Sessions
+  {
+    label: 'Session library',
+    to: '/teacher/sessions',
+    icon: FiPlayCircle,
     section: 'sessions',
-    excludePrefixes: ['/teacher/sessions/new']
+    excludePrefixes: ['/teacher/sessions/new'],
   },
-  { label: 'Launch session', to: '/teacher/sessions/new', icon: FiPlus, section: 'sessions' },
-  { 
-    label: 'Activity library', 
-    to: '/teacher/activities', 
-    icon: FiGrid, 
+  {
+    label: 'Launch session',
+    to: '/teacher/sessions/new',
+    icon: FiPlus,
+    section: 'sessions',
+  },
+
+  // Activities
+  {
+    label: 'Activity library',
+    to: '/teacher/activities',
+    icon: FiGrid,
     section: 'activities',
-    excludePrefixes: ['/teacher/activities/new']
+    excludePrefixes: ['/teacher/activities/new'],
   },
-  { label: 'Create activity', to: '/teacher/activities/new', icon: FiPlus, section: 'activities' },
-  { 
-    label: 'Activity types', 
-    to: '/teacher/activity-types', 
-    icon: FiLayers, 
-    section: 'activities'
+  {
+    label: 'Create activity',
+    to: '/teacher/activities/new',
+    icon: FiPlus,
+    section: 'activities',
+  },
+  {
+    label: 'Activity types',
+    to: '/teacher/activity-types',
+    icon: FiLayers,
+    section: 'activities',
+    excludePrefixes: ['/teacher/activity-types/new'],
+  },
+  {
+    label: 'Create activity type',
+    to: '/teacher/activity-types/new',
+    icon: FiPlus,
+    section: 'activities',
   },
 ]
 
@@ -94,12 +127,11 @@ function DesktopSidebar() {
   const location = useLocation()
   const sidebarBg = useColorModeValue('white', 'gray.800')
 
-  // Group navigation items by section
-  const sections = {
-    courses: navItems.filter(item => item.section === 'courses'),
-    surveys: navItems.filter(item => item.section === 'surveys'),
-    sessions: navItems.filter(item => item.section === 'sessions'),
-    activities: navItems.filter(item => item.section === 'activities'),
+  const grouped = {
+    courses: navItems.filter((item) => item.section === 'courses'),
+    surveys: navItems.filter((item) => item.section === 'surveys'),
+    sessions: navItems.filter((item) => item.section === 'sessions'),
+    activities: navItems.filter((item) => item.section === 'activities'),
   }
 
   return (
@@ -132,11 +164,7 @@ function DesktopSidebar() {
       <VStack spacing={6} align="stretch" h="full">
         {/* Logo */}
         <HStack spacing={3} px={2}>
-          <Icon 
-            as={PiGraduationCapBold} 
-            boxSize={10} 
-            color="brand.400"
-          />
+          <Icon as={PiGraduationCapBold} boxSize={10} color="brand.400" />
           <Text fontSize="xl" fontWeight="900" color="gray.900">
             ClassConnect
           </Text>
@@ -156,10 +184,10 @@ function DesktopSidebar() {
             Courses
           </Text>
           <VStack spacing={1} align="stretch">
-            {sections.courses.map((item) => {
+            {grouped.courses.map((item) => {
               const excludes = item.excludePrefixes ?? []
               const isExcluded = excludes.some((prefix) =>
-                location.pathname.startsWith(prefix)
+                location.pathname.startsWith(prefix),
               )
               const isBaseMatch =
                 location.pathname === item.to ||
@@ -177,7 +205,7 @@ function DesktopSidebar() {
                   size="sm"
                   w="full"
                   fontWeight={isActive ? '700' : '500'}
-                  color={isActive ? 'gray.700' : 'gray.700'}
+                  color="gray.700"
                   bg={isActive ? 'brand.50' : 'transparent'}
                   borderRadius="xl"
                   px={3}
@@ -207,10 +235,10 @@ function DesktopSidebar() {
             Surveys
           </Text>
           <VStack spacing={1} align="stretch">
-            {sections.surveys.map((item) => {
+            {grouped.surveys.map((item) => {
               const excludes = item.excludePrefixes ?? []
               const isExcluded = excludes.some((prefix) =>
-                location.pathname.startsWith(prefix)
+                location.pathname.startsWith(prefix),
               )
               const isBaseMatch =
                 location.pathname === item.to ||
@@ -228,7 +256,7 @@ function DesktopSidebar() {
                   size="sm"
                   w="full"
                   fontWeight={isActive ? '700' : '500'}
-                  color={isActive ? 'gray.700' : 'gray.700'}
+                  color="gray.700"
                   bg={isActive ? 'brand.50' : 'transparent'}
                   borderRadius="xl"
                   px={3}
@@ -258,10 +286,10 @@ function DesktopSidebar() {
             Sessions
           </Text>
           <VStack spacing={1} align="stretch">
-            {sections.sessions.map((item) => {
+            {grouped.sessions.map((item) => {
               const excludes = item.excludePrefixes ?? []
               const isExcluded = excludes.some((prefix) =>
-                location.pathname.startsWith(prefix)
+                location.pathname.startsWith(prefix),
               )
               const isBaseMatch =
                 location.pathname === item.to ||
@@ -279,7 +307,7 @@ function DesktopSidebar() {
                   size="sm"
                   w="full"
                   fontWeight={isActive ? '700' : '500'}
-                  color={isActive ? 'gray.700' : 'gray.700'}
+                  color="gray.700"
                   bg={isActive ? 'brand.50' : 'transparent'}
                   borderRadius="xl"
                   px={3}
@@ -309,10 +337,10 @@ function DesktopSidebar() {
             Activities
           </Text>
           <VStack spacing={1} align="stretch">
-            {sections.activities.map((item) => {
+            {grouped.activities.map((item) => {
               const excludes = item.excludePrefixes ?? []
               const isExcluded = excludes.some((prefix) =>
-                location.pathname.startsWith(prefix)
+                location.pathname.startsWith(prefix),
               )
               const isBaseMatch =
                 location.pathname === item.to ||
@@ -330,7 +358,7 @@ function DesktopSidebar() {
                   size="sm"
                   w="full"
                   fontWeight={isActive ? '700' : '500'}
-                  color={isActive ? 'gray.700' : 'gray.700'}
+                  color="gray.700"
                   bg={isActive ? 'brand.50' : 'transparent'}
                   borderRadius="xl"
                   px={3}
@@ -351,19 +379,24 @@ function DesktopSidebar() {
 }
 
 // Mobile Sidebar Component
-function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function MobileSidebar({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
   const location = useLocation()
 
   useEffect(() => {
     onClose()
   }, [location.pathname, onClose])
 
-  // Group navigation items by section
-  const sections = {
-    courses: navItems.filter(item => item.section === 'courses'),
-    surveys: navItems.filter(item => item.section === 'surveys'),
-    sessions: navItems.filter(item => item.section === 'sessions'),
-    activities: navItems.filter(item => item.section === 'activities'),
+  const grouped = {
+    courses: navItems.filter((item) => item.section === 'courses'),
+    surveys: navItems.filter((item) => item.section === 'surveys'),
+    sessions: navItems.filter((item) => item.section === 'sessions'),
+    activities: navItems.filter((item) => item.section === 'activities'),
   }
 
   return (
@@ -373,11 +406,7 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         <DrawerCloseButton />
         <DrawerHeader borderBottomWidth="1px">
           <HStack spacing={3}>
-            <Icon 
-              as={PiGraduationCapBold} 
-              boxSize={9} 
-              color="brand.400"
-            />
+            <Icon as={PiGraduationCapBold} boxSize={9} color="brand.400" />
             <Text fontSize="lg" fontWeight="900">
               ClassConnect
             </Text>
@@ -398,10 +427,10 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 Courses
               </Text>
               <VStack spacing={1} align="stretch">
-                {sections.courses.map((item) => {
+                {grouped.courses.map((item) => {
                   const excludes = item.excludePrefixes ?? []
                   const isExcluded = excludes.some((prefix) =>
-                    location.pathname.startsWith(prefix)
+                    location.pathname.startsWith(prefix),
                   )
                   const isBaseMatch =
                     location.pathname === item.to ||
@@ -419,7 +448,7 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                       size="sm"
                       w="full"
                       fontWeight={isActive ? '700' : '500'}
-                      color={isActive ? 'gray.700' : 'gray.700'}
+                      color="gray.700"
                       bg={isActive ? 'brand.50' : 'transparent'}
                       borderRadius="xl"
                       _hover={{
@@ -446,10 +475,10 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 Surveys
               </Text>
               <VStack spacing={1} align="stretch">
-                {sections.surveys.map((item) => {
+                {grouped.surveys.map((item) => {
                   const excludes = item.excludePrefixes ?? []
                   const isExcluded = excludes.some((prefix) =>
-                    location.pathname.startsWith(prefix)
+                    location.pathname.startsWith(prefix),
                   )
                   const isBaseMatch =
                     location.pathname === item.to ||
@@ -467,7 +496,7 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                       size="sm"
                       w="full"
                       fontWeight={isActive ? '700' : '500'}
-                      color={isActive ? 'gray.700' : 'gray.700'}
+                      color="gray.700"
                       bg={isActive ? 'brand.50' : 'transparent'}
                       borderRadius="xl"
                       _hover={{
@@ -494,10 +523,10 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 Sessions
               </Text>
               <VStack spacing={1} align="stretch">
-                {sections.sessions.map((item) => {
+                {grouped.sessions.map((item) => {
                   const excludes = item.excludePrefixes ?? []
                   const isExcluded = excludes.some((prefix) =>
-                    location.pathname.startsWith(prefix)
+                    location.pathname.startsWith(prefix),
                   )
                   const isBaseMatch =
                     location.pathname === item.to ||
@@ -515,7 +544,7 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                       size="sm"
                       w="full"
                       fontWeight={isActive ? '700' : '500'}
-                      color={isActive ? 'gray.700' : 'gray.700'}
+                      color="gray.700"
                       bg={isActive ? 'brand.50' : 'transparent'}
                       borderRadius="xl"
                       _hover={{
@@ -542,10 +571,10 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                 Activities
               </Text>
               <VStack spacing={1} align="stretch">
-                {sections.activities.map((item) => {
+                {grouped.activities.map((item) => {
                   const excludes = item.excludePrefixes ?? []
                   const isExcluded = excludes.some((prefix) =>
-                    location.pathname.startsWith(prefix)
+                    location.pathname.startsWith(prefix),
                   )
                   const isBaseMatch =
                     location.pathname === item.to ||
@@ -563,7 +592,7 @@ function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
                       size="sm"
                       w="full"
                       fontWeight={isActive ? '700' : '500'}
-                      color={isActive ? 'gray.700' : 'gray.700'}
+                      color="gray.700"
                       bg={isActive ? 'brand.50' : 'transparent'}
                       borderRadius="xl"
                       _hover={{
@@ -587,7 +616,6 @@ export function TeacherLayout() {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const bg = useColorModeValue('#F7F8FA', 'gray.900')
 
   const teacherName = localStorage.getItem('teacher_name') || 'Teacher'
@@ -647,7 +675,6 @@ export function TeacherLayout() {
 
             {/* Right: Icons + User */}
             <HStack spacing={3}>
-              {/* Notifications */}
               <IconButton
                 aria-label="Notifications"
                 icon={<Icon as={FiBell} boxSize={5} />}
@@ -668,7 +695,6 @@ export function TeacherLayout() {
                 />
               </IconButton>
 
-              {/* User Menu */}
               <Menu placement="bottom-end">
                 <MenuButton
                   as={Button}

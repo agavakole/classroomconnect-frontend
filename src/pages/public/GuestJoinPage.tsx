@@ -21,14 +21,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import {
-  FiUserPlus,
-  FiKey,
-  FiUser,
-  FiArrowRight,
-  FiCamera,
-  FiArrowLeft,
-} from "react-icons/fi";
+import { FiUserPlus, FiKey, FiUser, FiArrowRight, FiCamera, FiArrowLeft } from "react-icons/fi";
 import { getJoinSession } from "../../api/public";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
@@ -76,10 +69,8 @@ export function GuestJoinPage() {
       ? "Unable to find the session."
       : null;
 
-  // Don't render anything while redirecting
-  if (isStudent || isTeacher) {
-    return null;
-  }
+  // Don't render while redirecting
+  if (isStudent || isTeacher) return null;
 
   return (
     <Box
@@ -93,18 +84,8 @@ export function GuestJoinPage() {
       position="relative"
     >
       {/* Floating icon */}
-      <Box
-        position="absolute"
-        top="8"
-        right="8"
-        animation="float 6s infinite ease-in-out"
-      >
-        <Icon
-          as={FiUserPlus}
-          boxSize={10}
-          color="gray.600"
-          opacity={0.8}
-        />
+      <Box position="absolute" top="8" right="8" animation="float 6s infinite ease-in-out">
+        <Icon as={FiUserPlus} boxSize={10} color="gray.600" opacity={0.8} />
       </Box>
 
       {/* Back to Home button */}
@@ -123,7 +104,7 @@ export function GuestJoinPage() {
         Back to Home
       </Button>
 
-      {/* Main card – matches TeacherLoginPage sizing */}
+      {/* Main card (clean version) */}
       <Card
         bg={cardBg}
         boxShadow="2xl"
@@ -136,15 +117,10 @@ export function GuestJoinPage() {
           <VStack spacing={6} align="stretch">
             {/* Header */}
             <VStack spacing={2}>
-              <Heading
-                textAlign="center"
-                size="lg"
-                color="ink.800"
-                fontWeight="extrabold"
-              >
+              <Heading textAlign="center" size="lg" fontWeight="extrabold" color="gray.900">
                 Join as Guest
               </Heading>
-              <Text textAlign="center" color="ink.600" fontSize="md">
+              <Text textAlign="center" color="gray.600" fontSize="md">
                 Enter your session details to join your class.
               </Text>
             </VStack>
@@ -160,10 +136,9 @@ export function GuestJoinPage() {
             {/* Form */}
             <Box as="form" onSubmit={handleSubmit}>
               <Stack spacing={5}>
+                {/* Session Token */}
                 <FormControl isRequired>
-                  <FormLabel fontWeight="600">
-                    Session Token
-                  </FormLabel>
+                  <FormLabel fontWeight="600">Session Token</FormLabel>
                   <Input
                     value={token}
                     onChange={(event) => setToken(event.target.value)}
@@ -182,10 +157,9 @@ export function GuestJoinPage() {
                   </Text>
                 </FormControl>
 
+                {/* Guest Name */}
                 <FormControl isRequired>
-                  <FormLabel fontWeight="600">
-                    Your Name
-                  </FormLabel>
+                  <FormLabel fontWeight="600">Your Name</FormLabel>
                   <Input
                     value={guestName}
                     onChange={(event) => setGuestName(event.target.value)}
@@ -201,6 +175,7 @@ export function GuestJoinPage() {
                   </Text>
                 </FormControl>
 
+                {/* Submit */}
                 <Button
                   type="submit"
                   colorScheme="brand"
@@ -215,6 +190,7 @@ export function GuestJoinPage() {
                   Join Session
                 </Button>
 
+                {/* QR Button */}
                 <Button
                   leftIcon={<FiCamera />}
                   variant="outline"
@@ -230,6 +206,7 @@ export function GuestJoinPage() {
               </Stack>
             </Box>
 
+            {/* Bottom help text */}
             <Text textAlign="center" fontSize="sm" color="gray.600">
               Don&apos;t see a code? Ask your teacher for the session token or QR code.
             </Text>
@@ -240,8 +217,8 @@ export function GuestJoinPage() {
       {/* Animation */}
       <style>{`
         @keyframes float {
-          0%,100% { transform: translateY(0) }
-          50% { transform: translateY(-10px) }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
       `}</style>
     </Box>

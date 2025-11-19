@@ -22,8 +22,8 @@ import {
   Flex,
   FormControl,
   FormLabel,
+  SimpleGrid,
 } from '@chakra-ui/react'
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 import { FiArrowLeft, FiCheckCircle, FiPlus, FiTrash2 } from 'react-icons/fi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -32,7 +32,10 @@ import { useNavigate } from 'react-router-dom'
 import { createSurvey } from '../../api/surveys'
 import { ApiError } from '../../api/client'
 
-const styleKeys = ['visual', 'auditory', 'kinesthetic'] as const
+interface CategoryForm {
+  id: string
+  label: string
+}
 
 interface OptionForm {
   label: string
@@ -44,50 +47,89 @@ interface QuestionForm {
   options: OptionForm[]
 }
 
-function createEmptyOption(): OptionForm {
-  return { label: '', scores: { visual: 0, auditory: 0, kinesthetic: 0 } }
+function createCategory(defaultLabel = ''): CategoryForm {
+  return {
+    id: `category-${Math.random().toString(36).slice(2, 9)}`,
+    label: defaultLabel,
+  }
 }
 
-function createEmptyQuestion(): QuestionForm {
-  return { text: '', options: [createEmptyOption(), createEmptyOption()] }
+function createEmptyOption(categories: CategoryForm[] = []): OptionForm {
+  const scores: Record<string, number | ''> = {}
+  categories.forEach((category) => {
+    scores[category.id] = 0
+  })
+  return { label: '', scores }
 }
 
-const STYLE_CONFIG = {
-  visual: { color: 'purple', icon: '👁️', label: 'Visual' },
-  auditory: { color: 'blue', icon: '👂', label: 'Auditory' },
-  kinesthetic: { color: 'green', icon: '✋', label: 'Kinesthetic' },
+function createEmptyQuestion(categories: CategoryForm[] = []): QuestionForm {
+  return {
+    text: '',
+    options: [createEmptyOption(categories), createEmptyOption(categories)],
+  }
 }
+
+const DEFAULT_CATEGORIES = [
+  createCategory('Active Learner'),
+  createCategory('Passive Learner'),
+  createCategory('Structured Learner'),
+]
 
 export function TeacherSurveyCreatePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
-  const [questions, setQuestions] = useState<QuestionForm[]>([createEmptyQuestion()])
+  const [categories, setCategories] = useState<CategoryForm[]>(DEFAULT_CATEGORIES)
+  const [questions, setQuestions] = useState<QuestionForm[]>([
+    createEmptyQuestion(DEFAULT_CATEGORIES),
+  ])
+
+  const syncQuestionScores = (nextCategories: CategoryForm[]) => {
+    setQuestions((prev) =>
+      prev.map((question) => ({
+        ...question,
+        options: question.options.map((option) => {
+          const nextScores: Record<string, number | ''> = {}
+          nextCategories.forEach((category) => {
+            nextScores[category.id] = option.scores[category.id] ?? 0
+          })
+          return { ...option, scores: nextScores }
+        }),
+      })),
+    )
+  }
 
   const surveyMutation = useMutation({
-    mutationFn: () =>
-      createSurvey({
+    mutationFn: () => {
+      const categoryLabelMap = Object.fromEntries(
+        categories.map((category) => [category.id, category.label.trim()]),
+      )
+
+      return createSurvey({
         title,
         questions: questions.map((question, idx) => ({
           id: `q${idx + 1}`,
           text: question.text,
           options: question.options.map((option) => {
-            const scores = Object.fromEntries(
-              Object.entries(option.scores).map(([key, value]) => [
-                key,
-                Number(value) || 0,
-              ]),
-            )
+            const normalizedScores: Record<string, number> = {}
+            Object.entries(option.scores).forEach(([key, value]) => {
+              const label = categoryLabelMap[key]
+              if (!label) return
+              normalizedScores[label] = Number(value) || 0
+            })
             const trimmedScores = Object.fromEntries(
-              Object.entries(scores).filter(([, value]) => value !== 0),
+              Object.entries(normalizedScores).filter(([, value]) => value !== 0),
             )
+            const scores =
+              Object.keys(trimmedScores).length > 0 ? trimmedScores : normalizedScores
             return {
               label: option.label,
-              scores: Object.keys(trimmedScores).length ? trimmedScores : scores,
+              scores,
             }
           }),
         })),
-      }),
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surveys'] })
       navigate('/teacher/surveys')
@@ -99,8 +141,29 @@ export function TeacherSurveyCreatePage() {
     surveyMutation.mutate()
   }
 
+  const handleAddCategory = () => {
+    const nextCategories = [...categories, createCategory('')]
+    setCategories(nextCategories)
+    syncQuestionScores(nextCategories)
+  }
+
+  const handleRemoveCategory = (index: number) => {
+    if (categories.length <= 1) return
+    const nextCategories = categories.filter((_, idx) => idx !== index)
+    setCategories(nextCategories)
+    syncQuestionScores(nextCategories)
+  }
+
+  const handleCategoryLabelChange = (index: number, value: string) => {
+    setCategories((prev) =>
+      prev.map((category, idx) =>
+        idx === index ? { ...category, label: value } : category,
+      ),
+    )
+  }
+
   const handleAddQuestion = () => {
-    setQuestions((prev) => [...prev, createEmptyQuestion()])
+    setQuestions((prev) => [...prev, createEmptyQuestion(categories)])
   }
 
   const handleRemoveQuestion = (index: number) => {
@@ -111,7 +174,10 @@ export function TeacherSurveyCreatePage() {
     setQuestions((prev) =>
       prev.map((question, idx) =>
         idx === questionIndex
-          ? { ...question, options: [...question.options, createEmptyOption()] }
+          ? {
+              ...question,
+              options: [...question.options, createEmptyOption(categories)],
+            }
           : question,
       ),
     )
@@ -127,6 +193,14 @@ export function TeacherSurveyCreatePage() {
     )
   }
 
+  const hasEmptyCategory = categories.some((category) => !category.label.trim())
+  const hasEmptyQuestion = questions.some((question) => !question.text.trim())
+  const hasEmptyOptionLabel = questions.some((question) =>
+    question.options.some((option) => !option.label.trim()),
+  )
+  const isFormValid =
+    Boolean(title.trim()) && !hasEmptyCategory && !hasEmptyQuestion && !hasEmptyOptionLabel
+
   const totalQuestions = questions.length
   const totalOptions = questions.reduce((sum, q) => sum + q.options.length, 0)
 
@@ -141,7 +215,7 @@ export function TeacherSurveyCreatePage() {
           mb={4}
           fontWeight="600"
         >
-          Back to Templates
+          Back to Survey Library
         </Button>
 
         <HStack spacing={4} align="flex-start">
@@ -156,7 +230,7 @@ export function TeacherSurveyCreatePage() {
           </Box>
           <VStack align="flex-start" spacing={1}>
             <Heading size="lg" fontWeight="800">
-              Create Survey Template
+              Add Survey to Library
             </Heading>
             <HStack spacing={4} fontSize="sm" color="gray.600" fontWeight="600">
               <HStack>
@@ -197,6 +271,91 @@ export function TeacherSurveyCreatePage() {
                   }}
                 />
               </FormControl>
+            </CardBody>
+          </Card>
+
+          {/* Category Builder */}
+          <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+            <CardBody p={6}>
+              <VStack align="stretch" spacing={5}>
+                <HStack spacing={3}>
+                  <Icon as={FiCheckCircle} boxSize={6} color="accent.500" />
+                  <Heading size="md" fontWeight="700">
+                    Learning Style Categories
+                  </Heading>
+                  <Badge colorScheme="red" fontSize="xs" px={2} py={1} borderRadius="full">
+                    Required
+                  </Badge>
+                </HStack>
+                <Text fontSize="sm" color="gray.600">
+                  Define the learner types that this survey will help identify. These categories
+                  will automatically appear below each answer option for scoring.
+                </Text>
+
+                <VStack spacing={4} align="stretch">
+                  {categories.map((category, index) => (
+                    <Box
+                      key={category.id}
+                      p={4}
+                      borderRadius="xl"
+                      border="2px solid"
+                      borderColor="gray.100"
+                      bg="gray.50"
+                    >
+                      <HStack align="flex-start" spacing={4}>
+                        <FormControl isRequired>
+                          <FormLabel fontWeight="600" fontSize="sm" mb={1}>
+                            Category {index + 1}
+                          </FormLabel>
+                          <Input
+                            placeholder="e.g., Active Learner"
+                            value={category.label}
+                            onChange={(event) =>
+                              handleCategoryLabelChange(index, event.target.value)
+                            }
+                            borderRadius="xl"
+                            border="2px solid"
+                            borderColor="gray.200"
+                            bg="white"
+                            _hover={{ borderColor: 'accent.300' }}
+                            _focus={{
+                              borderColor: 'accent.400',
+                              boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
+                            }}
+                          />
+                        </FormControl>
+                        {categories.length > 1 && (
+                          <IconButton
+                            aria-label="Remove category"
+                            icon={<Icon as={FiTrash2} />}
+                            variant="ghost"
+                            colorScheme="red"
+                            mt={6}
+                            onClick={() => handleRemoveCategory(index)}
+                            borderRadius="xl"
+                          />
+                        )}
+                      </HStack>
+                    </Box>
+                  ))}
+                </VStack>
+
+                <Button
+                  leftIcon={<Icon as={FiPlus} />}
+                  variant="outline"
+                  borderRadius="xl"
+                  borderWidth="2px"
+                  borderStyle="dashed"
+                  borderColor="accent.200"
+                  color="accent.600"
+                  onClick={handleAddCategory}
+                  _hover={{ bg: 'accent.50', borderColor: 'accent.400' }}
+                  fontWeight="600"
+                  size="lg"
+                >
+                  Add Category
+                </Button>
+              </VStack>
             </CardBody>
           </Card>
 
@@ -330,66 +489,75 @@ export function TeacherSurveyCreatePage() {
                                 _hover={{ borderColor: 'gray.300' }}
                               />
 
-                              {/* Learning Style Scores */}
+                              {/* Category Scores */}
                               <VStack align="stretch" spacing={3}>
-                                <Text fontSize="xs" fontWeight="700" color="gray.600" textTransform="uppercase">
-                                  Learning Style Scores
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="700"
+                                  color="gray.600"
+                                  textTransform="uppercase"
+                                >
+                                  Category Scores
                                 </Text>
-                                <HStack spacing={3}>
-                                  {styleKeys.map((key) => {
-                                    const config = STYLE_CONFIG[key]
-                                    return (
-                                      <VStack key={key} flex={1} align="stretch" spacing={1}>
-                                        <HStack spacing={1} fontSize="xs" color="gray.600" fontWeight="600">
-                                          <Text>{config.icon}</Text>
-                                          <Text>{config.label}</Text>
-                                        </HStack>
-                                        <NumberInput
-                                          min={0}
-                                          max={10}
-                                          value={option.scores[key] ?? 0}
-                                          onChange={(_, valueNumber) =>
-                                            setQuestions((prev) =>
-                                              prev.map((item, idx) =>
-                                                idx === questionIndex
-                                                  ? {
-                                                      ...item,
-                                                      options: item.options.map((opt, optIdx) =>
-                                                        optIdx === optionIndex
-                                                          ? {
-                                                              ...opt,
-                                                              scores: {
-                                                                ...opt.scores,
-                                                                [key]: valueNumber,
-                                                              },
-                                                            }
-                                                          : opt,
-                                                      ),
-                                                    }
-                                                  : item,
-                                              ),
-                                            )
-                                          }
-                                        >
-                                          <NumberInputField
-                                            placeholder="0"
-                                            borderRadius="lg"
-                                            bg="white"
-                                            border="2px solid"
-                                            borderColor="gray.200"
-                                            textAlign="center"
-                                            fontWeight="700"
-                                            _hover={{ borderColor: `${config.color}.300` }}
-                                            _focus={{
-                                              borderColor: `${config.color}.400`,
-                                              boxShadow: `0 0 0 1px var(--chakra-colors-${config.color}-400)`,
-                                            }}
-                                          />
-                                        </NumberInput>
-                                      </VStack>
-                                    )
-                                  })}
-                                </HStack>
+                                <SimpleGrid
+                                  columns={{
+                                    base: 1,
+                                    md: Math.max(1, Math.min(3, categories.length)),
+                                  }}
+                                  spacing={3}
+                                >
+                                  {categories.map((category, categoryIndex) => (
+                                    <VStack key={category.id} flex={1} align="stretch" spacing={1}>
+                                      <Text fontSize="xs" color="gray.600" fontWeight="600">
+                                        {category.label?.trim() || `Category ${categoryIndex + 1}`}
+                                      </Text>
+                                      <NumberInput
+                                        min={0}
+                                        max={10}
+                                        value={option.scores[category.id] ?? 0}
+                                        onChange={(valueString, valueNumber) => {
+                                          const nextValue =
+                                            valueString === '' ? '' : Number.isNaN(valueNumber) ? 0 : valueNumber
+                                          setQuestions((prev) =>
+                                            prev.map((item, idx) =>
+                                              idx === questionIndex
+                                                ? {
+                                                    ...item,
+                                                    options: item.options.map((opt, optIdx) =>
+                                                      optIdx === optionIndex
+                                                        ? {
+                                                            ...opt,
+                                                            scores: {
+                                                              ...opt.scores,
+                                                              [category.id]: nextValue,
+                                                            },
+                                                          }
+                                                        : opt,
+                                                    ),
+                                                  }
+                                                : item,
+                                            ),
+                                          )
+                                        }}
+                                      >
+                                        <NumberInputField
+                                          placeholder="0"
+                                          borderRadius="lg"
+                                          bg="white"
+                                          border="2px solid"
+                                          borderColor="gray.200"
+                                          textAlign="center"
+                                          fontWeight="700"
+                                          _hover={{ borderColor: 'brand.200' }}
+                                          _focus={{
+                                            borderColor: 'brand.400',
+                                            boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
+                                          }}
+                                        />
+                                      </NumberInput>
+                                    </VStack>
+                                  ))}
+                                </SimpleGrid>
                               </VStack>
                             </Stack>
                           </CardBody>
@@ -474,14 +642,14 @@ export function TeacherSurveyCreatePage() {
               type="submit"
               colorScheme="brand"
               isLoading={surveyMutation.isPending}
-              isDisabled={!title.trim() || questions.some(q => !q.text.trim())}
+              isDisabled={!isFormValid}
               size="lg"
               borderRadius="xl"
               fontWeight="600"
               px={8}
               leftIcon={<Icon as={FiCheckCircle} />}
             >
-              Save Survey Template
+              Save to Library
             </Button>
           </HStack>
         </Stack>
