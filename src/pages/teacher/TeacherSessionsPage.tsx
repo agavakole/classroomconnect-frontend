@@ -390,7 +390,11 @@ export function TeacherSessionsPage() {
                   leftIcon={<Icon as={FiPlus} />}
                   colorScheme="brand"
                   size="lg"
-                  onClick={() => navigate('/teacher/sessions/new')}
+                  onClick={() =>
+                    navigate('/teacher/sessions/new', {
+                      state: { courseId },
+                    })
+                  }
                   mt={2}
                   borderRadius="xl"
                   fontWeight="600"
@@ -435,7 +439,11 @@ export function TeacherSessionsPage() {
         borderColor="brand.200"
         bg="brand.50"
         cursor="pointer"
-        onClick={() => navigate('/teacher/sessions/new')}
+        onClick={() =>
+          navigate('/teacher/sessions/new', {
+            state: { courseId },
+          })
+        }
         _hover={{
           borderColor: 'brand.400',
           bg: 'brand.100',

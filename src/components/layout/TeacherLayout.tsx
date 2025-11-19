@@ -72,19 +72,6 @@ const sections: Section[] = [
     ],
   },
   {
-    title: 'Surveys',
-    icon: FiClipboard,
-    links: [
-      {
-        label: 'Survey library',
-        to: '/teacher/surveys',
-        icon: FiList,
-        excludePrefixes: ['/teacher/surveys/new'],
-      },
-      { label: 'Create survey', to: '/teacher/surveys/new', icon: FiPlus },
-    ],
-  },
-  {
     title: 'Sessions',
     icon: FiPlayCircle,
     links: [
@@ -95,6 +82,19 @@ const sections: Section[] = [
         excludePrefixes: ['/teacher/sessions/new'],
       },
       { label: 'Launch session', to: '/teacher/sessions/new', icon: FiPlus },
+    ],
+  },
+  {
+    title: 'Surveys',
+    icon: FiClipboard,
+    links: [
+      {
+        label: 'Survey library',
+        to: '/teacher/surveys',
+        icon: FiList,
+        excludePrefixes: ['/teacher/surveys/new'],
+      },
+      { label: 'Create survey', to: '/teacher/surveys/new', icon: FiPlus },
     ],
   },
   {

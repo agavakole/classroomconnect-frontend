@@ -24,9 +24,9 @@ import {
   WrapItem,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   FiPlayCircle,
   FiArrowLeft,
@@ -40,7 +40,10 @@ import { ApiError } from '../../api/client'
 export function TeacherSessionCreatePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const [courseId, setCourseId] = useState('')
+  const location = useLocation()
+  const preselectedCourseId =
+    (location.state as { courseId?: string } | null)?.courseId ?? ''
+  const [courseId, setCourseId] = useState(preselectedCourseId)
   const [requireSurvey, setRequireSurvey] = useState(true)
   const [moodPrompt, setMoodPrompt] = useState('How are you feeling today?')
 
@@ -48,6 +51,12 @@ export function TeacherSessionCreatePage() {
     queryKey: ['courses'],
     queryFn: listCourses,
   })
+
+  useEffect(() => {
+    if (preselectedCourseId) {
+      setCourseId(preselectedCourseId)
+    }
+  }, [preselectedCourseId])
 
   const sessionMutation = useMutation({
     mutationFn: () =>
