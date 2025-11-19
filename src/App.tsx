@@ -14,7 +14,8 @@ import { SessionRunPage } from './pages/public/SessionRunPage'
 import { SessionResultPage } from './pages/public/SessionResultPage'
 import { SessionSharePage } from './pages/public/SessionSharePage'
 import { StudentDashboardPage } from './pages/student/StudentDashboardPage'
-import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage'
+import { TeacherCourseLibraryPage } from './pages/teacher/TeacherCourseLibraryPage'
+import { TeacherCourseCreatePage } from './pages/teacher/TeacherCourseCreatePage'
 import { TeacherCourseDetailPage } from './pages/teacher/TeacherCourseDetailPage'
 import { TeacherSurveyCreatePage } from './pages/teacher/TeacherSurveyCreatePage'
 import { TeacherSurveysPage } from './pages/teacher/TeacherSurveysPage'
@@ -43,7 +44,8 @@ function App() {
         }
       >
         <Route index element={<Navigate to="courses" replace />} />
-        <Route path="courses" element={<TeacherCoursesPage />} />
+        <Route path="courses" element={<TeacherCourseLibraryPage />} />
+        <Route path="courses/new" element={<TeacherCourseCreatePage />} />
         <Route path="courses/:courseId" element={<TeacherCourseDetailPage />} />
         <Route path="surveys" element={<TeacherSurveysPage />} />
         <Route path="surveys/new" element={<TeacherSurveyCreatePage />} />

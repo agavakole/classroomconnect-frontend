@@ -61,7 +61,15 @@ const sections: Section[] = [
   {
     title: 'Courses',
     icon: FiBook,
-    links: [{ label: 'Courses overview', to: '/teacher/courses', icon: FiList }],
+    links: [
+      {
+        label: 'Course library',
+        to: '/teacher/courses',
+        icon: FiList,
+        excludePrefixes: ['/teacher/courses/new'],
+      },
+      { label: 'Create course', to: '/teacher/courses/new', icon: FiPlus },
+    ],
   },
   {
     title: 'Surveys',
