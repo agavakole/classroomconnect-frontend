@@ -20,7 +20,7 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiClipboard, FiCopy, FiArrowLeft, FiCheckCircle } from 'react-icons/fi'
+import { FiClipboard, FiArrowLeft, FiCheckCircle } from 'react-icons/fi'
 import { getSurvey } from '../../api/surveys'
 
 export function TeacherSurveyDetailPage() {
@@ -37,7 +37,7 @@ export function TeacherSurveyDetailPage() {
     return (
       <Box textAlign="center" py={12}>
         <Text color="gray.500" fontSize="lg">
-          Loading survey template...
+          Loading survey...
         </Text>
       </Box>
     )
@@ -54,7 +54,7 @@ export function TeacherSurveyDetailPage() {
       >
         <AlertIcon color="red.500" />
         <AlertDescription color="red.700" fontWeight="600">
-          Unable to load survey template
+          Unable to load survey
         </AlertDescription>
       </Alert>
     )
@@ -73,7 +73,7 @@ export function TeacherSurveyDetailPage() {
           mb={4}
           fontWeight="600"
         >
-          Back to Templates
+          Back to Survey Library
         </Button>
 
         <Flex
@@ -111,17 +111,6 @@ export function TeacherSurveyDetailPage() {
               </HStack>
             </VStack>
           </HStack>
-
-          <Button
-            leftIcon={<Icon as={FiCopy} />}
-            colorScheme="brand"
-            onClick={() => navigate('/teacher/surveys/new')}
-            size="lg"
-            borderRadius="xl"
-            fontWeight="600"
-          >
-            Duplicate Template
-          </Button>
         </Flex>
       </Box>
 

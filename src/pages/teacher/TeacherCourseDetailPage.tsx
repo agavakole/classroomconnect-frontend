@@ -39,6 +39,7 @@ import {
   FiSave,
   FiAlertCircle,
   FiTag,
+  FiRefreshCw,
 } from 'react-icons/fi'
 import {
   autoGenerateCourseRecommendations,
@@ -175,6 +176,18 @@ export function TeacherCourseDetailPage() {
     return activity ? activity.name : 'Unknown'
   }
 
+  const resetMappingDisplay = () => {
+    setCellAssignments({})
+    setSelectedCell(null)
+    toast({
+      title: 'Mapping cleared',
+      description: 'Assignments reset in the UI. Remember to save if you want to persist.',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
   const recommendations = recommendationsQuery.data
 
   if (recommendationsQuery.isLoading || courseQuery.isLoading) {
@@ -219,6 +232,9 @@ export function TeacherCourseDetailPage() {
   const totalAssignments = Object.keys(cellAssignments).length
   const totalCells =
     recommendations.learning_style_categories.length * recommendations.mood_labels.length
+  const completedAssignments = Math.min(totalAssignments, totalCells)
+  const remainingCombinations = Math.max(totalCells - totalAssignments, 0)
+  const isMappingComplete = completedAssignments === totalCells && totalCells > 0
 
   return (
     <Stack spacing={8}>
@@ -384,24 +400,36 @@ export function TeacherCourseDetailPage() {
                 Mapping Progress
               </Text>
               <Heading size="lg" fontWeight="800" color="brand.700">
-                {totalAssignments} / {totalCells}
+                {completedAssignments} / {totalCells}
               </Heading>
               <Text fontSize="xs" color="gray.600">
-                {totalCells - totalAssignments} combinations remaining
+                {remainingCombinations} combinations remaining
               </Text>
             </VStack>
-            <Button
-              leftIcon={<Icon as={FiZap} />}
-              colorScheme="purple"
-              onClick={() => autoGenerateMutation.mutate()}
-              isLoading={autoGenerateMutation.isPending}
-              isDisabled={!courseId || autoGenerateMutation.isPending}
-              size="lg"
-              borderRadius="xl"
-              fontWeight="600"
-            >
-              AI Auto-Map
-            </Button>
+            <HStack spacing={3}>
+              <Button
+                variant="outline"
+                leftIcon={<Icon as={FiRefreshCw} />}
+                onClick={resetMappingDisplay}
+                isDisabled={isMapLocked || totalAssignments === 0}
+                borderRadius="xl"
+                fontWeight="600"
+              >
+                Reset Mapping
+              </Button>
+              <Button
+                leftIcon={<Icon as={FiZap} />}
+                colorScheme="purple"
+                onClick={() => autoGenerateMutation.mutate()}
+                isLoading={autoGenerateMutation.isPending}
+                isDisabled={!courseId || autoGenerateMutation.isPending}
+                size="lg"
+                borderRadius="xl"
+                fontWeight="600"
+              >
+                AI Auto-Map
+              </Button>
+            </HStack>
           </HStack>
         </CardBody>
       </Card>
@@ -547,7 +575,7 @@ export function TeacherCourseDetailPage() {
         alignSelf="flex-start"
         onClick={() => saveMutation.mutate()}
         isLoading={saveMutation.isPending}
-        isDisabled={isMapLocked}
+        isDisabled={isMapLocked || !isMappingComplete}
         size="lg"
         borderRadius="xl"
         fontWeight="600"

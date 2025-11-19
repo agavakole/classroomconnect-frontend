@@ -61,19 +61,14 @@ const sections: Section[] = [
   {
     title: 'Courses',
     icon: FiBook,
-    links: [{ label: 'Courses overview', to: '/teacher/courses', icon: FiList }],
-  },
-  {
-    title: 'Surveys',
-    icon: FiClipboard,
     links: [
       {
-        label: 'Survey templates',
-        to: '/teacher/surveys',
+        label: 'Course library',
+        to: '/teacher/courses',
         icon: FiList,
-        excludePrefixes: ['/teacher/surveys/new'],
+        excludePrefixes: ['/teacher/courses/new'],
       },
-      { label: 'Create survey', to: '/teacher/surveys/new', icon: FiPlus },
+      { label: 'Create course', to: '/teacher/courses/new', icon: FiPlus },
     ],
   },
   {
@@ -87,6 +82,19 @@ const sections: Section[] = [
         excludePrefixes: ['/teacher/sessions/new'],
       },
       { label: 'Launch session', to: '/teacher/sessions/new', icon: FiPlus },
+    ],
+  },
+  {
+    title: 'Surveys',
+    icon: FiClipboard,
+    links: [
+      {
+        label: 'Survey library',
+        to: '/teacher/surveys',
+        icon: FiList,
+        excludePrefixes: ['/teacher/surveys/new'],
+      },
+      { label: 'Create survey', to: '/teacher/surveys/new', icon: FiPlus },
     ],
   },
   {

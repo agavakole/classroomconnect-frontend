@@ -12,9 +12,10 @@ import { GuestJoinPage } from './pages/public/GuestJoinPage'
 import { ScanPage } from './pages/public/ScanPage'
 import { SessionRunPage } from './pages/public/SessionRunPage'
 import { SessionResultPage } from './pages/public/SessionResultPage'
-import { JoinRedirectPage } from './pages/public/JoinRedirectPage'
+import { SessionSharePage } from './pages/public/SessionSharePage'
 import { StudentDashboardPage } from './pages/student/StudentDashboardPage'
-import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage'
+import { TeacherCourseLibraryPage } from './pages/teacher/TeacherCourseLibraryPage'
+import { TeacherCourseCreatePage } from './pages/teacher/TeacherCourseCreatePage'
 import { TeacherCourseDetailPage } from './pages/teacher/TeacherCourseDetailPage'
 import { TeacherSurveyCreatePage } from './pages/teacher/TeacherSurveyCreatePage'
 import { TeacherSurveysPage } from './pages/teacher/TeacherSurveysPage'
@@ -43,7 +44,8 @@ function App() {
         }
       >
         <Route index element={<Navigate to="courses" replace />} />
-        <Route path="courses" element={<TeacherCoursesPage />} />
+        <Route path="courses" element={<TeacherCourseLibraryPage />} />
+        <Route path="courses/new" element={<TeacherCourseCreatePage />} />
         <Route path="courses/:courseId" element={<TeacherCourseDetailPage />} />
         <Route path="surveys" element={<TeacherSurveysPage />} />
         <Route path="surveys/new" element={<TeacherSurveyCreatePage />} />
@@ -76,7 +78,7 @@ function App() {
         </Route>
         <Route path="guest/join" element={<GuestJoinPage />} />
         <Route path="scan" element={<ScanPage />} />
-        <Route path="join" element={<JoinRedirectPage />} />
+        <Route path="join" element={<SessionSharePage />} />
         <Route path="session/run/:token" element={<SessionRunPage />} />
         <Route path="session/run/:token/result" element={<SessionResultPage />} />
         <Route
