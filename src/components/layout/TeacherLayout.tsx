@@ -68,7 +68,7 @@ const sections: Section[] = [
     icon: FiClipboard,
     links: [
       {
-        label: 'Survey templates',
+        label: 'Survey library',
         to: '/teacher/surveys',
         icon: FiList,
         excludePrefixes: ['/teacher/surveys/new'],

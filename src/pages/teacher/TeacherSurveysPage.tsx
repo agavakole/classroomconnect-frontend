@@ -34,7 +34,7 @@ export function TeacherSurveysPage() {
       {/* Page Header */}
       <Box>
         <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
-          Survey Templates 📋
+          Survey Library 📋
         </Heading>
         <Text color="gray.600" fontSize="lg">
           Create reusable surveys that power course baselines and live sessions
@@ -103,14 +103,14 @@ export function TeacherSurveysPage() {
         
       </SimpleGrid>
 
-      {/* Survey Templates List */}
+      {/* Survey Library List */}
       <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
         <CardBody p={8}>
           <Flex justify="space-between" align="center" mb={6}>
             <HStack spacing={3}>
               <Icon as={FiClipboard} boxSize={6} color="brand.500" />
               <Heading size="md" fontWeight="700">
-                Your Templates
+                Your Library
               </Heading>
             </HStack>
             <Button
@@ -120,14 +120,14 @@ export function TeacherSurveysPage() {
               borderRadius="xl"
               fontWeight="600"
             >
-              New Template
+              Add Survey
             </Button>
           </Flex>
 
           {surveysQuery.isLoading ? (
             <Box textAlign="center" py={12}>
               <Text color="gray.500" fontSize="lg">
-                Loading templates...
+                Loading library...
               </Text>
             </Box>
           ) : surveysQuery.data?.length ? (
@@ -208,12 +208,12 @@ export function TeacherSurveysPage() {
               >
                 <Icon as={FiClipboard} boxSize={12} color="gray.400" />
               </Box>
-              <VStack spacing={2}>
+                  <VStack spacing={2}>
                 <Text fontSize="lg" fontWeight="600" color="gray.700">
-                  No templates yet
+                  Library is empty
                 </Text>
                 <Text color="gray.500" textAlign="center" maxW="md">
-                  Create your first survey template to get started with personalized learning
+                  Add your first survey to start building personalized learning experiences
                 </Text>
               </VStack>
               <Button
@@ -223,7 +223,7 @@ export function TeacherSurveysPage() {
                 onClick={() => navigate('/teacher/surveys/new')}
                 mt={2}
               >
-                Create First Template
+                Add First Survey
               </Button>
             </VStack>
           )}
