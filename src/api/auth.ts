@@ -41,3 +41,9 @@ export async function studentSignup(payload: SignupPayload) {
     skipAuth: true,
   })
 }
+
+export async function getTeacherProfile() {
+  return apiClient<PersonProfile>('/api/teachers/me', {
+    method: 'GET',
+  })
+}

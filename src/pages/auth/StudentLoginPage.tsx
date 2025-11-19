@@ -72,7 +72,7 @@ export function StudentLoginPage() {
         <Icon
           as={PiGraduationCapBold}
           boxSize={10}
-          color="mint.600"
+          color="gray.600"
           opacity={0.8}
         />
       </Box>
@@ -83,7 +83,7 @@ export function StudentLoginPage() {
         to="/"
         leftIcon={<FiArrowLeft />}
         variant="ghost"
-        colorScheme="mint"
+        colorScheme="gray"
         borderRadius="lg"
         position="absolute"
         top={{ base: "6", md: "10" }}

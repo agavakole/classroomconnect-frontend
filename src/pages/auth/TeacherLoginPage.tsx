@@ -32,14 +32,16 @@ export function TeacherLoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const mutation = useMutation({
-    mutationFn: () => teacherLogin({ email, password }),
-    onSuccess: (data) => {
-      login(data.access_token, "teacher");
-      navigate("/teacher/courses", { replace: true });
-    },
-  });
+const mutation = useMutation({
+  mutationFn: () => teacherLogin({ email, password }),
+  onSuccess: (data) => {
+    login(data.access_token, "teacher");
+    // ✅ For now, use email as fallback name
+    const nameFromEmail = email.split('@')[0];
+    localStorage.setItem('teacher_name', nameFromEmail);
+    navigate("/teacher/courses", { replace: true });
+  },
+});
 
   const errorMessage =
     mutation.error instanceof ApiError
@@ -71,7 +73,7 @@ export function TeacherLoginPage() {
         <Icon
           as={PiGraduationCapBold}
           boxSize={10}
-          color="mint.600"
+          color="gray.600"
           opacity={0.8}
         />
       </Box>
@@ -82,7 +84,7 @@ export function TeacherLoginPage() {
         to="/"
         leftIcon={<FiArrowLeft />}
         variant="ghost"
-        colorScheme="mint"
+        colorScheme="gray"
         borderRadius="lg"
         position="absolute"
         top={{ base: "6", md: "10" }}

@@ -62,19 +62,22 @@ function App() {
           element={<TeacherSessionDashboardPage />}
         />
       </Route>
-
-      {/* All other routes - Use AppLayout (top navigation) */}
-      <Route path="/" element={<AppLayout />}>
-        <Route index element={<LandingPage />} />
-        <Route path="login">
+      <Route index element={<LandingPage />} />
+      <Route path="login">
           <Route path="teacher" element={<TeacherLoginPage />} />
           <Route path="student" element={<StudentLoginPage />} />
-        </Route>
-        <Route path="signup">
+      </Route>
+            <Route path="signup">
           <Route path="teacher" element={<TeacherSignupPage />} />
           <Route path="student" element={<StudentSignupPage />} />
         </Route>
         <Route path="guest/join" element={<GuestJoinPage />} />
+      {/* All other routes - Use AppLayout (top navigation) */}
+      <Route path="/" element={<AppLayout />}>
+        
+        
+  
+        
         <Route path="scan" element={<ScanPage />} />
         <Route path="join" element={<JoinRedirectPage />} />
         <Route path="session/run/:token" element={<SessionRunPage />} />

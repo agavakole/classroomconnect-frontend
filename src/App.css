@@ -17,6 +17,11 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
+.blob-mask {
+  clip-path: path(
+    "M 0 200 Q 50 0 200 0 Q 400 20 450 200 Q 420 400 200 450 Q 20 420 0 200 Z"
+  );
+}
 
 @keyframes logo-spin {
   from {

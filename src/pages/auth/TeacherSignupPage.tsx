@@ -34,18 +34,18 @@ export function TeacherSignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const mutation = useMutation({
-    mutationFn: async () => {
-      await teacherSignup({ email, password, full_name: fullName });
-      const tokenResponse = await teacherLogin({ email, password });
-      return tokenResponse;
-    },
-    onSuccess: (tokenResponse) => {
-      login(tokenResponse.access_token, "teacher");
-      navigate("/teacher/courses", { replace: true });
-    },
-  });
-
+const mutation = useMutation({
+  mutationFn: async () => {
+    await teacherSignup({ email, password, full_name: fullName });
+    const tokenResponse = await teacherLogin({ email, password });
+    return { tokenResponse, fullName };
+  },
+  onSuccess: ({ tokenResponse, fullName }) => {
+    login(tokenResponse.access_token, "teacher");
+    localStorage.setItem('teacher_name', fullName); // ✅ Store name on signup
+    navigate("/teacher/courses", { replace: true });
+  },
+});
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     mutation.mutate();
@@ -81,7 +81,7 @@ export function TeacherSignupPage() {
         <Icon
           as={PiGraduationCapBold}
           boxSize={10}
-          color="mint.600"
+          color="gray.600"
           opacity={0.8}
         />
       </Box>
@@ -92,7 +92,7 @@ export function TeacherSignupPage() {
         to="/"
         leftIcon={<FiArrowLeft />}
         variant="ghost"
-        colorScheme="mint"
+        colorScheme="gray"
         borderRadius="lg"
         position="absolute"
         top={{ base: "6", md: "10" }}
