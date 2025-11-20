@@ -15,18 +15,66 @@ import {
   Flex,
   Wrap,
   WrapItem,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure,
+  useToast,
 } from '@chakra-ui/react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { FiBookOpen, FiCalendar, FiCheckCircle, FiEye } from 'react-icons/fi'
-import { listCourses } from '../../api/courses'
+import { FiBookOpen, FiCalendar, FiCheckCircle, FiEye, FiTrash2, FiX } from 'react-icons/fi'
+import { listCourses, deleteCourse } from '../../api/courses'
+import { useState, useRef } from 'react'
 
 export function TeacherCourseLibraryPage() {
   const navigate = useNavigate()
+  const toast = useToast()
+  const queryClient = useQueryClient()
+  const [isDeleteMode, setIsDeleteMode] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
   const coursesQuery = useQuery({
     queryKey: ['courses'],
     queryFn: listCourses,
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteCourse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+      toast({
+        title: 'Course deleted',
+        status: 'success',
+        duration: 3000,
+      })
+      onClose()
+      setCourseToDelete(null)
+    },
+    onError: () => {
+      toast({
+        title: 'Failed to delete course',
+        status: 'error',
+        duration: 3000,
+      })
+    },
+  })
+
+  const handleDeleteClick = (courseId: string) => {
+    setCourseToDelete(courseId)
+    onOpen()
+  }
+
+  const handleConfirmDelete = () => {
+    if (courseToDelete) {
+      deleteMutation.mutate(courseToDelete)
+    }
+  }
 
   const totalCourses = coursesQuery.data?.length || 0
 
@@ -91,14 +139,27 @@ export function TeacherCourseLibraryPage() {
                 {totalCourses}
               </Badge>
             </HStack>
-            <Button
-              colorScheme="brand"
-              borderRadius="xl"
-              fontWeight="600"
-              onClick={() => navigate('/teacher/courses/new')}
-            >
-              Create Course
-            </Button>
+            <HStack spacing={3}>
+              <Button
+                variant={isDeleteMode ? 'solid' : 'outline'}
+                colorScheme={isDeleteMode ? 'gray' : 'red'}
+                borderRadius="xl"
+                fontWeight="600"
+                leftIcon={isDeleteMode ? <FiX /> : <FiTrash2 />}
+                onClick={() => setIsDeleteMode(!isDeleteMode)}
+              >
+                {isDeleteMode ? 'Done' : 'Delete Course'}
+              </Button>
+              <Button
+                colorScheme="brand"
+                borderRadius="xl"
+                fontWeight="600"
+                onClick={() => navigate('/teacher/courses/new')}
+                isDisabled={isDeleteMode}
+              >
+                Create Course
+              </Button>
+            </HStack>
           </Flex>
 
           {coursesQuery.isLoading ? (
@@ -114,37 +175,51 @@ export function TeacherCourseLibraryPage() {
                   key={course.id}
                   borderRadius="xl"
                   border="2px solid"
-                  borderColor="gray.100"
-                  cursor="pointer"
-                  _hover={{
-                    borderColor: 'brand.400',
-                    transform: 'translateY(-4px)',
-                    boxShadow: 'lg',
-                  }}
+                  borderColor={isDeleteMode ? 'red.200' : 'gray.100'}
+                  cursor={isDeleteMode ? 'default' : 'pointer'}
+                  _hover={
+                    isDeleteMode
+                      ? { borderColor: 'red.300', boxShadow: 'md' }
+                      : {
+                          borderColor: 'brand.400',
+                          transform: 'translateY(-4px)',
+                          boxShadow: 'lg',
+                        }
+                  }
                   transition="all 0.2s"
-                  onClick={() => navigate(`/teacher/courses/${course.id}`)}
+                  onClick={() => {
+                    if (isDeleteMode) {
+                      handleDeleteClick(course.id)
+                    } else {
+                      navigate(`/teacher/courses/${course.id}`)
+                    }
+                  }}
                 >
                   <CardBody p={5}>
                     <VStack align="stretch" spacing={4}>
                       <Flex justify="space-between" align="start">
                         <Box
-                          bg="brand.50"
+                          bg={isDeleteMode ? 'red.50' : 'brand.50'}
                           p={3}
                           borderRadius="xl"
                           border="2px solid"
-                          borderColor="brand.100"
+                          borderColor={isDeleteMode ? 'red.100' : 'brand.100'}
                         >
-                          <Icon as={FiBookOpen} boxSize={6} color="brand.500" />
+                          <Icon
+                            as={isDeleteMode ? FiTrash2 : FiBookOpen}
+                            boxSize={6}
+                            color={isDeleteMode ? 'red.500' : 'brand.500'}
+                          />
                         </Box>
                         <Badge
-                          colorScheme="brand"
+                          colorScheme={isDeleteMode ? 'red' : 'brand'}
                           borderRadius="full"
                           px={3}
                           py={1}
                           fontSize="xs"
                           fontWeight="700"
                         >
-                          Course
+                          {isDeleteMode ? 'DELETE' : 'COURSE'}
                         </Badge>
                       </Flex>
 
@@ -197,18 +272,22 @@ export function TeacherCourseLibraryPage() {
                       )}
 
                       <Button
-                        rightIcon={<Icon as={FiEye} />}
-                        variant="outline"
-                        colorScheme="brand"
+                        rightIcon={!isDeleteMode ? <Icon as={FiEye} /> : undefined}
+                        variant={isDeleteMode ? 'solid' : 'outline'}
+                        colorScheme={isDeleteMode ? 'red' : 'brand'}
                         size="sm"
                         borderRadius="lg"
                         fontWeight="600"
                         onClick={(event) => {
                           event.stopPropagation()
-                          navigate(`/teacher/courses/${course.id}`)
+                          if (isDeleteMode) {
+                            handleDeleteClick(course.id)
+                          } else {
+                            navigate(`/teacher/courses/${course.id}`)
+                          }
                         }}
                       >
-                        View Details
+                        {isDeleteMode ? 'Delete This Course' : 'View Details'}
                       </Button>
                     </VStack>
                   </CardBody>
@@ -238,6 +317,40 @@ export function TeacherCourseLibraryPage() {
           )}
         </CardBody>
       </Card>
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent borderRadius="xl">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Course
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              If you delete this course, all the sessions and submission history will be deleted. Are you sure?
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose} borderRadius="lg">
+                Cancel
+              </Button>
+              <Button
+                colorScheme="red"
+                onClick={handleConfirmDelete}
+                ml={3}
+                borderRadius="lg"
+                isLoading={deleteMutation.isPending}
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Stack>
   )
 }

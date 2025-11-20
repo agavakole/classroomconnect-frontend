@@ -32,6 +32,14 @@ export function createCourse(payload: CreateCoursePayload) {
   })
 }
 
+
+
+export function deleteCourse(courseId: string) {
+  return apiClient<void>(`/api/courses/${courseId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function updateCourse(courseId: string, payload: UpdateCoursePayload) {
   return apiClient<Course>(`/api/courses/${courseId}`, {
     method: 'PATCH',

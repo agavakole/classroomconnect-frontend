@@ -56,8 +56,14 @@ export function TeacherCourseCreatePage() {
   const [moodInput, setMoodInput] = useState('')
   const [moodLabels, setMoodLabels] = useState<string[]>([])
 
+  const formatMoodLabel = (value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    return `${trimmed[0].toUpperCase()}${trimmed.slice(1).toLowerCase()}`
+  }
+
   const addMoodLabel = () => {
-    const label = moodInput.trim()
+    const label = formatMoodLabel(moodInput)
     if (!label || moodLabels.includes(label)) return
     setMoodLabels((prev) => [...prev, label])
     setMoodInput('')
@@ -320,6 +326,7 @@ export function TeacherCourseCreatePage() {
                               py={2}
                               borderRadius="full"
                               fontSize="sm"
+                              textTransform="none"
                             >
                               <HStack spacing={2}>
                                 <Text fontWeight="600">{label}</Text>
