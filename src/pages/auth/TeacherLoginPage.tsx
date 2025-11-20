@@ -34,9 +34,12 @@ export function TeacherLoginPage() {
   const [password, setPassword] = useState("");
 
   const mutation = useMutation({
-    mutationFn: () => teacherLogin({ email, password }),
+    mutationFn: async () => {
+      const response = await teacherLogin({ email, password });
+      return response;
+    },
     onSuccess: (data) => {
-      login(data.access_token, "teacher");
+      login(data.access_token, "teacher", data.teacher_full_name);
       navigate("/teacher/courses", { replace: true });
     },
   });

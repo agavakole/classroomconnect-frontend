@@ -8,7 +8,6 @@ import {
   Card,
   CardBody,
   Box,
-  Heading,
   Input,
   Spinner,
   Stack,
@@ -478,13 +477,31 @@ export function StudentDashboardPage() {
                                 fontWeight="600"
                                 fontSize="xs"
                                 color="gray.500"
-                                mb={2}
+                                mb={3}
+                                letterSpacing="wide"
+                                textTransform="uppercase"
                               >
                                 YOUR ANSWERS
                               </Text>
-                              <Text fontFamily="mono" fontSize="xs">
-                                {JSON.stringify(submission.answers, null, 2)}
-                              </Text>
+                              
+                              {submission.answer_details ? (
+                                <VStack align="stretch" spacing={3}>
+                                  {Object.values(submission.answer_details).map((detail) => (
+                                    <Box key={detail.question_id} p={2} bg="white" borderRadius="md" border="1px solid" borderColor="gray.100">
+                                      <Text fontSize="xs" color="gray.500" mb={1}>
+                                        {detail.question_text}
+                                      </Text>
+                                      <Text fontSize="sm" fontWeight="600" color="gray.800">
+                                        {detail.selected_option_text}
+                                      </Text>
+                                    </Box>
+                                  ))}
+                                </VStack>
+                              ) : (
+                                <Text fontFamily="mono" fontSize="xs">
+                                  {JSON.stringify(submission.answers, null, 2)}
+                                </Text>
+                              )}
                             </Box>
 
                             <HStack spacing={2} fontSize="xs" color="gray.500">

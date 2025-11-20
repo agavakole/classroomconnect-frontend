@@ -20,7 +20,6 @@ import {
   DrawerCloseButton,
   useDisclosure,
   IconButton,
-  Avatar,
   Menu,
   MenuButton,
   MenuList,
@@ -39,10 +38,11 @@ import {
   FiLayers,
   FiMenu,
   FiLogOut,
-  FiSettings,
 } from 'react-icons/fi'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getTeacherProfile } from '../../api/teachers'
 
 interface SectionLink {
   label: string
@@ -227,7 +227,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 export function TeacherLayout() {
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const { logout } = useAuth()
+  const { logout, fullName } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const sidebarBg = useColorModeValue('white', 'gray.800')
@@ -235,6 +235,14 @@ export function TeacherLayout() {
   
   // Detect if we're on desktop breakpoint
   const isDesktop = useBreakpointValue({ base: false, lg: true })
+
+  const teacherProfileQuery = useQuery({
+    queryKey: ['teacherProfile'],
+    queryFn: getTeacherProfile,
+    enabled: !fullName, // Only fetch if we don't have the name yet
+  })
+
+  const teacherName = fullName || teacherProfileQuery.data?.full_name || 'Teacher'
 
   // Close drawer on route change
   useEffect(() => {
@@ -323,25 +331,21 @@ export function TeacherLayout() {
               </Button>
 
               {/* User Menu */}
-              <Menu placement="bottom-end">
+              <Menu placement="bottom-end" gutter={8}>
                 <MenuButton
                   as={Button}
-                  variant="ghost"
-                  borderRadius="full"
-                  p={0}
-                  h="auto"
-                  _hover={{ transform: 'scale(1.05)' }}
+                  variant="unstyled"
+                  display="flex"
+                  alignItems="center"
+                  _hover={{ color: 'brand.600' }}
+                  _active={{ color: 'brand.600' }}
                   transition="all 0.2s"
                 >
-                  <Avatar
-                    size="sm"
-                    name="Teacher"
-                    bg="brand.400"
-                    color="white"
-                    fontWeight="700"
-                  >
-                    👨‍🏫
-                  </Avatar>
+                  <HStack spacing={3}>
+                    <Text fontSize="md" fontWeight="600" color="gray.700">
+                      {teacherName}
+                    </Text>
+                  </HStack>
                 </MenuButton>
                 <MenuList
                   borderRadius="xl"
@@ -349,27 +353,18 @@ export function TeacherLayout() {
                   borderColor="gray.100"
                   boxShadow="xl"
                   py={2}
-                  minW="220px"
+                  w="280px"
                   zIndex={1500}
+                  overflow="visible"
                 >
-                  <Box px={4} py={3}>
-                    <Text fontSize="sm" fontWeight="700" color="gray.800">
-                      Teacher Account
+                  <Box px={4} py={3} w="full">
+                    <Text fontSize="sm" fontWeight="700" color="gray.800" noOfLines={1}>
+                      {teacherName}
                     </Text>
-                    <Text fontSize="xs" color="gray.500">
+                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
                       Teacher Portal
                     </Text>
                   </Box>
-                  <MenuDivider />
-                  <MenuItem
-                    icon={<Icon as={FiSettings} />}
-                    borderRadius="lg"
-                    mx={2}
-                    fontSize="sm"
-                    fontWeight="500"
-                  >
-                    Settings
-                  </MenuItem>
                   <MenuDivider />
                   <MenuItem
                     icon={<Icon as={FiLogOut} />}

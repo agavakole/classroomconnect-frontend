@@ -15,6 +15,7 @@ import {
   Text,
   VStack,
   useColorModeValue,
+  useToast,
   Icon,
 } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
@@ -33,15 +34,24 @@ export function TeacherSignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const toast = useToast(); // Initialized useToast
 
   const mutation = useMutation({
     mutationFn: async () => {
       await teacherSignup({ email, password, full_name: fullName });
-      const tokenResponse = await teacherLogin({ email, password });
-      return tokenResponse;
+      // Auto-login after signup
+      const loginResponse = await teacherLogin({ email, password });
+      return loginResponse; // Return the login response for onSuccess
     },
-    onSuccess: (tokenResponse) => {
-      login(tokenResponse.access_token, "teacher");
+    onSuccess: (loginResponse) => {
+      login(loginResponse.access_token, "teacher", loginResponse.teacher_full_name); // Pass full_name to login
+      toast({
+        title: "Account created.",
+        description: "You have successfully signed up and logged in.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
       navigate("/teacher/courses", { replace: true });
     },
   });
@@ -135,7 +145,7 @@ export function TeacherSignupPage() {
             <Box as="form" onSubmit={handleSubmit}>
               <Stack spacing={5}>
                 <FormControl isRequired>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>Full Name</FormLabel>
                   <Input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}

@@ -25,7 +25,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { studentLogin } from "../../api/auth";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
-import { FiArrowLeft, FiHeart } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import { PiGraduationCapBold } from "react-icons/pi";
 
 export function StudentLoginPage() {
@@ -37,7 +37,7 @@ export function StudentLoginPage() {
   const mutation = useMutation({
     mutationFn: () => studentLogin({ email, password }),
     onSuccess: (data) => {
-      login(data.access_token, "student");
+      login(data.access_token, "student", data.student_full_name);
       navigate("/student", { replace: true });
     },
   });

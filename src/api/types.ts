@@ -1,6 +1,10 @@
 export interface AuthTokenResponse {
   access_token: string
   token_type: string
+  teacher_full_name?: string
+  teacher_email?: string
+  student_full_name?: string
+  student_email?: string
 }
 
 export interface PersonProfile {
@@ -15,6 +19,16 @@ export interface StudentSubmission {
   session_id: string
   course_title: string
   answers: Record<string, string>
+  answer_details?: Record<
+    string,
+    {
+      question_id: string
+      question_text: string
+      selected_option_id: string
+      selected_option_text: string
+      options: Array<{ option_id: string; text: string }>
+    }
+  >
   status: string
   created_at: string
   updated_at?: string | null

@@ -25,7 +25,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { studentLogin, studentSignup } from "../../api/auth";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
-import { FiArrowLeft, FiHeart } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import { PiGraduationCapBold } from "react-icons/pi";
 
 export function StudentSignupPage() {
@@ -38,13 +38,17 @@ export function StudentSignupPage() {
   const mutation = useMutation({
     mutationFn: async () => {
       await studentSignup({ email, password, full_name: fullName });
-      const tokenResponse = await studentLogin({ email, password });
-      return tokenResponse;
-    },
-    onSuccess: (tokenResponse) => {
-      login(tokenResponse.access_token, "student");
+      // Auto-login after signup
+      const loginResponse = await studentLogin({ email, password });
+      login(loginResponse.access_token, 'student', loginResponse.student_full_name);
       navigate("/student", { replace: true });
+      return loginResponse; // Optionally return if needed elsewhere, but not strictly for this flow
     },
+    // onSuccess is no longer needed for login/navigation as it's handled in mutationFn
+    // onSuccess: (tokenResponse) => {
+    //   login(tokenResponse.access_token, "student", fullName);
+    //   navigate("/student", { replace: true });
+    // },
   });
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -136,7 +140,7 @@ export function StudentSignupPage() {
             <Box as="form" onSubmit={handleSubmit}>
               <Stack spacing={5}>
                 <FormControl isRequired>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>Full Name</FormLabel>
                   <Input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}

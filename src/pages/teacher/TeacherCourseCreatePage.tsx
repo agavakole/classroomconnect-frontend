@@ -183,11 +183,12 @@ export function TeacherCourseCreatePage() {
               </HStack>
 
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel fontWeight="600" fontSize="sm" mb={2}>
                     <HStack spacing={2}>
                       <Icon as={FiBookOpen} boxSize={4} color="brand.500" />
                       <Text>Course Title</Text>
+                      <Text color="red.500">*</Text>
                     </HStack>
                   </FormLabel>
                   <Input
@@ -206,11 +207,12 @@ export function TeacherCourseCreatePage() {
                   />
                 </FormControl>
 
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel fontWeight="600" fontSize="sm" mb={2}>
                     <HStack spacing={2}>
                       <Icon as={FiCheckCircle} boxSize={4} color="brand.500" />
                       <Text>Baseline Survey</Text>
+                      <Text color="red.500">*</Text>
                     </HStack>
                   </FormLabel>
                   <Select

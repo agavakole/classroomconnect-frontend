@@ -248,11 +248,12 @@ export function TeacherSessionCreatePage() {
                 <Divider />
 
                 {/* Mood Prompt Input */}
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel fontWeight="700" fontSize="md" mb={2}>
                     <HStack spacing={2}>
                       <Icon as={FiMessageSquare} color="accent.500" />
                       <Text>Mood Check Prompt</Text>
+                      <Text color="red.500">*</Text>
                     </HStack>
                   </FormLabel>
                   <Input
@@ -273,27 +274,6 @@ export function TeacherSessionCreatePage() {
                     This question will be shown to students when they join
                   </FormHelperText>
                 </FormControl>
-
-                {/* Preview Box */}
-                <Box
-                  p={4}
-                  bg="accent.50"
-                  borderRadius="xl"
-                  border="1px solid"
-                  borderColor="accent.100"
-                >
-                  <VStack align="stretch" spacing={2}>
-                    <HStack spacing={2}>
-                      <Icon as={FiMessageSquare} color="accent.600" boxSize={4} />
-                      <Text fontSize="xs" fontWeight="700" color="accent.700">
-                        PREVIEW
-                      </Text>
-                    </HStack>
-                    <Text fontSize="md" fontWeight="600" color="accent.900">
-                      {moodPrompt || 'Your mood prompt will appear here...'}
-                    </Text>
-                  </VStack>
-                </Box>
               </VStack>
             </CardBody>
           </Card>

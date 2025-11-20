@@ -9,7 +9,6 @@ import {
   Text,
   useDisclosure,
   useBreakpointValue,
-  Avatar,
   Menu,
   MenuButton,
   MenuList,
@@ -28,7 +27,6 @@ import {
   FiGrid, 
   FiPlayCircle,
   FiLogOut,
-  FiSettings,
   FiCode,
   FiUserPlus,
 } from 'react-icons/fi'
@@ -45,12 +43,12 @@ interface NavItem {
 }
 
 export function AppLayout() {
-  const { role, isTeacher, isStudent, logout } = useAuth()
+  const { role, logout, isTeacher, isStudent, fullName } = useAuth()
   const navigate = useNavigate()
   const studentProfileQuery = useQuery({
     queryKey: ['studentProfile'],
     queryFn: getStudentProfile,
-    enabled: isStudent,
+    enabled: isStudent && !fullName,
   })
   const mobileNav = useDisclosure()
 
@@ -80,12 +78,6 @@ export function AppLayout() {
   const showLogout = Boolean(role)
   const navSpacing = useBreakpointValue({ base: 2, md: 4 })
   const studentName = studentProfileQuery.data?.full_name || 'Student'
-  const initials = studentName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
 
   const handleLogout = () => {
     logout()
@@ -182,28 +174,17 @@ export function AppLayout() {
   <Menu placement="bottom-end" gutter={8}>
     <MenuButton
       as={Button}
-      variant="ghost"
-      borderRadius="full"
-      p={0}
-      h="auto"
-      _hover={{ transform: 'scale(1.05)' }}
+      variant="unstyled"
+      display="flex"
+      alignItems="center"
+      _hover={{ color: isTeacher ? 'brand.600' : 'accent.600' }}
+      _active={{ color: isTeacher ? 'brand.600' : 'accent.600' }}
       transition="all 0.2s"
     >
       <HStack spacing={3}>
-        {isStudent && (
-          <Text fontSize="sm" fontWeight="600" color="gray.700">
-            {studentName}
-          </Text>
-        )}
-        <Avatar
-          size="sm"
-          name={isStudent ? studentName : 'Teacher'}
-          bg={isTeacher ? 'brand.400' : 'accent.400'}
-          color="white"
-          fontWeight="700"
-        >
-          {isStudent ? initials : ''}
-        </Avatar>
+        <Text fontSize="md" fontWeight="600" color="gray.700">
+          {isStudent ? studentName : 'Teacher'}
+        </Text>
       </HStack>
     </MenuButton>
     <MenuList
@@ -224,16 +205,6 @@ export function AppLayout() {
           {isTeacher ? 'Teacher Portal' : 'Student Portal'}
         </Text>
       </Box>
-      <MenuDivider />
-      <MenuItem
-        icon={<Icon as={FiSettings} />}
-        borderRadius="lg"
-        mx={2}
-        fontSize="sm"
-        fontWeight="500"
-      >
-        Settings
-      </MenuItem>
       <MenuDivider />
       <MenuItem
         icon={<Icon as={FiLogOut} />}
@@ -362,29 +333,15 @@ export function AppLayout() {
               )}
 
               {isStudent && studentProfileQuery.data && (
-                <Box
-                  bg="accent.50"
-                  p={3}
-                  borderRadius="xl"
-                  border="1px solid"
-                  borderColor="accent.100"
-                >
-                  <HStack spacing={3}>
-                    <Avatar
-                      size="sm"
-                      name={studentName}
-                      bg="accent.400"
-                      color="white"
-                    />
-                    <VStack align="flex-start" spacing={0}>
-                      <Text fontSize="sm" fontWeight="700">
-                        {studentName}
-                      </Text>
-                      <Text fontSize="xs" color="gray.600">
-                        Student Account
-                      </Text>
-                    </VStack>
-                  </HStack>
+                <Box p={3}>
+                  <VStack align="flex-start" spacing={0}>
+                    <Text fontSize="sm" fontWeight="700">
+                      {studentName}
+                    </Text>
+                    <Text fontSize="xs" color="gray.600">
+                      Student Account
+                    </Text>
+                  </VStack>
                 </Box>
               )}
 
