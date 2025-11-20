@@ -11,7 +11,6 @@ import {
   Icon,
   Flex,
   useColorModeValue,
-  useBreakpointValue,
   Link,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
@@ -23,6 +22,7 @@ import {
   FiHeadphones,
   FiPlayCircle,
   FiImage,
+  FiUserPlus,
 } from "react-icons/fi";
 import { PiGraduationCapBold } from "react-icons/pi";
 
@@ -30,32 +30,7 @@ export function LandingPage() {
   const cardBg = useColorModeValue("white", "white");
 
   // Responsive sizes/behaviors
-  const tileSize = useBreakpointValue({ base: 0, md: 160, lg: 220, xl: 260 });
-  const iconSize = useBreakpointValue({ base: "0px", md: "40px", lg: "64px" });
-  const tagPadX = useBreakpointValue({ base: 0, md: 2, lg: 3 });
-  const tagPadY = useBreakpointValue({ base: 0, md: 1, lg: 1 });
-  const tagRadius = useBreakpointValue({ base: "md", md: "md", lg: "md" });
-
   // On md (iPad), no rotation; on lg+, playful rotation
-  const tileTransform = (i: number) =>
-    useBreakpointValue({
-      base: "none",
-      md: "none",
-      lg: i % 2 === 0 ? "rotate(-2deg)" : "rotate(2deg)",
-    });
-
-  const tiles = [
-    { bg: "blush.100", icon: FiBookOpen, tag: "Explore", tagBg: "mint.400"}, // learning
-    { bg: "white", icon: FiPlayCircle, tag: "Watch", tagBg: "blue.300" }, // video
-    { bg: "mint.100", icon: FiHeadphones, tag: "Listen", tagBg: "brand.300" }, // audio
-    {
-      bg: "brand.100",
-      icon: FiImage,
-      tag: "Gallery",
-      tagBg: "blush.500",
-      tagColor: "black",
-    }, // pictures
-  ];
 
   return (
     <Box bg="surfaces.canvas" minH="100vh">
@@ -85,27 +60,7 @@ export function LandingPage() {
           opacity={0.25}
         />
 
-        {/* floating accents */}
-        <Box
-          position="absolute"
-          top="6"
-          right="6"
-          fontSize="3xl"
-          opacity={0.9}
-          animation="float 6s infinite ease-in-out"
-        >
-          🎓
-        </Box>
-        <Box
-          position="absolute"
-          bottom="10"
-          left="8"
-          fontSize="3xl"
-          opacity={0.9}
-          animation="float 7s infinite ease-in-out"
-        >
-          💡
-        </Box>
+
         <Container
           maxW={{ base: "full", md: "6xl", lg: "7xl" }}
           px={{ base: 4, md: 8, lg: 12 }} // tighter horizontal padding
@@ -149,18 +104,35 @@ export function LandingPage() {
               {/* CTAs (soft radius) */}
               <Stack
                 direction={{ base: "column", sm: "row" }}
-                spacing={4}
+                spacing={3}
                 w={{ base: "full", sm: "auto" }}
+                flexWrap="wrap"
               >
                 <Button
                   as={RouterLink}
                   to="/login/teacher"
                   size="lg"
                   px={6}
-                  borderRadius="lg"
-                  color="sky.900"
+                  borderRadius="xl"
+                  colorScheme="brand"
+                  fontWeight="bold"
+                  leftIcon={<Icon as={FiUsers} />}
+                  _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
                 >
-                  Get started
+                  Teacher Login
+                </Button>
+                <Button
+                  as={RouterLink}
+                  to="/login/student"
+                  size="lg"
+                  px={6}
+                  borderRadius="xl"
+                  colorScheme="blue"
+                  fontWeight="bold"
+                  leftIcon={<Icon as={FiPlay} />}
+                  _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                >
+                  Student Login
                 </Button>
                 <Button
                   as={RouterLink}
@@ -168,94 +140,66 @@ export function LandingPage() {
                   size="lg"
                   px={6}
                   variant="outline"
-                  leftIcon={<Icon as={FiPlay} />}
-                  colorScheme="mint"
-                  borderRadius="lg"
+                  leftIcon={<Icon as={FiUserPlus} />}
+                  colorScheme="gray"
+                  borderRadius="xl"
+                  fontWeight="bold"
+                  borderWidth="2px"
+                  _hover={{ transform: 'translateY(-2px)', bg: 'gray.50' }}
                 >
-                  Do an activity
+                  Guest Join
                 </Button>
               </Stack>
             </VStack>
 
-            {/* Right visual board */}
-            <Box flex={1} display={{ base: "none", md: "block" }}>
-              {/* md: true 2×2 grid with square tiles; lg+: larger, rotated */}
-              <SimpleGrid
-                columns={2}
-                spacing={{ md: 4, lg: 6 }}
-                position="relative"
-                justifyItems="center"
-                alignItems="center"
-              >
-                {tiles.map((tile, i) => (
-                  <Box
-                    key={i}
-                    bg={tile.bg}
-                    w={`${tileSize}px`}
-                    h={`${tileSize}px`}
-                    borderRadius={{ md: "lg", lg: "xl" }}
-                    boxShadow="2xl"
-                    position="relative"
-                    transform={tileTransform(i)}
-                    _hover={{
-                      transform: {
-                        md: "none",
-                        lg: "rotate(0deg) scale(1.02)",
-                      } as any,
-                    }}
-                    transition="all .2s"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon as={tile.icon} boxSize={iconSize} color="ink.700" />
-                    {tile.tag && (
-                      <Box
-                        position="absolute"
-                        bottom={{ md: 2, lg: 3 }}
-                        left={{ md: 2, lg: 3 }}
-                        bg={tile.tagBg}
-                        color={tile.tagColor || "ink.800"}
-                        px={tagPadX}
-                        py={tagPadY}
-                        borderRadius={tagRadius}
-                        fontSize={{ md: "xs", lg: "sm" }}
-                        fontWeight="semibold"
-                        boxShadow="md"
-                      >
-                        {tile.tag}
-                      </Box>
-                    )}
-                  </Box>
-                ))}
-
-                {/* Center sparkle — keep small on md to avoid overlap */}
-                <Box
-                  position="absolute"
-                  top="50%"
-                  left="50%"
-                  transform="translate(-50%, -50%)"
-                  w={{ md: "56px", lg: "84px" }}
-                  h={{ md: "56px", lg: "84px" }}
-                  borderRadius="full"
-                  bg="white"
-                  boxShadow="xl"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Box
-                    w={{ md: "40px", lg: "62px" }}
-                    h={{ md: "40px", lg: "62px" }}
-                    borderRadius="full"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    ✨
-                  </Box>
-                </Box>
-              </SimpleGrid>
+            {/* Right visual board - Floating Icon Cloud */}
+            <Box flex={1} display={{ base: "none", md: "block" }} position="relative" h="400px">
+               {/* Abstract Background Blob */}
+               <Box
+                 position="absolute"
+                 top="50%"
+                 left="50%"
+                 transform="translate(-50%, -50%)"
+                 w="350px"
+                 h="350px"
+                 bgGradient="radial(circle, brand.100 0%, transparent 70%)"
+                 opacity={0.6}
+                 filter="blur(40px)"
+                 zIndex={0}
+               />
+               
+               {/* Floating Icons */}
+               {[
+                 { icon: FiBookOpen, color: "mint.600", bg: "mint.100", top: "15%", left: "15%", delay: "0s", size: "5xl", p: 6 },
+                 { icon: FiPlayCircle, color: "blue.600", bg: "blue.100", top: "25%", right: "10%", delay: "1s", size: "5xl", p: 6 },
+                 { icon: FiHeadphones, color: "brand.600", bg: "brand.100", bottom: "10%", left: "10%", delay: "2s", size: "5xl", p: 6 },
+                 { icon: FiImage, color: "blush.600", bg: "blush.100", bottom: "12%", right: "8%", delay: "1.5s", size: "5xl", p: 6 },
+                 { icon: FiUsers, color: "purple.600", bg: "purple.100", top: "40%", left: "40%", delay: "0.5s", size: "8xl", p: 10 },
+                 { icon: FiHeart, color: "red.500", bg: "red.50", top: "5%", right: "40%", delay: "2.5s", size: "6xl", p: 8 },
+               ].map((item, i) => (
+                 <Box
+                   key={i}
+                   position="absolute"
+                   top={item.top}
+                   left={item.left}
+                   right={item.right}
+                   bottom={item.bottom}
+                   animation={`float ${6 + i}s infinite ease-in-out ${item.delay}`}
+                   cursor="pointer"
+                   transition="transform 0.2s"
+                   _hover={{ transform: "scale(1.1) rotate(5deg)" }}
+                   zIndex={1}
+                   boxShadow="xl"
+                   bg={item.bg}
+                   p={item.p || 4}
+                   borderRadius="full"
+                   display="flex"
+                   alignItems="center"
+                   justifyContent="center"
+                 >
+                   <Icon as={item.icon} boxSize={item.size ? undefined : 8} fontSize={item.size} color={item.color} />
+                 </Box>
+               ))}
             </Box>
           </Stack>
         </Container>
@@ -379,21 +323,7 @@ export function LandingPage() {
         </SimpleGrid>
 
         {/* Bottom tagline */}
-        <Box textAlign="center" mt={16}>
-          <Text fontSize="lg" color="ink.600" maxW="2xl" mx="auto">
-            <Text as="span" fontWeight="bold" color="ink.700">
-              We don’t just lecture—kids learn by doing.
-            </Text>{" "}
-            <Text
-              as="span"
-              color="mint.700"
-              fontWeight="bold"
-              _hover={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Learn more
-            </Text>
-          </Text>
-        </Box>
+
       </Container>
 
       {/* animations */}

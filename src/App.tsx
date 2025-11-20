@@ -23,7 +23,6 @@ import { TeacherSurveyDetailPage } from './pages/teacher/TeacherSurveyDetailPage
 import { TeacherActivityCreatePage } from './pages/teacher/TeacherActivityCreatePage'
 import { TeacherActivitiesPage } from './pages/teacher/TeacherActivitiesPage'
 import { TeacherActivityDetailPage } from './pages/teacher/TeacherActivityDetailPage'
-import { TeacherActivityTypeCreatePage } from './pages/teacher/TeacherActivityTypeCreatePage'
 import { TeacherActivityTypesPage } from './pages/teacher/TeacherActivityTypesPage'
 import { TeacherActivityTypeDetailPage } from './pages/teacher/TeacherActivityTypeDetailPage'
 import { TeacherSessionCreatePage } from './pages/teacher/TeacherSessionCreatePage'
@@ -54,7 +53,6 @@ function App() {
         <Route path="activities/new" element={<TeacherActivityCreatePage />} />
         <Route path="activities/:activityId" element={<TeacherActivityDetailPage />} />
         <Route path="activity-types" element={<TeacherActivityTypesPage />} />
-        <Route path="activity-types/new" element={<TeacherActivityTypeCreatePage />} />
         <Route path="activity-types/:typeName" element={<TeacherActivityTypeDetailPage />} />
         <Route path="sessions" element={<TeacherSessionsPage />} />
         <Route path="sessions/new" element={<TeacherSessionCreatePage />} />

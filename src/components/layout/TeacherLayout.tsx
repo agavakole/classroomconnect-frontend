@@ -114,7 +114,6 @@ const sections: Section[] = [
         icon: FiLayers,
         excludePrefixes: ['/teacher/activity-types/new'],
       },
-      { label: 'Create activity type', to: '/teacher/activity-types/new', icon: FiPlus },
     ],
   },
 ]
@@ -220,27 +219,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </Box>
         ))}
 
-        {/* Help Section */}
-        <Box
-          p={4}
-          bg="accent.50"
-          borderRadius="xl"
-          border="1px solid"
-          borderColor="accent.100"
-        >
-          <HStack spacing={2} mb={2}>
-            <Text fontSize="lg">💡</Text>
-            <Text fontSize="sm" fontWeight="600" color="accent.700">
-              Need Help?
-            </Text>
-          </HStack>
-          <Text fontSize="xs" color="gray.600" mb={3}>
-            Check out our quick start guide
-          </Text>
-          <Button size="xs" colorScheme="accent" w="full" borderRadius="lg">
-            View Guide
-          </Button>
-        </Box>
+
       </Stack>
     </Box>
   )
