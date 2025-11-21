@@ -11,7 +11,7 @@ interface SignupPayload extends AuthCredentials {
 }
 
 export async function teacherLogin(payload: AuthCredentials) {
-  return apiClient<AuthTokenResponse>('/api/teachers/login', {
+  return apiClient<AuthTokenResponse>('/api/teachers/login/', {
     method: 'POST',
     body: JSON.stringify(payload),
     skipAuth: true,
@@ -19,7 +19,7 @@ export async function teacherLogin(payload: AuthCredentials) {
 }
 
 export async function teacherSignup(payload: SignupPayload) {
-  return apiClient<PersonProfile>('/api/teachers/signup', {
+  return apiClient<PersonProfile>('/api/teachers/signup/', {
     method: 'POST',
     body: JSON.stringify(payload),
     skipAuth: true,
@@ -27,7 +27,7 @@ export async function teacherSignup(payload: SignupPayload) {
 }
 
 export async function studentLogin(payload: AuthCredentials) {
-  return apiClient<AuthTokenResponse>('/api/students/login', {
+  return apiClient<AuthTokenResponse>('/api/students/login/', {
     method: 'POST',
     body: JSON.stringify(payload),
     skipAuth: true,
@@ -35,7 +35,7 @@ export async function studentLogin(payload: AuthCredentials) {
 }
 
 export async function studentSignup(payload: SignupPayload) {
-  return apiClient<PersonProfile>('/api/students/signup', {
+  return apiClient<PersonProfile>('/api/students/signup/', {
     method: 'POST',
     body: JSON.stringify(payload),
     skipAuth: true,
