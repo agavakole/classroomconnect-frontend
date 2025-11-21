@@ -13,6 +13,7 @@ import {
   Text,
   useToast,
   HStack,
+  Select,
   VStack,
   Icon,
   SimpleGrid,
@@ -21,9 +22,10 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Progress,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   FiUsers,
@@ -172,6 +174,49 @@ export function TeacherSessionDashboardPage() {
     window.open(sessionMeta.qr_url, '_blank', 'noopener,noreferrer')
   }
 
+  const dashboard = sessionQuery.data
+  const participants = dashboard?.participants ?? []
+  const moodEntries = useMemo(
+    () => Object.entries(dashboard?.mood_summary ?? {}),
+    [dashboard?.mood_summary]
+  )
+  const totalMoodResponses = useMemo(
+    () => moodEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
+    [moodEntries]
+  )
+
+  const surveyEntries = useMemo(() => {
+    const counts: Record<string, number> = {}
+    participants.forEach((participant) => {
+      const label = participant.learning_style ?? 'Not set'
+      counts[label] = (counts[label] ?? 0) + 1
+    })
+    return Object.entries(counts)
+  }, [participants])
+
+  const totalSurveyResponses = useMemo(
+    () => surveyEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
+    [surveyEntries]
+  )
+
+  const [moodFilter, setMoodFilter] = useState<string>('all')
+  const [surveyFilter, setSurveyFilter] = useState<string>('all')
+
+  const filteredParticipants = useMemo(() => {
+    return participants.filter((participant) => {
+      const matchesMood = moodFilter === 'all' || participant.mood === moodFilter
+      const surveyValue = participant.learning_style ?? 'Not set'
+      const matchesSurvey = surveyFilter === 'all' || surveyValue === surveyFilter
+      return matchesMood && matchesSurvey
+    })
+  }, [participants, moodFilter, surveyFilter])
+
+  const moodOptions = useMemo(() => moodEntries.map(([mood]) => mood), [moodEntries])
+  const surveyOptions = useMemo(
+    () => surveyEntries.map(([style]) => style),
+    [surveyEntries]
+  )
+
   if (sessionQuery.isLoading) {
     return (
       <Box textAlign="center" py={12}>
@@ -182,7 +227,7 @@ export function TeacherSessionDashboardPage() {
     )
   }
 
-  if (sessionQuery.isError || !sessionQuery.data) {
+  if (sessionQuery.isError || !dashboard) {
     return (
       <Alert
         status="error"
@@ -199,9 +244,7 @@ export function TeacherSessionDashboardPage() {
     )
   }
 
-  const dashboard = sessionQuery.data
-  const totalParticipants = dashboard.participants.length
-  const moodEntries = Object.entries(dashboard.mood_summary)
+  const totalParticipants = participants.length
 
   return (
     <Stack spacing={8}>
@@ -421,137 +464,319 @@ export function TeacherSessionDashboardPage() {
             </CardBody>
           </Card>
         )}
-
-        {/* Mood Summary Card */}
-        <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-          <CardBody p={6}>
-            <VStack align="stretch" spacing={4}>
-              <HStack spacing={3}>
-                <Icon as={FiTrendingUp} boxSize={6} color="accent.500" />
-                <Heading size="md" fontWeight="700">
-                  Mood Distribution
-                </Heading>
-              </HStack>
-
-              {moodEntries.length > 0 ? (
-                <Stack spacing={3}>
-                  {moodEntries.map(([mood, count]) => (
-                    <HStack key={mood} justify="space-between">
-                      <HStack spacing={3}>
-                        <Box
-                          w="12px"
-                          h="12px"
-                          borderRadius="full"
-                          bgGradient="linear(to-r, accent.400, accent.600)"
-                        />
-                        <Text fontWeight="600" textTransform="capitalize">
-                          {mood}
-                        </Text>
-                      </HStack>
-                      <Badge colorScheme="accent" fontSize="md" px={3} py={1} borderRadius="full">
-                        {count}
-                      </Badge>
-                    </HStack>
-                  ))}
-                </Stack>
-              ) : (
-                <VStack py={8} spacing={2}>
-                  <Icon as={FiUsers} boxSize={12} color="gray.300" />
-                  <Text color="gray.500">No mood data yet</Text>
-                </VStack>
-              )}
-            </VStack>
-          </CardBody>
-        </Card>
       </SimpleGrid>
+
+      {/* Mood Summary Card */}
+      <Card
+        borderRadius="2xl"
+        border="2px solid"
+        borderColor="gray.100"
+        boxShadow="xl"
+      >
+        <CardBody p={{ base: 6, md: 8 }}>
+          <VStack align="stretch" spacing={5}>
+            <HStack spacing={3}>
+              <Icon as={FiTrendingUp} boxSize={6} color="accent.500" />
+              <Heading size="md" fontWeight="800">
+                Mood & Survey Insights
+              </Heading>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+              <Box
+                p={5}
+                borderRadius="xl"
+                border="1px solid"
+                borderColor="gray.100"
+                bg="blue.50"
+                >
+                <HStack justify="space-between" mb={4}>
+                  <Text fontWeight="800" color="gray.800">
+                    Mood Distribution
+                  </Text>
+                  <Badge colorScheme="accent" borderRadius="full" fontWeight="800" bg="accent.100">
+                    {totalMoodResponses} responses
+                  </Badge>
+                </HStack>
+
+                {moodEntries.length > 0 ? (
+                  <Stack spacing={4}>
+                    {moodEntries.map(([mood, count]) => {
+                      const countNumber = Number(count) || 0
+                      const percent =
+                        totalMoodResponses > 0
+                          ? Math.round((countNumber / totalMoodResponses) * 100)
+                          : 0
+                      return (
+                        <VStack key={mood} align="stretch" spacing={3}>
+                          <HStack justify="space-between" align="center">
+                            <HStack spacing={3}>
+                              <Box w="12px" h="12px" borderRadius="full" bg="accent.500" />
+                              <Text fontWeight="800" textTransform="capitalize" color="gray.800">
+                                {mood.replace(/_/g, ' ')}
+                              </Text>
+                            </HStack>
+                            <HStack spacing={2}>
+                              <Text fontWeight="900" color="gray.800">
+                                {countNumber}
+                              </Text>
+                              <Badge colorScheme="accent" variant="subtle" fontWeight="800" borderRadius="lg">
+                                {percent}%
+                              </Badge>
+                            </HStack>
+                          </HStack>
+                          <Progress
+                            value={percent}
+                            size="lg"
+                            borderRadius="full"
+                            colorScheme="cyan"
+                            bg="white"
+                            sx={{
+                              '& > div': {
+                                bgGradient: 'linear(to-r, accent.300, accent.500)',
+                                boxShadow: 'sm',
+                              },
+                            }}
+                          />
+                        </VStack>
+                      )
+                    })}
+                  </Stack>
+                ) : (
+                  <VStack py={8} spacing={3}>
+                    <Icon as={FiUsers} boxSize={14} color="gray.300" />
+                    <Text color="gray.500" fontWeight="600">
+                      No mood data yet
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+
+              <Box
+                p={5}
+                borderRadius="xl"
+                border="1px solid"
+                borderColor="purple.100"
+                bg="purple.50"
+              >
+                <HStack justify="space-between" mb={4}>
+                  <Text fontWeight="800" color="purple.800">
+                    Survey Results
+                  </Text>
+                  <Badge colorScheme="purple" borderRadius="full" fontWeight="800" bg="purple.200">
+                    {totalSurveyResponses} students
+                  </Badge>
+                </HStack>
+
+                {surveyEntries.length > 0 ? (
+                  <Stack spacing={4}>
+                    {surveyEntries.map(([style, count]) => {
+                      const countNumber = Number(count) || 0
+                      const percent =
+                        totalSurveyResponses > 0
+                          ? Math.round((countNumber / totalSurveyResponses) * 100)
+                          : 0
+                      return (
+                        <VStack key={style} align="stretch" spacing={3}>
+                          <HStack justify="space-between" align="center">
+                            <HStack spacing={3}>
+                              <Box
+                                w="12px"
+                                h="12px"
+                                borderRadius="full"
+                                bgGradient="linear(to-r, purple.400, purple.600)"
+                              />
+                              <Text fontWeight="800" textTransform="capitalize">
+                                {style.replace(/_/g, ' ')}
+                              </Text>
+                            </HStack>
+                            <HStack spacing={2}>
+                              <Text fontWeight="900" color="purple.900">
+                                {countNumber}
+                              </Text>
+                              <Badge colorScheme="purple" variant="subtle" fontWeight="800" borderRadius="lg">
+                                {percent}%
+                              </Badge>
+                            </HStack>
+                          </HStack>
+                          <Progress
+                            value={percent}
+                            size="lg"
+                            borderRadius="full"
+                            colorScheme="purple"
+                            bg="white"
+                            sx={{
+                              '& > div': {
+                                bgGradient: 'linear(to-r, purple.300, purple.600)',
+                                boxShadow: 'sm',
+                              },
+                            }}
+                          />
+                        </VStack>
+                      )
+                    })}
+                  </Stack>
+                ) : (
+                  <VStack py={8} spacing={3}>
+                    <Icon as={FiUsers} boxSize={14} color="purple.300" />
+                    <Text color="purple.700" fontWeight="600">
+                      Survey results will appear here
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+            </SimpleGrid>
+          </VStack>
+        </CardBody>
+      </Card>
 
       {/* Participants List */}
       <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
         <CardBody p={6}>
-          <HStack spacing={3} mb={6}>
-            <Icon as={FiUsers} boxSize={6} color="brand.500" />
-            <Heading size="md" fontWeight="700">
-              Active Participants ({totalParticipants})
-            </Heading>
-            {isSessionOpen && (
-              <Badge colorScheme="green" fontSize="xs" px={2} py={1} borderRadius="full">
-                Live Updates
-              </Badge>
-            )}
-          </HStack>
+          <Flex
+            direction={{ base: 'column', lg: 'row' }}
+            justify="space-between"
+            align={{ base: 'flex-start', lg: 'center' }}
+            gap={4}
+            mb={6}
+          >
+            <HStack spacing={3}>
+              <Icon as={FiUsers} boxSize={6} color="brand.500" />
+              <Heading size="md" fontWeight="700">
+                Active Participants ({filteredParticipants.length}/{totalParticipants})
+              </Heading>
+              {isSessionOpen && (
+                <Badge colorScheme="green" fontSize="xs" px={2} py={1} borderRadius="full">
+                  Live Updates
+                </Badge>
+              )}
+            </HStack>
+
+            <HStack spacing={3} w={{ base: 'full', lg: 'auto' }}>
+              <Select
+                value={moodFilter}
+                onChange={(event) => setMoodFilter(event.target.value)}
+                maxW={{ base: 'full', lg: '220px' }}
+                borderRadius="xl"
+                bg="white"
+              >
+                <option value="all">All moods</option>
+                {moodOptions.map((mood) => (
+                  <option key={mood} value={mood}>
+                    {mood.charAt(0).toUpperCase() + mood.slice(1)}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={surveyFilter}
+                onChange={(event) => setSurveyFilter(event.target.value)}
+                maxW={{ base: 'full', lg: '240px' }}
+                borderRadius="xl"
+                bg="white"
+              >
+                <option value="all">All survey results</option>
+                {surveyOptions.map((style) => (
+                  <option key={style} value={style}>
+                    {style}
+                  </option>
+                ))}
+              </Select>
+            </HStack>
+          </Flex>
 
           {dashboard.participants.length > 0 ? (
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              {dashboard.participants.map((participant, idx) => (
-                <Card
-                  key={`${participant.mode}-${participant.display_name}-${idx}`}
-                  borderRadius="xl"
-                  border="2px solid"
-                  borderColor="gray.100"
-                  _hover={{ borderColor: 'brand.200', boxShadow: 'md' }}
-                  transition="all 0.2s"
-                >
-                  <CardBody p={5}>
-                    <VStack align="stretch" spacing={3}>
-                      <HStack spacing={3}>
-                        <Avatar
-                          name={participant.display_name}
-                          size="md"
-                          bg="brand.400"
-                          color="white"
-                          fontWeight="700"
-                        />
-                        <VStack align="flex-start" spacing={0} flex={1}>
-                          <Heading size="sm" fontWeight="700">
-                            {participant.display_name}
-                          </Heading>
-                          <HStack fontSize="xs" color="gray.500" spacing={2}>
-                            <Badge size="sm" colorScheme="purple">
-                              {participant.mode}
-                            </Badge>
-                            <Text>•</Text>
-                            <Text textTransform="capitalize">{participant.mood}</Text>
-                          </HStack>
-                        </VStack>
-                      </HStack>
-
-                      <Divider />
-
-                      <VStack align="stretch" spacing={2} fontSize="sm">
-                        <HStack justify="space-between">
-                          <Text color="gray.600">Learning Style:</Text>
-                          <Badge colorScheme="blue">
-                            {participant.learning_style ?? 'N/A'}
-                          </Badge>
+            filteredParticipants.length > 0 ? (
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                {filteredParticipants.map((participant, idx) => (
+                  <Card
+                    key={`${participant.mode}-${participant.display_name}-${idx}`}
+                    borderRadius="xl"
+                    border="2px solid"
+                    borderColor="gray.100"
+                    _hover={{ borderColor: 'brand.200', boxShadow: 'md' }}
+                    transition="all 0.2s"
+                  >
+                    <CardBody p={5}>
+                      <VStack align="stretch" spacing={3}>
+                        <HStack spacing={3}>
+                          <Avatar
+                            name={participant.display_name}
+                            size="md"
+                            bg="brand.400"
+                            color="white"
+                            fontWeight="700"
+                          />
+                          <VStack align="flex-start" spacing={0} flex={1}>
+                            <Heading size="sm" fontWeight="700">
+                              {participant.display_name}
+                            </Heading>
+                            <HStack fontSize="xs" color="gray.500" spacing={2}>
+                              <Badge size="sm" colorScheme="purple">
+                                {participant.mode}
+                              </Badge>
+                              <Text>•</Text>
+                              <Text textTransform="capitalize">{participant.mood}</Text>
+                            </HStack>
+                          </VStack>
                         </HStack>
 
-                        {participant.recommended_activity && (
-                          <Box
-                            bg="green.50"
-                            p={3}
-                            borderRadius="lg"
-                            border="1px solid"
-                            borderColor="green.200"
-                          >
-                            <VStack align="stretch" spacing={1}>
-                              <Text fontSize="xs" fontWeight="700" color="green.700">
-                                Recommended Activity:
-                              </Text>
-                              <Text fontWeight="600" color="green.900">
-                                {participant.recommended_activity.activity.name}
-                              </Text>
-                              <Text fontSize="xs" color="green.700">
-                                {participant.recommended_activity.activity.summary}
-                              </Text>
-                            </VStack>
-                          </Box>
-                        )}
+                        <Divider />
+
+                        <VStack align="stretch" spacing={2} fontSize="sm">
+                          <HStack justify="space-between">
+                            <Text color="gray.600">Learning Style:</Text>
+                            <Badge colorScheme="blue">
+                              {participant.learning_style ?? 'N/A'}
+                            </Badge>
+                          </HStack>
+
+                          {participant.recommended_activity && (
+                            <Box
+                              bg="green.50"
+                              p={3}
+                              borderRadius="lg"
+                              border="1px solid"
+                              borderColor="green.200"
+                            >
+                              <VStack align="stretch" spacing={1}>
+                                <Text fontSize="xs" fontWeight="700" color="green.700">
+                                  Recommended Activity:
+                                </Text>
+                                <Text fontWeight="600" color="green.900">
+                                  {participant.recommended_activity.activity.name}
+                                </Text>
+                                <Text fontSize="xs" color="green.700">
+                                  {participant.recommended_activity.activity.summary}
+                                </Text>
+                              </VStack>
+                            </Box>
+                          )}
+                        </VStack>
                       </VStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </SimpleGrid>
+                    </CardBody>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            ) : (
+              <VStack py={12} spacing={3}>
+                <Text fontSize="lg" fontWeight="700" color="gray.700">
+                  No students match these filters
+                </Text>
+                <Text color="gray.500" textAlign="center">
+                  Try selecting another mood or survey result to see matching students
+                </Text>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMoodFilter('all')
+                    setSurveyFilter('all')
+                  }}
+                  borderRadius="xl"
+                >
+                  Clear filters
+                </Button>
+              </VStack>
+            )
           ) : (
             <VStack py={12} spacing={4}>
               <Box
