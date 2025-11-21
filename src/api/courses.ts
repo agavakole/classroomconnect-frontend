@@ -18,30 +18,28 @@ export interface UpdateCoursePayload {
 }
 
 export function listCourses() {
-  return apiClient<Course[]>('/api/courses/')
+  return apiClient<Course[]>('/api/courses')
 }
 
 export function getCourse(courseId: string) {
-  return apiClient<Course>(`/api/courses/${courseId}/`)
+  return apiClient<Course>(`/api/courses/${courseId}`)
 }
 
 export function createCourse(payload: CreateCoursePayload) {
-  return apiClient<Course>('/api/courses/', {
+  return apiClient<Course>('/api/courses', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
-
-
 export function deleteCourse(courseId: string) {
-  return apiClient<void>(`/api/courses/${courseId}/`, {
+  return apiClient<void>(`/api/courses/${courseId}`, {
     method: 'DELETE',
   })
 }
 
 export function updateCourse(courseId: string, payload: UpdateCoursePayload) {
-  return apiClient<Course>(`/api/courses/${courseId}/`, {
+  return apiClient<Course>(`/api/courses/${courseId}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
@@ -49,7 +47,7 @@ export function updateCourse(courseId: string, payload: UpdateCoursePayload) {
 
 export function getCourseRecommendations(courseId: string) {
   return apiClient<CourseRecommendationsResponse>(
-    `/api/courses/${courseId}/recommendations/`,
+    `/api/courses/${courseId}/recommendations`,
   )
 }
 
@@ -58,7 +56,7 @@ export function updateCourseRecommendations(
   payload: CourseRecommendationUpdatePayload,
 ) {
   return apiClient<CourseRecommendationsResponse>(
-    `/api/courses/${courseId}/recommendations/`,
+    `/api/courses/${courseId}/recommendations`,
     {
       method: 'PATCH',
       body: JSON.stringify(payload),
@@ -77,7 +75,7 @@ export function autoGenerateCourseRecommendations(
   payload: AutoGenerateRecommendationsPayload = {},
 ) {
   return apiClient<CourseRecommendationAutoResponse>(
-    `/api/courses/${courseId}/recommendations/auto/`,
+    `/api/courses/${courseId}/recommendations/auto`,
     {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -100,7 +98,7 @@ export interface CreateSessionResponse {
 }
 
 export function createCourseSession(courseId: string, payload: CreateSessionPayload) {
-  return apiClient<CreateSessionResponse>(`/api/sessions/${courseId}/sessions/`, {
+  return apiClient<CreateSessionResponse>(`/api/sessions/${courseId}/sessions`, {
     method: 'POST',
     body: JSON.stringify(payload),
   })
