@@ -29,10 +29,16 @@ import {
   FiPlus,
 } from 'react-icons/fi'
 import { listActivityTypes } from '../../api/activities'
+import { useEffect } from 'react'
 
 export function TeacherActivityTypeDetailPage() {
   const { typeName } = useParams<{ typeName: string }>()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   const activityTypesQuery = useQuery({
     queryKey: ['activityTypes'],
     queryFn: listActivityTypes,

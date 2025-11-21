@@ -68,6 +68,11 @@ export function TeacherActivityDetailPage() {
     }
   }, [contentJson])
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   useEffect(() => {
     if (!activityQuery.data) return
     setName(activityQuery.data.name)
