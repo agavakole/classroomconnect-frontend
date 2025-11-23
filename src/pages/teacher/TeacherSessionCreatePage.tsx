@@ -22,14 +22,17 @@ import {
   FormHelperText,
   Wrap,
   WrapItem,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   FiPlayCircle,
-  FiArrowLeft,
   FiCheckCircle,
   FiAlertCircle,
   FiMessageSquare,
@@ -83,26 +86,42 @@ export function TeacherSessionCreatePage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/sessions')}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
           mb={4}
-          fontWeight="600"
+          fontSize="sm"
+          fontWeight="500"
         >
-          Back to Sessions
-        </Button>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/sessions')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Session Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+              Create Session
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
 
         <HStack spacing={4} align="flex-start">
-          <Box
-            bgGradient="linear(135deg, #10B981, #059669)"
-            color="white"
-            p={4}
-            borderRadius="2xl"
-            boxShadow="lg"
-          >
-            <Icon as={FiPlayCircle} boxSize={8} />
-          </Box>
           <VStack align="flex-start" spacing={1}>
             <Heading size="lg" fontWeight="800">
               Launch New Session

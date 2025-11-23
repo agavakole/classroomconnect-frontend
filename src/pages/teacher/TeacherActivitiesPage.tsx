@@ -24,7 +24,11 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -71,6 +75,31 @@ export function TeacherActivitiesPage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
+          mb={4}
+          fontSize="sm"
+          fontWeight="500"
+        >
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+              Activity Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
+
         <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
           Activity Library
         </Heading>

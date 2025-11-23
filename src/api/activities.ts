@@ -10,11 +10,11 @@ export interface CreateActivityTypePayload {
 }
 
 export function listActivityTypes() {
-  return apiClient<ActivityType[]>('/api/activity-types')
+  return apiClient<ActivityType[]>('/api/activity-types/')
 }
 
 export function createActivityType(payload: CreateActivityTypePayload) {
-  return apiClient<ActivityType>('/api/activity-types', {
+  return apiClient<ActivityType>('/api/activity-types/', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -36,11 +36,11 @@ export interface UpdateActivityPayload {
 }
 
 export function listActivities() {
-  return apiClient<Activity[]>('/api/activities')
+  return apiClient<Activity[]>('/api/activities/')
 }
 
 export function createActivity(payload: CreateActivityPayload) {
-  return apiClient<Activity>('/api/activities', {
+  return apiClient<Activity>('/api/activities/', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

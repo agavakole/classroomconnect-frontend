@@ -24,12 +24,15 @@ import {
   Flex,
   Divider,
   Wrap,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  FiArrowLeft,
   FiGrid,
   FiCheckCircle,
   FiTag,
@@ -153,15 +156,40 @@ export function TeacherActivityDetailPage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/activities')}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
           mb={4}
-          fontWeight="600"
+          fontSize="sm"
+          fontWeight="500"
         >
-          Back to Activities
-        </Button>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/activities')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Activity Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default" noOfLines={1}>
+              {activity.name}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
 
         <Flex
           direction={{ base: 'column', md: 'row' }}

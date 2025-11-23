@@ -34,17 +34,17 @@ export function TeacherSignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const toast = useToast(); // Initialized useToast
+  const toast = useToast();
 
   const mutation = useMutation({
     mutationFn: async () => {
       await teacherSignup({ email, password, full_name: fullName });
       // Auto-login after signup
       const loginResponse = await teacherLogin({ email, password });
-      return loginResponse; // Return the login response for onSuccess
+      return loginResponse;
     },
     onSuccess: (loginResponse) => {
-      login(loginResponse.access_token, "teacher", loginResponse.teacher_full_name); // Pass full_name to login
+      login(loginResponse.access_token, "teacher", loginResponse.teacher_full_name);
       toast({
         title: "Account created.",
         description: "You have successfully signed up and logged in.",
@@ -52,7 +52,7 @@ export function TeacherSignupPage() {
         duration: 3000,
         isClosable: true,
       });
-      navigate("/teacher/courses", { replace: true });
+      navigate("/teacher/dashboard", { replace: true });
     },
   });
 

@@ -84,12 +84,12 @@ export function TeacherActivityTypeDetailPage() {
         </Alert>
         <Button
           leftIcon={<Icon as={FiArrowLeft} />}
-          onClick={() => navigate('/teacher/activity-types')}
+          onClick={() => navigate(-1)}
           variant="outline"
           size="lg"
           borderRadius="xl"
         >
-          Back to Types
+          Back
         </Button>
       </Stack>
     )
@@ -102,11 +102,11 @@ export function TeacherActivityTypeDetailPage() {
         <Button
           leftIcon={<Icon as={FiArrowLeft} />}
           variant="ghost"
-          onClick={() => navigate('/teacher/activity-types')}
+          onClick={() => navigate(-1)}
           mb={4}
           fontWeight="600"
         >
-          Back to Activity Types
+          Back
         </Button>
 
         <Flex
@@ -419,14 +419,14 @@ export function TeacherActivityTypeDetailPage() {
             <HStack spacing={4} w="full">
               <Button
                 variant="outline"
-                onClick={() => navigate('/teacher/activity-types')}
+                onClick={() => navigate(-1)}
                 size="lg"
                 borderRadius="xl"
                 fontWeight="600"
                 borderWidth="2px"
                 flex={1}
               >
-                View All Types
+                Go Back
               </Button>
               <Button
                 leftIcon={<Icon as={FiPlus} />}

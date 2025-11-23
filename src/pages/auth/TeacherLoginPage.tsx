@@ -40,7 +40,7 @@ export function TeacherLoginPage() {
     },
     onSuccess: (data) => {
       login(data.access_token, "teacher", data.teacher_full_name);
-      navigate("/teacher/courses", { replace: true });
+      navigate("/teacher/dashboard", { replace: true });
     },
   });
 

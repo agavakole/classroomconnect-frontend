@@ -20,7 +20,11 @@ import {
   Avatar,
   Wrap,
   WrapItem,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -59,8 +63,33 @@ export function TeacherSessionsPage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
+          mb={4}
+          fontSize="sm"
+          fontWeight="500"
+        >
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+              Session Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
+
         <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
-          Session Library 📚
+          Session Library
         </Heading>
         <Text color="gray.600" fontSize="lg">
           Review and manage your teaching sessions
@@ -69,7 +98,7 @@ export function TeacherSessionsPage() {
 
       {/* Course Selection Card */}
       <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-        <CardBody p={6}>
+        <CardBody p={{ base: 4, md: 6 }}>
           <Stack spacing={6}>
             <HStack spacing={3}>
               <Icon as={FiPlayCircle} boxSize={6} color="brand.500" />
@@ -97,6 +126,7 @@ export function TeacherSessionsPage() {
                           fontWeight="600"
                           onClick={() => setCourseId(course.id)}
                           borderWidth={isSelected ? undefined : '2px'}
+                          size={{ base: 'sm', md: 'md' }}
                         >
                           {course.title}
                         </Button>
@@ -167,7 +197,7 @@ export function TeacherSessionsPage() {
             {/* Active Sessions */}
             {activeSessions.length > 0 && (
               <Card borderRadius="2xl" border="2px solid" borderColor="green.100" boxShadow="xl">
-                <CardBody p={6}>
+                <CardBody p={{ base: 4, md: 6 }}>
                   <HStack spacing={3} mb={6}>
                     <Icon as={FiActivity} boxSize={6} color="green.500" />
                     <Heading size="md" fontWeight="700">
@@ -196,7 +226,12 @@ export function TeacherSessionsPage() {
                         <CardBody p={5}>
                           <VStack align="stretch" spacing={4}>
                             {/* Session Header */}
-                            <HStack justify="space-between">
+                            <Flex
+                              direction={{ base: 'column', sm: 'row' }}
+                              justify="space-between"
+                              align={{ base: 'flex-start', sm: 'center' }}
+                              gap={2}
+                            >
                               <HStack spacing={3}>
                                 <Box
                                   bg="green.500"
@@ -227,7 +262,7 @@ export function TeacherSessionsPage() {
                               >
                                 🟢 Open
                               </Badge>
-                            </HStack>
+                            </Flex>
 
                             {/* Session Details */}
                             <Stack spacing={2}>
@@ -283,7 +318,7 @@ export function TeacherSessionsPage() {
             {/* Closed Sessions */}
             {closedSessions.length > 0 && (
               <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-                <CardBody p={6}>
+                <CardBody p={{ base: 4, md: 6 }}>
                   <HStack spacing={3} mb={6}>
                     <Icon as={FiCheckCircle} boxSize={6} color="gray.500" />
                     <Heading size="md" fontWeight="700">
@@ -322,22 +357,24 @@ export function TeacherSessionsPage() {
                                 <Text fontWeight="700" fontSize="sm">
                                   Session {session.session_id.slice(0, 8)}...
                                 </Text>
-                                <HStack spacing={3} fontSize="xs" color="gray.500">
+                                <HStack spacing={2} fontSize="xs" color="gray.500" flexWrap="wrap">
                                   <HStack>
                                     <Icon as={FiClock} boxSize={3} />
                                     <Text>
                                       {new Date(session.started_at).toLocaleDateString()}
                                     </Text>
                                   </HStack>
-                                  <Text>•</Text>
+                                  <Text display={{ base: 'none', sm: 'block' }}>•</Text>
                                   <Badge
                                     size="sm"
                                     colorScheme={session.require_survey ? 'purple' : 'orange'}
                                   >
                                     {session.require_survey ? 'Survey' : 'No Survey'}
                                   </Badge>
-                                  <Text>•</Text>
-                                  <Text fontFamily="mono">{session.join_token}</Text>
+                                  <Text display={{ base: 'none', sm: 'block' }}>•</Text>
+                                  <Text fontFamily="mono" display={{ base: 'none', sm: 'block' }}>
+                                    {session.join_token}
+                                  </Text>
                                 </HStack>
                               </VStack>
                             </HStack>
@@ -352,6 +389,7 @@ export function TeacherSessionsPage() {
                               size="sm"
                               borderRadius="lg"
                               fontWeight="600"
+                              w={{ base: '100%', md: 'auto' }}
                             >
                               View Results
                             </Button>

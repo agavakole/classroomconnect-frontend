@@ -27,13 +27,16 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
-  FiArrowLeft,
   FiGrid,
   FiPlus,
   FiCheckCircle,
@@ -102,26 +105,42 @@ export function TeacherActivityCreatePage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/activities')}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
           mb={4}
-          fontWeight="600"
+          fontSize="sm"
+          fontWeight="500"
         >
-          Back to Activities
-        </Button>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/activities')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Activity Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+              Create Activity
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
 
         <HStack spacing={4} align="flex-start">
-          <Box
-            bgGradient="linear(135deg, brand.400, brand.600)"
-            color="white"
-            p={4}
-            borderRadius="2xl"
-            boxShadow="lg"
-          >
-            <Icon as={FiPlus} boxSize={8} />
-          </Box>
           <VStack align="flex-start" spacing={1}>
             <Heading size="lg" fontWeight="800">
               Create Activity

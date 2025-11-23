@@ -21,7 +21,11 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -31,7 +35,6 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiCopy,
-  FiArrowLeft,
   FiActivity,
   FiTrendingUp,
   FiExternalLink,
@@ -207,15 +210,40 @@ export function TeacherSessionDashboardPage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/sessions')}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
           mb={4}
-          fontWeight="600"
+          fontSize="sm"
+          fontWeight="500"
         >
-          Back to Sessions
-        </Button>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/sessions')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Session Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default" noOfLines={1}>
+              Session {sessionId?.slice(0, 8)}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
 
         <Flex
           direction={{ base: 'column', md: 'row' }}

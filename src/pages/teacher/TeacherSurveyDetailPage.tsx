@@ -17,10 +17,14 @@ import {
   SimpleGrid,
   Flex,
   Divider,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FiClipboard, FiArrowLeft, FiCheckCircle } from 'react-icons/fi'
+import { FiClipboard, FiCheckCircle } from 'react-icons/fi'
 import { getSurvey } from '../../api/surveys'
 
 export function TeacherSurveyDetailPage() {
@@ -66,15 +70,40 @@ export function TeacherSurveyDetailPage() {
     <Stack spacing={8}>
       {/* Header Section */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/surveys')}
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
           mb={4}
-          fontWeight="600"
+          fontSize="sm"
+          fontWeight="500"
         >
-          Back to Survey Library
-        </Button>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/surveys')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Survey Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default" noOfLines={1}>
+              {survey.title}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
 
         <Flex
           direction={{ base: 'column', md: 'row' }}
@@ -83,15 +112,7 @@ export function TeacherSurveyDetailPage() {
           gap={4}
         >
           <HStack spacing={4} align="flex-start">
-            <Box
-              bgGradient="linear(135deg, brand.400, brand.600)"
-              color="white"
-              p={4}
-              borderRadius="2xl"
-              boxShadow="lg"
-            >
-              <Icon as={FiClipboard} boxSize={8} />
-            </Box>
+  
             <VStack align="flex-start" spacing={1}>
               <Heading size="lg" fontWeight="800">
                 {survey.title}
@@ -178,9 +199,9 @@ export function TeacherSurveyDetailPage() {
                               colorScheme={
                                 key === 'visual'
                                   ? 'purple'
-                                  : key === 'auditory' //here
+                                  : key === 'auditory'
                                   ? 'blue'
-                                  : ''
+                                  : 'gray'
                               }
                               fontSize="xs"
                               px={2}

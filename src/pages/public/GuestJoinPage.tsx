@@ -13,24 +13,15 @@ import {
   Input,
   Stack,
   Text,
-  HStack,
   VStack,
+  useColorModeValue,
   Icon,
-  Divider,
 } from '@chakra-ui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import {
-  FiUserPlus,
-  FiKey,
-  FiUser,
-  FiArrowRight,
-  FiCamera,
-  FiAlertCircle,
-  FiArrowLeft,
-} from 'react-icons/fi'
+import { FiUserPlus, FiArrowLeft, FiCamera } from 'react-icons/fi'
 import { getJoinSession } from '../../api/public'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
@@ -75,6 +66,8 @@ export function GuestJoinPage() {
       : mutation.isError
         ? 'Unable to find the session.'
         : null
+
+  const cardBg = useColorModeValue('white', 'gray.800')
 
   // Don't render anything while redirecting
   if (isStudent || isTeacher) {
@@ -123,184 +116,103 @@ export function GuestJoinPage() {
         Back to Home
       </Button>
 
-      <Box maxW="2xl" w="full">
-        <Stack spacing={8}>
-          {/* Header */}
-          <VStack spacing={3}>
-       
-            <VStack spacing={1}>
-              <Heading size="xl" fontWeight="800" textAlign="center">
-                Join as Guest
-              </Heading>
-              <Text color="gray.600" fontSize="lg" textAlign="center">
-                Enter your session token to get started
-              </Text>
-            </VStack>
+      {/* Join card */}
+      <Card
+        bg={cardBg}
+        boxShadow="2xl"
+        borderRadius="2xl"
+        maxW="md"
+        w="full"
+        p={{ base: 6, md: 8 }}
+      >
+        <CardBody>
+          <VStack spacing={6} align="stretch">
+            <Heading
+              textAlign="center"
+              size="lg"
+              color="ink.800"
+              fontWeight="extrabold"
+            >
+              Join as Guest
+            </Heading>
+
+            <Text textAlign="center" color="ink.600" fontSize="md">
+              Enter your session token and name to get started.
+            </Text>
+
+            {errorMessage && (
+              <Alert status="error" borderRadius="md">
+                <AlertIcon />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+
+            <Box
+              as="form"
+              onSubmit={handleSubmit}
+            >
+              <Stack spacing={5}>
+                <FormControl isRequired>
+                  <FormLabel>Session Token</FormLabel>
+                  <Input
+                    value={token}
+                    onChange={(event) => setToken(event.target.value)}
+                    placeholder="e.g., ABC123"
+                    borderRadius="lg"
+                    borderColor="gray.200"
+                    focusBorderColor="accent.500"
+                    fontFamily="mono"
+                    fontWeight="600"
+                    textAlign="center"
+                    _placeholder={{ color: 'gray.400' }}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Your Name</FormLabel>
+                  <Input
+                    value={guestName}
+                    onChange={(event) => setGuestName(event.target.value)}
+                    placeholder="e.g., John Smith"
+                    autoComplete="name"
+                    borderRadius="lg"
+                    borderColor="gray.200"
+                    focusBorderColor="accent.500"
+                    _placeholder={{ color: 'gray.400' }}
+                  />
+                </FormControl>
+
+                <Button
+                  type="submit"
+                  colorScheme="accent"
+                  size="lg"
+                  borderRadius="lg"
+                  isLoading={mutation.isPending}
+                  loadingText="Joining..."
+                  isDisabled={!token.trim() || !guestName.trim()}
+                >
+                  Join Session
+                </Button>
+
+                <Button
+                  leftIcon={<Icon as={FiCamera} />}
+                  variant="outline"
+                  size="lg"
+                  borderRadius="lg"
+                  onClick={() => navigate('/scan')}
+                  isDisabled={mutation.isPending}
+                >
+                  Scan QR Code
+                </Button>
+              </Stack>
+            </Box>
+
+            <Text textAlign="center" color="gray.600" fontSize="sm">
+              Get your token from your teacher or scan the QR code to join.
+            </Text>
           </VStack>
-
-          {/* Main Card */}
-          <Card
-            borderRadius="2xl"
-            border="2px solid"
-            borderColor="gray.100"
-            boxShadow="2xl"
-            bg="white"
-          >
-            <CardBody p={8}>
-              <Box as="form" onSubmit={handleSubmit}>
-                <Stack spacing={6}>
-                  {/* Info Box */}
-                  <Box
-                    p={4}
-                    bg="blue.50"
-                    borderRadius="xl"
-                    border="1px solid"
-                    borderColor="blue.100"
-                  >
-                    <HStack spacing={3} align="start">
-                      <Icon as={FiAlertCircle} color="blue.500" boxSize={5} mt={0.5} />
-                      <VStack align="start" spacing={1}>
-                        <Text fontSize="sm" fontWeight="700" color="blue.900">
-                          Quick Access
-                        </Text>
-                        <Text fontSize="sm" color="blue.800">
-                          Get your join token from your teacher or scan the QR code
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  </Box>
-
-                  {/* Error Alert */}
-                  {errorMessage && (
-                    <Alert
-                      status="error"
-                      borderRadius="xl"
-                      bg="red.50"
-                      border="2px solid"
-                      borderColor="red.200"
-                    >
-                      <AlertIcon color="red.500" />
-                      <AlertDescription color="red.700" fontWeight="600">
-                        {errorMessage}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {/* Join Token Input */}
-                  <FormControl isRequired>
-                    <FormLabel fontWeight="700" fontSize="md" mb={3}>
-                      <HStack spacing={2}>
-                        <Icon as={FiKey} boxSize={5} color="accent.500" />
-                        <Text>Session Token</Text>
-                      </HStack>
-                    </FormLabel>
-                    <Input
-                      value={token}
-                      onChange={(event) => setToken(event.target.value)}
-                      placeholder="e.g., ABC123"
-                      size="lg"
-                      borderRadius="xl"
-                      border="2px solid"
-                      borderColor="gray.200"
-                      fontFamily="mono"
-                      fontSize="lg"
-                      fontWeight="700"
-                      textAlign="center"
-                      _hover={{ borderColor: 'accent.300' }}
-                      _focus={{
-                        borderColor: 'accent.400',
-                        boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
-                      }}
-                    />
-                    <Text fontSize="xs" color="gray.500" mt={2}>
-                      Enter the code provided by your teacher
-                    </Text>
-                  </FormControl>
-
-                  <Divider />
-
-                  {/* Guest Name Input */}
-                  <FormControl isRequired>
-                    <FormLabel fontWeight="700" fontSize="md" mb={3}>
-                      <HStack spacing={2}>
-                        <Icon as={FiUser} boxSize={5} color="accent.500" />
-                        <Text>Your Name</Text>
-                      </HStack>
-                    </FormLabel>
-                    <Input
-                      value={guestName}
-                      onChange={(event) => setGuestName(event.target.value)}
-                      placeholder="e.g., John Smith"
-                      autoComplete="name"
-                      size="lg"
-                      borderRadius="xl"
-                      border="2px solid"
-                      borderColor="gray.200"
-                      _hover={{ borderColor: 'accent.300' }}
-                      _focus={{
-                        borderColor: 'accent.400',
-                        boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
-                      }}
-                    />
-                    <Text fontSize="xs" color="gray.500" mt={2}>
-                      Let your teacher know who you are
-                    </Text>
-                  </FormControl>
-
-                  {/* Action Buttons */}
-                  <Stack spacing={3} pt={2}>
-                    <Button
-                      type="submit"
-                      rightIcon={<Icon as={FiArrowRight} />}
-                      colorScheme="accent"
-                      size="lg"
-                      borderRadius="xl"
-                      fontWeight="700"
-                      isLoading={mutation.isPending}
-                      loadingText="Joining Session..."
-                      isDisabled={!token.trim() || !guestName.trim()}
-                    >
-                      Join Session
-                    </Button>
-
-                    <Button
-                      leftIcon={<Icon as={FiCamera} />}
-                      variant="outline"
-                      size="lg"
-                      borderRadius="xl"
-                      fontWeight="600"
-                      borderWidth="2px"
-                      onClick={() => navigate('/scan')}
-                      isDisabled={mutation.isPending}
-                    >
-                      Scan QR Code Instead
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
-            </CardBody>
-          </Card>
-
-          {/* Help Text */}
-          <Box
-            p={6}
-            bg="white"
-            borderRadius="2xl"
-            border="2px dashed"
-            borderColor="gray.200"
-            textAlign="center"
-          >
-            <VStack spacing={2}>
-              <Text fontSize="sm" fontWeight="700" color="gray.700">
-                Need help joining?
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                Ask your teacher for the session token or QR code to scan
-              </Text>
-            </VStack>
-          </Box>
-        </Stack>
-      </Box>
+        </CardBody>
+      </Card>
 
       {/* Animation */}
       <style>{`

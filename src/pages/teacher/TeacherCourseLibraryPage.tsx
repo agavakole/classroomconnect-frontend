@@ -26,7 +26,7 @@ import {
 } from '@chakra-ui/react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { FiBookOpen, FiCalendar, FiCheckCircle, FiEye, FiTrash2, FiX } from 'react-icons/fi'
+import { FiBookOpen, FiCalendar, FiCheckCircle, FiEye, FiTrash2, FiX, FiPlus } from 'react-icons/fi'
 import { listCourses, deleteCourse } from '../../api/courses'
 import { useState, useRef } from 'react'
 
@@ -77,9 +77,29 @@ export function TeacherCourseLibraryPage() {
   }
 
   const totalCourses = coursesQuery.data?.length || 0
+  const thisMonthCourses = coursesQuery.data?.filter(c => {
+    const created = new Date(c.created_at);
+    const now = new Date();
+    return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+  }).length || 0
 
   return (
     <Stack spacing={8}>
+      {/* Breadcrumb Navigation */}
+      <HStack spacing={2} fontSize="sm" color="gray.600">
+        <Text 
+          cursor="pointer" 
+          _hover={{ color: "brand.600" }}
+          onClick={() => navigate('/teacher/dashboard')}
+          fontWeight="500"
+        >
+          Dashboard
+        </Text>
+        <Text color="gray.400">/</Text>
+        <Text color="gray.800" fontWeight="600">Course Library</Text>
+      </HStack>
+
+      {/* Header */}
       <Box>
         <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
           Course Library
@@ -127,9 +147,16 @@ export function TeacherCourseLibraryPage() {
         </Card>
       </SimpleGrid>
 
+      {/* Main Content Card */}
       <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-        <CardBody p={8}>
-          <Flex justify="space-between" align="center" mb={6}>
+        <CardBody p={{ base: 4, md: 8 }}>
+          <Flex
+            justify="space-between"
+            align={{ base: 'stretch', md: 'center' }}
+            mb={6}
+            direction={{ base: 'column', md: 'row' }}
+            gap={4}
+          >
             <HStack spacing={3}>
               <Icon as={FiBookOpen} boxSize={6} color="brand.500" />
               <Heading size="md" fontWeight="700">
@@ -139,7 +166,7 @@ export function TeacherCourseLibraryPage() {
                 {totalCourses}
               </Badge>
             </HStack>
-            <HStack spacing={3}>
+            <HStack spacing={3} w={{ base: '100%', md: 'auto' }}>
               <Button
                 variant={isDeleteMode ? 'solid' : 'outline'}
                 colorScheme={isDeleteMode ? 'gray' : 'red'}
@@ -147,6 +174,8 @@ export function TeacherCourseLibraryPage() {
                 fontWeight="600"
                 leftIcon={isDeleteMode ? <FiX /> : <FiTrash2 />}
                 onClick={() => setIsDeleteMode(!isDeleteMode)}
+                flex={{ base: 1, md: 'none' }}
+                size={{ base: 'sm', md: 'md' }}
               >
                 {isDeleteMode ? 'Done' : 'Delete Course'}
               </Button>
@@ -156,6 +185,8 @@ export function TeacherCourseLibraryPage() {
                 fontWeight="600"
                 onClick={() => navigate('/teacher/courses/new')}
                 isDisabled={isDeleteMode}
+                flex={{ base: 1, md: 'none' }}
+                size={{ base: 'sm', md: 'md' }}
               >
                 Create Course
               </Button>
@@ -325,7 +356,7 @@ export function TeacherCourseLibraryPage() {
         isCentered
       >
         <AlertDialogOverlay>
-          <AlertDialogContent borderRadius="xl">
+          <AlertDialogContent borderRadius="xl" mx={4}>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
               Delete Course
             </AlertDialogHeader>
