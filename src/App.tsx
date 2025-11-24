@@ -30,6 +30,7 @@ import { TeacherSessionCreatePage } from "./pages/teacher/TeacherSessionCreatePa
 import { TeacherSessionsPage } from "./pages/teacher/TeacherSessionsPage";
 import { TeacherSessionDashboardPage } from "./pages/teacher/TeacherSessionDashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { AlreadySubmittedPage } from "./pages/public/AlreadySubmittedPage";
 
 function App() {
   return (
@@ -101,14 +102,18 @@ function App() {
         }
       />
       <Route path="scan" element={<ScanPage />} />
-      {/* All other routes - Use AppLayout (top navigation) */}
-      <Route path="/" element={<AppLayout />}>
-        <Route path="join" element={<SessionSharePage />} />
-        <Route path="session/run/:token" element={<SessionRunPage />} />
+              <Route path="session/run/:token" element={<SessionRunPage />} />
+              
         <Route
           path="session/run/:token/result"
           element={<SessionResultPage />}
         />
+        <Route path="/session/run/:token/already-submitted" element={<AlreadySubmittedPage />} />
+        <Route path="join" element={<SessionSharePage />} />
+      {/* All other routes - Use AppLayout (top navigation) */}
+      <Route path="/" element={<AppLayout />}>
+        
+
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

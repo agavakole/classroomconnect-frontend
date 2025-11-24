@@ -29,6 +29,12 @@ import {
   DrawerContent,
   DrawerCloseButton,
   useDisclosure,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  Tooltip,
 } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -135,13 +141,13 @@ export function StudentDashboardPage() {
           <DrawerCloseButton />
           <DrawerHeader borderBottom="1px solid" borderColor="gray.100">
             <HStack spacing={3}>
-              <Icon as={PiGraduationCapBold} boxSize={10} color="brand.400" />
+              <Icon as={PiGraduationCapBold} boxSize={10} color="ink.400" />
               <VStack align="flex-start" spacing={0}>
                 <Text fontWeight="800" fontSize="lg" color="gray.800">
-                  Student Portal
+                  ClassConnect
                 </Text>
                 <Text fontSize="xs" color="gray.500" fontWeight="600">
-                  Learning Hub
+                  Student Portal
                 </Text>
               </VStack>
             </HStack>
@@ -161,7 +167,7 @@ export function StudentDashboardPage() {
                   <Avatar
                     name={profileQuery.data?.full_name}
                     size="md"
-                    bg="brand.300"
+                    bg="ink.300"
                     color="white"
                   />
                   <VStack align="flex-start" spacing={0} flex="1" minW="0">
@@ -226,9 +232,129 @@ export function StudentDashboardPage() {
         </DrawerContent>
       </Drawer>
 
+      {/* Mobile Bottom Navigation Bar */}
+      <Box
+        display={{ base: 'flex', md: 'none' }}
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        bg="white"
+        borderTop="1px solid"
+        borderColor="gray.200"
+        px={2}
+        py={2}
+        zIndex={20}
+        boxShadow="0 -2px 10px rgba(0,0,0,0.05)"
+      >
+        <HStack justify="space-around" w="100%" spacing={0}>
+          {menuItems.map((item) => {
+            const active = currentView === item.id
+            return (
+              <VStack
+                key={item.id}
+                as="button"
+                onClick={() => handleNavigate(item.id)}
+                spacing={0.5}
+                flex={1}
+                py={1}
+                px={2}
+                borderRadius="lg"
+                bg={active ? 'brand.50' : 'transparent'}
+                color={active ? 'brand.600' : 'gray.500'}
+                transition="all 0.2s"
+                _hover={{ color: 'brand.600' }}
+              >
+                <Icon as={item.icon} boxSize={5} />
+                <Text fontSize="2xs" fontWeight={active ? '700' : '600'}>
+                  {item.label}
+                </Text>
+              </VStack>
+            )
+          })}
+        </HStack>
+      </Box>
+
+      {/* Tablet Sidebar - Icons only (md to lg) */}
+      <Box
+        display={{ base: 'none', md: 'flex', lg: 'none' }}
+        position="fixed"
+        left="0"
+        top="0"
+        h="100vh"
+        w="72px"
+        bg="white"
+        borderRight="1px solid"
+        borderColor="gray.200"
+        flexDirection="column"
+        py={4}
+        zIndex="10"
+        boxShadow="sm"
+      >
+        {/* Logo */}
+        <Flex justify="center" mb={4}>
+          <Box
+            w="44px"
+            h="44px"
+            borderRadius="xl"
+            bg="brand.500"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Icon as={PiGraduationCapBold} boxSize={6} color="white" />
+          </Box>
+        </Flex>
+
+        {/* Navigation Icons */}
+        <VStack flex="1" spacing={2} px={3} align="center">
+          {menuItems.map((item) => {
+            const active = currentView === item.id
+            return (
+              <Tooltip key={item.id} label={item.label} placement="right" hasArrow openDelay={200}>
+                <IconButton
+                  aria-label={item.label}
+                  icon={<Icon as={item.icon} boxSize={5} />}
+                  onClick={() => handleNavigate(item.id)}
+                  variant="ghost"
+                  size="lg"
+                  w="44px"
+                  h="44px"
+                  borderRadius="xl"
+                  color={active ? 'brand.600' : 'gray.600'}
+                  bg={active ? 'brand.50' : 'transparent'}
+                  _hover={{
+                    bg: active ? 'brand.50' : 'gray.100',
+                  }}
+                />
+              </Tooltip>
+            )
+          })}
+        </VStack>
+
+        {/* Bottom: Logout */}
+        <VStack spacing={2} px={3} mt="auto">
+          <Tooltip label="Logout" placement="right" hasArrow>
+            <IconButton
+              aria-label="Logout"
+              icon={<Icon as={FiLogOut} boxSize={5} />}
+              variant="ghost"
+              size="lg"
+              w="44px"
+              h="44px"
+              borderRadius="xl"
+              color="red.600"
+              _hover={{ bg: 'red.50', color: 'red.500' }}
+              onClick={handleLogout}
+            />
+          </Tooltip>
+        </VStack>
+      </Box>
+
       {/* Side Navigation - Desktop Only */}
       <Box
         w={isMobile ? "0" : (isSidebarOpen ? "280px" : "0")}
+        h="100vh"
         bg="white"
         borderRight="1px solid"
         borderColor="gray.200"
@@ -236,6 +362,10 @@ export function StudentDashboardPage() {
         overflow="hidden"
         boxShadow="sm"
         display={{ base: "none", lg: "block" }}
+        position="fixed"
+        left="0"
+        top="0"
+        zIndex="10"
       >
         <VStack h="full" spacing={0} align="stretch">
           {/* Logo/Brand */}
@@ -245,10 +375,10 @@ export function StudentDashboardPage() {
                 <Icon as={PiGraduationCapBold} boxSize={10} color="ink.400" />
                 <VStack align="flex-start" spacing={0}>
                   <Text fontWeight="800" fontSize="lg" color="gray.800">
-                    Student Portal
+                    ClassConnect
                   </Text>
                   <Text fontSize="xs" color="gray.500" fontWeight="600">
-                    Learning Hub
+                    Student Portal
                   </Text>
                 </VStack>
               </HStack>
@@ -296,7 +426,25 @@ export function StudentDashboardPage() {
           </Box>
 
           {/* Navigation Menu */}
-          <VStack flex="1" p={4} spacing={2} align="stretch">
+          <VStack 
+            flex="1" 
+            p={4} 
+            spacing={2} 
+            align="stretch"
+            overflowY="auto"
+            css={{
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#CBD5E0',
+                borderRadius: '24px',
+              },
+            }}
+          >
             {menuItems.map((item) => (
               <Button
                 key={item.id}
@@ -337,7 +485,13 @@ export function StudentDashboardPage() {
       </Box>
 
       {/* Main Content Area */}
-      <Flex flex="1" direction="column" overflow="hidden">
+      <Flex 
+        flex="1" 
+        direction="column" 
+        overflow="hidden"
+        ml={{ base: 0, md: '72px', lg: isSidebarOpen ? '280px' : 0 }}
+        transition="margin-left 0.3s"
+      >
         {/* Top Bar */}
         <Box
           bg="white"
@@ -349,8 +503,8 @@ export function StudentDashboardPage() {
         >
           <Flex justify="space-between" align="center">
             <HStack spacing={{ base: 2, md: 4 }}>
-              {/* Show back button if not on home and sidebar is collapsed OR on mobile */}
-              {currentView !== "home" && (isMobile || !isSidebarOpen) ? (
+              {/* Show back button if not on home OR show menu button based on screen size */}
+              {currentView !== "home" ? (
                 <IconButton
                   icon={<Icon as={FiArrowLeft} />}
                   variant="ghost"
@@ -358,22 +512,29 @@ export function StudentDashboardPage() {
                   onClick={() => handleNavigate("home")}
                   borderRadius="lg"
                 />
-              ) : isMobile ? (
-                <IconButton
-                  icon={<Icon as={FiMenu} />}
-                  variant="ghost"
-                  aria-label="Toggle menu"
-                  onClick={onOpen}
-                  borderRadius="lg"
-                />
-              ) : !isSidebarOpen && (
-                <IconButton
-                  icon={<Icon as={FiMenu} />}
-                  variant="ghost"
-                  aria-label="Open sidebar"
-                  onClick={() => setIsSidebarOpen(true)}
-                  borderRadius="lg"
-                />
+              ) : (
+                <>
+                  {/* Mobile: show drawer menu button */}
+                  <IconButton
+                    icon={<Icon as={FiMenu} />}
+                    variant="ghost"
+                    aria-label="Toggle menu"
+                    onClick={onOpen}
+                    borderRadius="lg"
+                    display={{ base: 'flex', md: 'none' }}
+                  />
+                  {/* Desktop: show sidebar toggle when collapsed */}
+                  {!isSidebarOpen && (
+                    <IconButton
+                      icon={<Icon as={FiMenu} />}
+                      variant="ghost"
+                      aria-label="Open sidebar"
+                      onClick={() => setIsSidebarOpen(true)}
+                      borderRadius="lg"
+                      display={{ base: 'none', lg: 'flex' }}
+                    />
+                  )}
+                </>
               )}
               <VStack align="flex-start" spacing={0}>
                 <Text fontWeight="800" fontSize={{ base: "xl", md: "2xl" }} color="gray.800">
@@ -386,24 +547,76 @@ export function StudentDashboardPage() {
                 </Text>
               </VStack>
             </HStack>
+            
+            {/* Right: User Menu */}
             <HStack spacing={3}>
-              <Badge
-                colorScheme="ink"
-                px={{ base: 2, md: 3 }}
-                py={{ base: 1, md: 2 }}
-                borderRadius="lg"
-                fontSize={{ base: "xs", md: "sm" }}
-                fontWeight="700"
-                display={{ base: "none", sm: "flex" }}
-              >
-                {submissionsQuery.data?.submissions.length || 0} Submissions
-              </Badge>
+              <Menu placement="bottom-end">
+                <MenuButton
+                  as={Button}
+                  variant="ghost"
+                  borderRadius="full"
+                  p={0}
+                  h="auto"
+                  _hover={{ transform: 'scale(1.05)' }}
+                  transition="all 0.2s"
+                >
+                  <HStack spacing={2}>
+                    <Avatar
+                      size="sm"
+                      name={profileQuery.data?.full_name}
+                      bg="brand.300"
+                      color="white"
+                    />
+                    <Text
+                      fontSize="sm"
+                      fontWeight="600"
+                      display={{ base: 'none', md: 'block' }}
+                    >
+                      {profileQuery.data?.full_name?.split(" ")[0] || "Student"}
+                    </Text>
+                  </HStack>
+                </MenuButton>
+                <MenuList
+                  borderRadius="xl"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  boxShadow="xl"
+                  py={2}
+                  minW="220px"
+                >
+                  <Box px={4} py={3}>
+                    <Text fontSize="sm" fontWeight="700" color="gray.900">
+                      {profileQuery.data?.full_name || "Student"}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Student Account
+                    </Text>
+                  </Box>
+                  <MenuDivider />
+                  <MenuItem
+                    icon={<Icon as={FiLogOut} />}
+                    color="red.600"
+                    borderRadius="lg"
+                    mx={2}
+                    fontSize="sm"
+                    fontWeight="600"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </MenuItem>
+                </MenuList>
+              </Menu>
             </HStack>
           </Flex>
         </Box>
 
         {/* Content Area */}
-        <Box flex="1" overflow="auto" p={{ base: 4, md: 6 }}>
+        <Box 
+          flex="1" 
+          overflow="auto" 
+          p={{ base: 4, md: 6 }}
+          pb={{ base: '80px', md: 6 }}
+        >
           {currentView === "home" && (
             <Stack spacing={6} maxW="1200px" mx="auto">
               {/* Quick Actions */}
@@ -576,7 +789,7 @@ export function StudentDashboardPage() {
                             <Flex justify="space-between" align="center">
                               <HStack spacing={4}>
                                 <Box
-                                  bg="brand.50"
+                                  bg="purple.50"
                                   p={3}
                                   borderRadius="lg"
                                   border="1px solid"
@@ -585,7 +798,7 @@ export function StudentDashboardPage() {
                                   <Icon
                                     as={FiBookOpen}
                                     boxSize={5}
-                                    color="brand.500"
+                                    color="purple.500"
                                   />
                                 </Box>
                                 <VStack align="flex-start" spacing={1}>
@@ -874,7 +1087,7 @@ export function StudentDashboardPage() {
                         transition="all 0.2s"
                         _hover={{
                           boxShadow: "md",
-                          borderColor: "brand.300",
+                          borderColor: "purple.300",
                         }}
                       >
                         <CardBody p={6}>
@@ -882,16 +1095,16 @@ export function StudentDashboardPage() {
                             <Flex justify="space-between" align="start">
                               <HStack spacing={4}>
                                 <Box
-                                  bg="brand.50"
+                                  bg="purple.50"
                                   p={4}
                                   borderRadius="xl"
                                   border="1px solid"
-                                  borderColor="brand.100"
+                                  borderColor="purple.100"
                                 >
                                   <Icon
                                     as={FiBookOpen}
                                     boxSize={6}
-                                    color="brand.500"
+                                    color="purple.500"
                                   />
                                 </Box>
                                 <VStack align="flex-start" spacing={1}>
@@ -1064,10 +1277,10 @@ export function StudentDashboardPage() {
               {/* Info Card */}
               <Card
                 borderRadius="2xl"
-                bg="linear-gradient(135deg, #a8edea 0%, #d5f4f3 100%)"
+                bg="red.50"
                 boxShadow="sm"
                 border="1px solid"
-                borderColor="teal.200"
+                borderColor="red.200"
               >
                 <CardBody p={6}>
                   <HStack spacing={4} align="start">
@@ -1077,13 +1290,13 @@ export function StudentDashboardPage() {
                       borderRadius="lg"
                       flexShrink={0}
                     >
-                      <Icon as={FiKey} boxSize={6} color="teal.500" />
+                      <Icon as={FiKey} boxSize={6} color="red.500" />
                     </Box>
                     <VStack align="flex-start" spacing={1}>
-                      <Text fontSize="lg" fontWeight="800" color="teal.900">
+                      <Text fontSize="lg" fontWeight="800" color="red.900">
                         Ready to join?
                       </Text>
-                      <Text fontSize="sm" color="teal.700">
+                      <Text fontSize="sm" color="red.700">
                         Ask your teacher for the session code or scan their QR
                         code to get started!
                       </Text>

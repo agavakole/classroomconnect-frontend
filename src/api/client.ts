@@ -41,6 +41,9 @@ function resolveApiBase() {
 
 const API_BASE = resolveApiBase();
 
+// Useful for verifying which API base got baked into the build
+console.log('API_BASE', API_BASE);
+
 type ApiClientOptions = RequestInit & {
 	skipAuth?: boolean;
 };

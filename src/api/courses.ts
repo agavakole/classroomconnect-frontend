@@ -18,7 +18,7 @@ export interface UpdateCoursePayload {
 }
 
 export function listCourses() {
-  return apiClient<Course[]>('/api/courses')
+  return apiClient<Course[]>('/api/courses/')
 }
 
 export function getCourse(courseId: string) {
@@ -26,13 +26,11 @@ export function getCourse(courseId: string) {
 }
 
 export function createCourse(payload: CreateCoursePayload) {
-  return apiClient<Course>('/api/courses', {
+  return apiClient<Course>('/api/courses/', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
-
-
 
 export function deleteCourse(courseId: string) {
   return apiClient<void>(`/api/courses/${courseId}`, {

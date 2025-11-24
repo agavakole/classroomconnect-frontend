@@ -15,13 +15,18 @@ import {
   VStack,
   HStack,
   Icon,
-  Badge,
+  Progress,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from '@chakra-ui/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { FiCheckCircle, FiUser, FiSmile } from 'react-icons/fi'
-import { getJoinSession, submitJoinSession } from '../../api/public'
+import { FiArrowLeft, FiChevronLeft, FiUser, FiLogOut } from 'react-icons/fi'
+import { getJoinSession, submitJoinSession, getJoinSubmissionStatus } from '../../api/public'
 import { ApiError } from '../../api/client'
 import type { PublicJoinResponse } from '../../api/types'
 import { useAuth } from '../../contexts/AuthContext'
@@ -64,6 +69,21 @@ export function SessionRunPage() {
     enabled: Boolean(joinToken),
     retry: false,
   })
+
+  // Check if user already submitted
+  const submissionStatusQuery = useQuery({
+    queryKey: ['submissionStatus', joinToken, guestId],
+    queryFn: () => getJoinSubmissionStatus(joinToken ?? '', guestId),
+    enabled: Boolean(joinToken) && Boolean(sessionQuery.data),
+    retry: false,
+  })
+
+  // Redirect to result page if already submitted
+  useEffect(() => {
+    if (submissionStatusQuery.data?.submitted) {
+      navigate(`/session/run/${joinToken}/already-submitted`, { replace: true })
+    }
+  }, [submissionStatusQuery.data, navigate, joinToken])
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -125,12 +145,9 @@ export function SessionRunPage() {
   const totalSteps = (needsNameInput ? 1 : 0) + surveyStepCount + 1
   
   const isNameStep = needsNameInput && currentStep === 0
-  
   const surveyQuestionIndex = needsNameInput ? currentStep - 1 : currentStep
-  
   const isSurveyStep = showSurvey && surveyQuestionIndex >= 0 && surveyQuestionIndex < surveyStepCount
   const currentQuestion = isSurveyStep ? sessionData?.survey?.questions[surveyQuestionIndex] : null
-  
   const isMoodStep = currentStep === totalSteps - 1
 
   const handleNext = () => {
@@ -139,9 +156,26 @@ export function SessionRunPage() {
     }
   }
 
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1)
+    }
+  }
+
+  const handleAnswerSelect = (questionId: string, optionId: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: optionId }))
+    setTimeout(() => {
+      handleNext()
+    }, 300)
+  }
+
   const handleSubmit = () => {
     if (!sessionData) return
     mutation.mutate()
+  }
+
+  const handleBack = () => {
+    navigate(-1)
   }
 
   const errorMessage =
@@ -151,26 +185,12 @@ export function SessionRunPage() {
         ? 'Unable to submit your response.'
         : null
 
-  if (sessionQuery.isLoading) {
+  if (sessionQuery.isLoading || submissionStatusQuery.isLoading) {
     return (
-      <Box minH="100vh" bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
-        <VStack spacing={6}>
-          <Box
-            w="80px"
-            h="80px"
-            bg="white"
-            borderRadius="2xl"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            boxShadow="2xl"
-          >
-            <Spinner size="xl" color="purple.500" thickness="4px" />
-          </Box>
-          <VStack spacing={2}>
-            <Text color="white" fontWeight="800" fontSize="2xl">Loading session...</Text>
-            <Text color="whiteAlpha.800" fontSize="lg">Hang tight! 🚀</Text>
-          </VStack>
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <VStack spacing={4}>
+          <Spinner size="xl" color="brand.500" thickness="4px" />
+          <Text fontWeight="600" fontSize="lg" color="gray.700">Loading session...</Text>
         </VStack>
       </Box>
     )
@@ -182,23 +202,22 @@ export function SessionRunPage() {
         ? sessionQuery.error.message
         : 'We could not find this session or it is no longer available.'
     return (
-      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" p={4}>
-        <Card maxW="md" borderRadius="2xl" boxShadow="xl">
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <Card maxW="md" borderRadius="2xl" boxShadow="lg">
           <CardBody p={8}>
             <VStack spacing={4}>
-              <Box fontSize="5xl">😕</Box>
-              <Text fontSize="xl" fontWeight="800" color="gray.800" textAlign="center">
-                Oops! Session Not Found
-              </Text>
-              <Text color="gray.600" textAlign="center">
+              <Text fontSize="4xl">😕</Text>
+              <Heading size="md" color="gray.800" textAlign="center">
+                Session Not Found
+              </Heading>
+              <Text color="gray.600" textAlign="center" fontSize="sm">
                 {message}
               </Text>
               <Button
-                colorScheme="purple"
-                size="lg"
-                borderRadius="xl"
+                colorScheme="brand"
+                size="md"
                 onClick={() => navigate('/dashboard')}
-                mt={4}
+                mt={2}
               >
                 Back to Dashboard
               </Button>
@@ -211,23 +230,22 @@ export function SessionRunPage() {
 
   if (sessionData.status !== 'OPEN') {
     return (
-      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" p={4}>
-        <Card maxW="md" borderRadius="2xl" boxShadow="xl">
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <Card maxW="md" borderRadius="2xl" boxShadow="lg">
           <CardBody p={8}>
             <VStack spacing={4}>
-              <Box fontSize="5xl">🔒</Box>
-              <Text fontSize="xl" fontWeight="800" color="gray.800" textAlign="center">
+              <Text fontSize="4xl">🔒</Text>
+              <Heading size="md" color="gray.800" textAlign="center">
                 Session Closed
-              </Text>
-              <Text color="gray.600" textAlign="center">
+              </Heading>
+              <Text color="gray.600" textAlign="center" fontSize="sm">
                 This session is no longer accepting responses.
               </Text>
               <Button
-                colorScheme="purple"
-                size="lg"
-                borderRadius="xl"
+                colorScheme="brand"
+                size="md"
                 onClick={() => navigate('/dashboard')}
-                mt={4}
+                mt={2}
               >
                 Back to Dashboard
               </Button>
@@ -239,257 +257,273 @@ export function SessionRunPage() {
   }
 
   const progress = ((currentStep + 1) / totalSteps) * 100
-  const displayName = studentName || auth.fullName || 'Guest'
+  const displayName = studentName || auth.fullName || 'Student'
 
-  // Fun step colors
-  const stepColors = [
-    'linear-gradient(135deg, #a8c0ff 0%, #c8b6ff 100%)',
-    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  ]
-  
-  const currentGradient = stepColors[currentStep % stepColors.length]
+  // Mood emoji mapping
+  const moodEmojis: Record<string, string> = {
+    'Happy': '😊',
+    'Excited': '🤩',
+    'Sad': '😢',
+    'Tired': '😴',
+    'Confused': '😕',
+    'Angry': '😠',
+    'Calm': '😌',
+    'Energetic': '⚡',
+    'Nervous': '😰',
+    'Good': '👍',
+    'Great': '🌟',
+    'Okay': '👌',
+    'Not Great': '😐',
+  }
 
   return (
-    <Box minH="100vh" bg="gray.50" py={{ base: 6, md: 12 }} px={{ base: 4, md: 6 }}>
-      <Box maxW="3xl" mx="auto">
-        <Stack spacing={8}>
-          {/* Fun Header Card */}
-          <Card
-            borderRadius="3xl"
-            bg={currentGradient}
-            boxShadow="2xl"
-            border="none"
-            overflow="hidden"
-            position="relative"
-          >
-            <Box
-              position="absolute"
-              top="-50px"
-              right="-50px"
-              w="200px"
-              h="200px"
-              bg="whiteAlpha.200"
-              borderRadius="full"
+    <Box 
+      minH="100vh" 
+      bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" 
+      py={{ base: 4, md: 12 }} 
+      px={{ base: 4, md: 6 }}
+      position="relative"
+    >
+      {/* Header with Back and Logout */}
+      <Box 
+        maxW="2xl" 
+        mx="auto" 
+        mb={{ base: 4, md: 6 }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        {/* Back button */}
+        <Button
+          onClick={handleBack}
+          leftIcon={<Icon as={FiArrowLeft} />}
+          variant="ghost"
+          colorScheme="mint"
+          borderRadius="lg"
+          fontWeight="medium"
+          size={{ base: "sm", md: "md" }}
+          _hover={{ bg: 'whiteAlpha.800' }}
+        >
+          Back
+        </Button>
+
+        {/* User menu */}
+        {authToken && (
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              icon={<Icon as={FiUser} boxSize={{ base: 4, md: 5 }} />}
+              variant="ghost"
+              colorScheme="mint"
+              borderRadius="lg"
+              size={{ base: "sm", md: "md" }}
+              _hover={{ bg: 'whiteAlpha.800' }}
             />
-            <CardBody p={{ base: 6, md: 8 }} position="relative">
-              <VStack spacing={4}>
-                <HStack spacing={3}>
-                  <Box fontSize="3xl">📚</Box>
-                  <Heading size={{ base: "lg", md: "xl" }} color="white" fontWeight="900">
-                    {sessionData.course_title}
-                  </Heading>
+            <MenuList>
+              <MenuItem 
+                icon={<Icon as={FiLogOut} />} 
+                onClick={() => {
+                  auth.logout()
+                  navigate('/')
+                }}
+              >
+                Logout
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        )}
+      </Box>
+
+      <Box maxW="2xl" mx="auto">
+        <Stack spacing={8}>
+
+          {/* Header Card */}
+          <Card 
+            borderRadius="2xl" 
+            boxShadow="md" 
+            bg="white"
+            border="1px solid"
+            borderColor="gray.100"
+          >
+            <CardBody p={6}>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between" align="flex-start">
+                  <VStack align="flex-start" spacing={1} flex="1">
+                    <HStack spacing={2}>
+                      <Box 
+                        w="8px" 
+                        h="8px" 
+                        borderRadius="full" 
+                        bg="green.400"
+                        boxShadow="0 0 0 3px rgba(72, 187, 120, 0.2)"
+                      />
+                      <Text fontSize="xs" fontWeight="700" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                        {sessionData.course_title}
+                      </Text>
+                    </HStack>
+                    {!isNameStep && (
+                      <Text fontSize="lg" fontWeight="700" color="gray.800">
+                        Welcome, {displayName} 👋
+                      </Text>
+                    )}
+                  </VStack>
+                  <Box 
+                    px={3} 
+                    py={1} 
+                    bg="brand.50" 
+                    borderRadius="full"
+                  >
+                    <Text fontSize="xs" fontWeight="700" color="brand.600">
+                      {currentStep + 1} of {totalSteps}
+                    </Text>
+                  </Box>
                 </HStack>
                 
-                {!isNameStep && (
-                  <HStack spacing={2}>
-                    <Text color="white" fontWeight="700" fontSize={{ base: "md", md: "lg" }}>
-                      Hey there,
-                    </Text>
-                    <Badge
-                      bg="whiteAlpha.300"
-                      color="white"
-                      px={3}
-                      py={1}
-                      borderRadius="full"
-                      fontWeight="800"
-                      fontSize={{ base: "sm", md: "md" }}
-                    >
-                      {displayName}! 👋
-                    </Badge>
-                  </HStack>
-                )}
-                
-                <VStack spacing={3} w="full" mt={2}>
-                  <HStack justify="space-between" w="full">
-                    <Text color="whiteAlpha.900" fontWeight="700" fontSize="sm">
-                      Step {currentStep + 1} of {totalSteps}
-                    </Text>
-                    <Text color="whiteAlpha.900" fontWeight="700" fontSize="sm">
-                      {Math.round(progress)}%
-                    </Text>
-                  </HStack>
-                  <Box w="full" h="4" bg="whiteAlpha.300" borderRadius="full" overflow="hidden">
-                    <Box
-                      h="full"
-                      bg="white"
-                      w={`${progress}%`}
-                      transition="all 0.5s ease"
-                      borderRadius="full"
-                      boxShadow="0 0 20px rgba(255,255,255,0.5)"
-                    />
-                  </Box>
-                </VStack>
+                <Box>
+                  <Progress
+                    value={progress}
+                    size="sm"
+                    colorScheme="brand"
+                    borderRadius="full"
+                    bg="gray.100"
+                    sx={{
+                      '& > div': {
+                        transition: 'width 0.4s ease',
+                      }
+                    }}
+                  />
+                </Box>
               </VStack>
             </CardBody>
           </Card>
 
           {/* Main Content Card */}
-          <Card
-            borderRadius="3xl"
-            boxShadow="2xl"
-            border="3px solid"
-            borderColor="gray.200"
+          <Card 
+            borderRadius="2xl" 
+            boxShadow="lg" 
             bg="white"
-            overflow="hidden"
+            border="1px solid"
+            borderColor="gray.100"
           >
-            <CardBody p={{ base: 6, md: 10 }}>
+            <CardBody p={{ base: 8, md: 10 }}>
               
               {/* Name Input Step */}
               {isNameStep && (
-                <VStack spacing={6} align="stretch">
-                  <VStack spacing={3}>
-                    <Box fontSize="5xl">👋</Box>
-                    <Heading size="lg" fontWeight="900" color="gray.800" textAlign="center">
-                      Let's get started!
+                <VStack spacing={7} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Heading size="lg" fontWeight="800" color="gray.900">
+                      What's your name?
                     </Heading>
-                    <Text color="gray.600" textAlign="center" fontSize="lg">
-                      What's your name? Your teacher will see this.
+                    <Text color="gray.600" fontSize="md">
+                      Your teacher will see this name
                     </Text>
                   </VStack>
                   
-                  <Box
-                    p={6}
-                    bg="purple.50"
-                    borderRadius="2xl"
-                    border="2px solid"
-                    borderColor="purple.200"
-                  >
-                    <VStack spacing={4}>
-                      <HStack spacing={3} w="full">
-                        <Box
-                          bg="purple.500"
-                          p={3}
-                          borderRadius="xl"
-                          color="white"
-                        >
-                          <Icon as={FiUser} boxSize={6} />
-                        </Box>
-                        <VStack align="flex-start" spacing={0} flex="1">
-                          <Text fontSize="xs" fontWeight="700" color="purple.700" textTransform="uppercase">
-                            Your Name
-                          </Text>
-                        </VStack>
-                      </HStack>
-                      <Input
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                        placeholder="Type your full name here..."
-                        size="lg"
-                        borderRadius="xl"
-                        border="3px solid"
-                        borderColor="purple.300"
-                        bg="white"
-                        fontSize="xl"
-                        fontWeight="700"
-                        h="70px"
-                        autoFocus
-                        _hover={{ borderColor: 'purple.400' }}
-                        _focus={{
-                          borderColor: 'purple.500',
-                          boxShadow: '0 0 0 3px rgba(159, 122, 234, 0.2)',
-                        }}
-                      />
-                    </VStack>
-                  </Box>
+                  <Input
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="Enter your full name"
+                    size="lg"
+                    fontSize="md"
+                    h="56px"
+                    autoFocus
+                    borderRadius="xl"
+                    _focus={{
+                      borderColor: 'brand.500',
+                      boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)',
+                    }}
+                  />
                   
                   <Button
                     size="lg"
-                    h="70px"
-                    bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    color="white"
+                    h="56px"
+                    colorScheme="brand"
                     onClick={handleNext}
                     isDisabled={!studentName.trim()}
-                    borderRadius="2xl"
-                    fontSize="xl"
-                    fontWeight="800"
-                    boxShadow="xl"
+                    fontWeight="700"
+                    fontSize="md"
+                    borderRadius="xl"
+                    boxShadow="md"
                     _hover={{
                       transform: 'translateY(-2px)',
-                      boxShadow: '2xl',
+                      boxShadow: 'xl',
                     }}
                     _active={{
-                      transform: 'scale(0.98)',
+                      transform: 'translateY(0)',
                     }}
                     transition="all 0.2s"
-                    mt={4}
                   >
-                    Let's Go! 🚀
+                    Continue
                   </Button>
                 </VStack>
               )}
               
               {/* Survey Question Step */}
               {currentQuestion && (
-                <VStack spacing={6} align="stretch">
-                  <VStack spacing={3}>
-                    <Badge
-                      colorScheme="purple"
-                      fontSize="md"
-                      px={4}
-                      py={2}
+                <VStack spacing={8} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Box 
+                      px={3} 
+                      py={1} 
+                      bg="brand.50" 
                       borderRadius="full"
-                      fontWeight="800"
+                      mb={1}
                     >
-                      Question {surveyQuestionIndex + 1}
-                    </Badge>
-                    <Heading
-                      size={{ base: "md", md: "lg" }}
-                      fontWeight="900"
-                      color="gray.800"
-                      textAlign="center"
-                    >
+                      <Text fontSize="xs" fontWeight="700" color="brand.600" textTransform="uppercase">
+                        Question {surveyQuestionIndex + 1} of {surveyStepCount}
+                      </Text>
+                    </Box>
+                    <Heading size="lg" fontWeight="800" color="gray.900" lineHeight="shorter">
                       {currentQuestion.text}
                     </Heading>
                   </VStack>
                   
-                  <Stack spacing={4} mt={4}>
-                    {currentQuestion.options.map((option, index) => {
+                  <Stack spacing={4}>
+                    {currentQuestion.options.map((option) => {
                       const isSelected = answers[currentQuestion.question_id] === option.option_id
-                      const optionColors = [
-                        { bg: 'purple.50', border: 'purple.400', text: 'purple.900', icon: '🟣' },
-                        { bg: 'blue.50', border: 'blue.400', text: 'blue.900', icon: '🔵' },
-                        { bg: 'pink.50', border: 'pink.400', text: 'pink.900', icon: '🌸' },
-                        { bg: 'green.50', border: 'green.400', text: 'green.900', icon: '🟢' },
-                      ]
-                      const colors = optionColors[index % optionColors.length]
                       
                       return (
                         <Box
                           key={option.option_id}
                           as="button"
-                          onClick={() => setAnswers(prev => ({ ...prev, [currentQuestion.question_id]: option.option_id }))}
-                          p={{ base: 5, md: 6 }}
-                          borderRadius="2xl"
-                          border="3px solid"
-                          borderColor={isSelected ? colors.border : 'gray.200'}
-                          bg={isSelected ? colors.bg : 'white'}
+                          onClick={() => handleAnswerSelect(currentQuestion.question_id, option.option_id)}
+                          p={5}
+                          borderRadius="xl"
+                          border="2px solid"
+                          borderColor={isSelected ? 'brand.500' : 'gray.200'}
+                          bg={isSelected ? 'brand.50' : 'white'}
+                          boxShadow={isSelected ? 'md' : 'sm'}
                           _hover={{
-                            borderColor: colors.border,
-                            bg: colors.bg,
+                            borderColor: isSelected ? 'brand.600' : 'brand.300',
                             transform: 'translateY(-2px)',
                             boxShadow: 'lg',
                           }}
-                          transition="all 0.2s"
+                          transition="all 0.2s ease-in-out"
                           textAlign="left"
                           w="full"
-                          position="relative"
-                          boxShadow={isSelected ? 'lg' : 'sm'}
                         >
                           <HStack spacing={4}>
                             <Box
-                              fontSize={{ base: "2xl", md: "3xl" }}
-                              opacity={isSelected ? 1 : 0.5}
+                              w="20px"
+                              h="20px"
+                              borderRadius="full"
+                              border="2px solid"
+                              borderColor={isSelected ? 'brand.500' : 'gray.300'}
+                              bg={isSelected ? 'brand.500' : 'white'}
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              flexShrink={0}
                               transition="all 0.2s"
                             >
-                              {isSelected ? '✅' : colors.icon}
+                              {isSelected && (
+                                <Box w="10px" h="10px" borderRadius="full" bg="white" />
+                              )}
                             </Box>
                             <Text
-                              fontWeight={isSelected ? '800' : '600'}
-                              fontSize={{ base: "md", md: "lg" }}
-                              color={isSelected ? colors.text : 'gray.700'}
+                              fontWeight={isSelected ? '600' : '500'}
+                              fontSize="md"
+                              color={isSelected ? 'brand.700' : 'gray.700'}
                               flex="1"
                             >
                               {option.text}
@@ -499,110 +533,73 @@ export function SessionRunPage() {
                       )
                     })}
                   </Stack>
-
-                  <Button
-                    size="lg"
-                    h="70px"
-                    bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    color="white"
-                    onClick={handleNext}
-                    isDisabled={!answers[currentQuestion.question_id]}
-                    borderRadius="2xl"
-                    fontSize="xl"
-                    fontWeight="800"
-                    boxShadow="xl"
-                    _hover={{
-                      transform: 'translateY(-2px)',
-                      boxShadow: '2xl',
-                    }}
-                    _active={{
-                      transform: 'scale(0.98)',
-                    }}
-                    transition="all 0.2s"
-                    mt={6}
-                  >
-                    Next Question →
-                  </Button>
                 </VStack>
               )}
 
               {/* Mood Check Step */}
               {isMoodStep && (
-                <VStack spacing={6} align="stretch">
-                  <VStack spacing={3}>
-                    <Box fontSize="5xl">😊</Box>
-                    <Heading
-                      size={{ base: "md", md: "lg" }}
-                      fontWeight="900"
-                      color="gray.800"
-                      textAlign="center"
+                <VStack spacing={8} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Box 
+                      px={3} 
+                      py={1} 
+                      bg="purple.50" 
+                      borderRadius="full"
+                      mb={1}
                     >
-                      Almost done!
-                    </Heading>
-                    <Text
-                      fontSize={{ base: "lg", md: "xl" }}
-                      color="gray.600"
-                      textAlign="center"
-                      fontWeight="600"
-                    >
+                      <Text fontSize="xs" fontWeight="700" color="purple.600" textTransform="uppercase">
+                        Final Step
+                      </Text>
+                    </Box>
+                    <Heading size="lg" fontWeight="800" color="gray.900">
                       {sessionData.mood_check_schema.prompt}
+                    </Heading>
+                    <Text color="gray.600" fontSize="md">
+                      Select the option that best describes how you're feeling right now
                     </Text>
                   </VStack>
 
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} mt={4}>
-                    {sessionData.mood_check_schema.options.map((option, index) => {
+                  <SimpleGrid columns={2} spacing={4}>
+                    {sessionData.mood_check_schema.options.map((option) => {
                       const isSelected = mood === option
-                      
-                      // Fun emoji mapping
-                      const moodEmojis: Record<string, string> = {
-                        'Happy': '😊',
-                        'Excited': '🤩',
-                        'Sad': '😢',
-                        'Tired': '😴',
-                        'Confused': '😕',
-                        'Angry': '😠',
-                        'Calm': '😌',
-                        'Energetic': '⚡',
-                        'Nervous': '😰',
-                        'Good': '👍',
-                        'Great': '🌟',
-                        'Okay': '👌',
-                        'Not Great': '😐',
-                      }
-                      
                       const emoji = moodEmojis[option] || '😊'
-                      
-                      const gradients = [
-                        'linear-gradient(135deg, #a8c0ff 0%, #c8b6ff 100%)',
-                        'linear-gradient(135deg, #ffd3a5 0%, #fff0e1 100%)',
-                        'linear-gradient(135deg, #a8edea 0%, #d5f4f3 100%)',
-                        'linear-gradient(135deg, #fbc2eb 0%, #ffeaa7 100%)',
-                      ]
                       
                       return (
                         <Box
                           key={option}
                           as="button"
                           onClick={() => setMood(option)}
-                          p={8}
-                          borderRadius="2xl"
-                          border="3px solid"
-                          borderColor={isSelected ? 'purple.400' : 'gray.200'}
-                          bg={isSelected ? gradients[index % gradients.length] : 'white'}
+                          p={6}
+                          borderRadius="xl"
+                          border="2px solid"
+                          borderColor={isSelected ? 'brand.500' : 'gray.200'}
+                          bg={isSelected ? 'brand.50' : 'white'}
+                          boxShadow={isSelected ? 'lg' : 'sm'}
                           _hover={{
-                            transform: 'translateY(-4px)',
-                            boxShadow: 'xl',
-                            borderColor: 'purple.400',
+                            borderColor: isSelected ? 'brand.600' : 'brand.300',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'lg',
                           }}
-                          transition="all 0.2s"
-                          boxShadow={isSelected ? 'xl' : 'md'}
+                          transition="all 0.2s ease-in-out"
+                          position="relative"
+                          overflow="hidden"
+                          _before={{
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            bg: isSelected ? 'brand.500' : 'transparent',
+                            transition: 'all 0.2s',
+                          }}
                         >
                           <VStack spacing={3}>
-                            <Text fontSize="5xl">{emoji}</Text>
+                            <Text fontSize="3xl">{emoji}</Text>
                             <Text
-                              fontWeight="900"
-                              fontSize="xl"
-                              color={isSelected ? 'purple.900' : 'gray.700'}
+                              fontWeight={isSelected ? '700' : '600'}
+                              fontSize="md"
+                              color={isSelected ? 'brand.700' : 'gray.700'}
                             >
                               {option}
                             </Text>
@@ -613,16 +610,13 @@ export function SessionRunPage() {
                   </SimpleGrid>
 
                   {errorMessage && (
-                    <Alert
-                      status="error"
-                      borderRadius="2xl"
-                      bg="red.50"
-                      border="3px solid"
-                      borderColor="red.200"
-                      p={5}
+                    <Alert 
+                      status="error" 
+                      borderRadius="xl"
+                      boxShadow="sm"
                     >
-                      <Text fontSize="2xl" mr={3}>😕</Text>
-                      <AlertDescription color="red.700" fontWeight="700">
+                      <AlertIcon />
+                      <AlertDescription fontSize="sm" fontWeight="500">
                         {errorMessage}
                       </AlertDescription>
                     </Alert>
@@ -630,29 +624,26 @@ export function SessionRunPage() {
 
                   <Button
                     size="lg"
-                    h="70px"
-                    bg="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
-                    color="white"
+                    colorScheme="brand"
                     onClick={handleSubmit}
                     isDisabled={!mood}
                     isLoading={mutation.isPending}
                     loadingText="Submitting..."
-                    borderRadius="2xl"
-                    fontSize="xl"
-                    fontWeight="800"
-                    boxShadow="xl"
+                    fontWeight="700"
+                    fontSize="md"
+                    h="56px"
+                    borderRadius="xl"
+                    boxShadow="md"
                     _hover={{
                       transform: 'translateY(-2px)',
-                      boxShadow: '2xl',
+                      boxShadow: 'xl',
                     }}
                     _active={{
-                      transform: 'scale(0.98)',
+                      transform: 'translateY(0)',
                     }}
                     transition="all 0.2s"
-                    mt={6}
-                    leftIcon={<Icon as={FiCheckCircle} boxSize={6} />}
                   >
-                    Submit! 🎉
+                    Submit Check-in
                   </Button>
                 </VStack>
               )}
@@ -660,13 +651,22 @@ export function SessionRunPage() {
             </CardBody>
           </Card>
 
-          {/* Fun Footer */}
-          <HStack justify="center" spacing={2} opacity={0.6}>
-            <Text color="gray.500" fontSize="sm" fontWeight="600">
-              You're doing great! Keep going! 
-            </Text>
-            <Text fontSize="lg">🌟</Text>
-          </HStack>
+          {/* Previous Button */}
+          {currentStep > 0 && (
+            <HStack justify="center">
+              <Button
+                leftIcon={<Icon as={FiChevronLeft} />}
+                variant="ghost"
+                size="sm"
+                onClick={handlePrevious}
+                fontWeight="600"
+                color="gray.600"
+                _hover={{ bg: 'gray.100' }}
+              >
+                Previous
+              </Button>
+            </HStack>
+          )}
         </Stack>
       </Box>
     </Box>

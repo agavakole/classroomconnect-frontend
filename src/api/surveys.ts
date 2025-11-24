@@ -18,11 +18,11 @@ export interface CreateSurveyPayload {
 }
 
 export function listSurveys() {
-  return apiClient<SurveyTemplate[]>('/api/surveys')
+  return apiClient<SurveyTemplate[]>('/api/surveys/')
 }
 
 export function createSurvey(payload: CreateSurveyPayload) {
-  return apiClient<SurveyTemplate>('/api/surveys', {
+  return apiClient<SurveyTemplate>('/api/surveys/', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
