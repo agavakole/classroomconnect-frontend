@@ -47,9 +47,14 @@ function extractJoinToken(rawValue: string) {
 
 export function ScanPage() {
   const navigate = useNavigate()
-  const isMobileExperience = useBreakpointValue({ base: true, md: false })
+  const prefersMobileLayout = useBreakpointValue({ base: true, lg: false })
   const [scannedToken, setScannedToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const isTouchDevice =
+    typeof navigator !== 'undefined' &&
+    (navigator.maxTouchPoints > 1 ||
+      (typeof window !== 'undefined' && 'ontouchstart' in window))
+  const isMobileExperience = Boolean(prefersMobileLayout || isTouchDevice)
 
   const cardBg = useColorModeValue('white', 'gray.800')
 

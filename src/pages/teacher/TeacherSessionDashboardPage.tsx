@@ -13,21 +13,19 @@ import {
   Text,
   useToast,
   HStack,
+  Select,
   VStack,
   Icon,
   SimpleGrid,
+  GridItem,
   Flex,
   Avatar,
   Divider,
   IconButton,
   Tooltip,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
 } from '@chakra-ui/react'
-import { ChevronRightIcon } from '@chakra-ui/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   FiUsers,
@@ -39,6 +37,8 @@ import {
   FiTrendingUp,
   FiExternalLink,
   FiLink,
+  FiPieChart,
+  FiBarChart2,
 } from 'react-icons/fi'
 import {
   closeSession,
@@ -175,6 +175,69 @@ export function TeacherSessionDashboardPage() {
     window.open(sessionMeta.qr_url, '_blank', 'noopener,noreferrer')
   }
 
+  const dashboard = sessionQuery.data
+  const participants = dashboard?.participants ?? []
+  const moodEntries = useMemo(
+    () => Object.entries(dashboard?.mood_summary ?? {}),
+    [dashboard?.mood_summary]
+  )
+  const totalMoodResponses = useMemo(
+    () => moodEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
+    [moodEntries]
+  )
+
+  const surveyEntries = useMemo(() => {
+    const counts: Record<string, number> = {}
+    participants.forEach((participant) => {
+      const label = participant.learning_style ?? 'Not set'
+      counts[label] = (counts[label] ?? 0) + 1
+    })
+    return Object.entries(counts)
+  }, [participants])
+
+  const totalSurveyResponses = useMemo(
+    () => surveyEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
+    [surveyEntries]
+  )
+
+  const moodData = useMemo(() => {
+    return moodEntries.map(([name, value]) => ({
+      name: name.replace(/_/g, ' '),
+      value: Number(value) || 0,
+    }))
+  }, [moodEntries])
+
+  const surveyData = useMemo(() => {
+    return surveyEntries.map(([name, value]) => ({
+      name: name.replace(/_/g, ' '),
+      value: Number(value) || 0,
+    }))
+  }, [surveyEntries])
+
+  const MOOD_COLORS = ['#00C49F', '#FFBB28', '#FF8042', '#0088FE', '#8884d8']
+  const SURVEY_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE']
+
+  const [moodFilter, setMoodFilter] = useState<string>('all')
+  const [surveyFilter, setSurveyFilter] = useState<string>('all')
+
+  const [moodChartType, setMoodChartType] = useState<'pie' | 'bar'>('pie')
+  const [surveyChartType, setSurveyChartType] = useState<'pie' | 'bar'>('bar')
+
+  const filteredParticipants = useMemo(() => {
+    return participants.filter((participant) => {
+      const matchesMood = moodFilter === 'all' || participant.mood === moodFilter
+      const surveyValue = participant.learning_style ?? 'Not set'
+      const matchesSurvey = surveyFilter === 'all' || surveyValue === surveyFilter
+      return matchesMood && matchesSurvey
+    })
+  }, [participants, moodFilter, surveyFilter])
+
+  const moodOptions = useMemo(() => moodEntries.map(([mood]) => mood), [moodEntries])
+  const surveyOptions = useMemo(
+    () => surveyEntries.map(([style]) => style),
+    [surveyEntries]
+  )
+
   if (sessionQuery.isLoading) {
     return (
       <Box textAlign="center" py={12}>
@@ -185,7 +248,7 @@ export function TeacherSessionDashboardPage() {
     )
   }
 
-  if (sessionQuery.isError || !sessionQuery.data) {
+  if (sessionQuery.isError || !dashboard) {
     return (
       <Alert
         status="error"
@@ -202,9 +265,7 @@ export function TeacherSessionDashboardPage() {
     )
   }
 
-  const dashboard = sessionQuery.data
-  const totalParticipants = dashboard.participants.length
-  const moodEntries = Object.entries(dashboard.mood_summary)
+  const totalParticipants = participants.length
 
   return (
     <Stack spacing={8}>
@@ -304,282 +365,538 @@ export function TeacherSessionDashboardPage() {
         </Flex>
       </Box>
 
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-        {/* Participants Count */}
-        <Card
-           borderRadius="xl"
-          border="2px solid"
-          borderColor="blue.100"
-          bg="blue.50"
-        >
-          <CardBody p={6}>
-            <HStack spacing={4}>
-              <Box bg="whiteAlpha.300" p={3} borderRadius="xl">
-                <Icon as={FiUsers} boxSize={6} />
-              </Box>
-              <VStack align="flex-start" spacing={0}>
-                <Text fontSize="sm" fontWeight="600" opacity={0.9}>
-                  Participants
-                </Text>
-                <Text fontSize="3xl" fontWeight="800">
-                  {totalParticipants}
-                </Text>
-              </VStack>
-            </HStack>
-          </CardBody>
-        </Card>
-
-        {/* Survey Status */}
-        
-        {/* Session Time */}
-        <Card
-           borderRadius="xl"
-          border="2px solid"
-          borderColor="red.100"
-          bg="red.50"
-        >
-          <CardBody p={6}>
-            <HStack spacing={4}>
-              <Box bg="whiteAlpha.300" p={3} borderRadius="xl">
-                <Icon as={FiClock} boxSize={6} />
-              </Box>
-              <VStack align="flex-start" spacing={0}>
-                <Text fontSize="sm" fontWeight="600" opacity={0.9}>
-                  Started
-                </Text>
-                <Text fontSize="md" fontWeight="700">
-                  {sessionMeta
-                    ? new Date(sessionMeta.started_at).toLocaleTimeString()
-                    : 'N/A'}
-                </Text>
-              </VStack>
-            </HStack>
-          </CardBody>
-        </Card>
-      </SimpleGrid>
-
-      {/* QR Code & Join Info */}
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-        {/* QR Code Card */}
-        {sessionMeta?.qr_url && (
-          <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-            <CardBody p={8}>
-              <VStack spacing={6}>
-                <VStack spacing={2}>
-                  <Icon as={FiTrendingUp} boxSize={8} color="brand.500" />
-                  <Heading size="md" fontWeight="700">
-                    Join Session
-                  </Heading>
-                  <Text color="gray.600" textAlign="center">
-                    Launch a standalone join screen with the QR code for your students
-                  </Text>
-                </VStack>
-
-                <Button
-                  leftIcon={<Icon as={FiExternalLink} />}
-                  colorScheme="brand"
-                  size="lg"
-                  borderRadius="xl"
-                  fontWeight="700"
-                  onClick={handleOpenShareScreen}
-                  w="full"
-                >
-                  Open Join Screen
-                </Button>
-
-                <VStack spacing={4} w="full">
-                  <VStack spacing={2} w="full">
-                    <HStack w="full" justify="center" spacing={2}>
-                      <Badge
-                        fontSize="lg"
-                        px={4}
-                        py={2}
-                        borderRadius="xl"
-                        colorScheme="brand"
-                        fontWeight="800"
-                        fontFamily="mono"
-                        textTransform="none"
-                      >
-                        {sessionMeta.join_token}
-                      </Badge>
-                      <Tooltip label="Copy token">
-                        <IconButton
-                          aria-label="Copy token"
-                          icon={<Icon as={FiCopy} />}
-                          onClick={handleCopyToken}
-                          colorScheme="brand"
-                          variant="ghost"
-                          size="lg"
-                        />
-                      </Tooltip>
-                    </HStack>
-                    <Text fontSize="sm" color="gray.500">
-                      Or share the join token above
+      {/* Join Session & Stats Grid */}
+      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
+        {/* Join Session (Left, larger) */}
+        <GridItem colSpan={{ base: 1, lg: 2 }}>
+          {sessionMeta?.qr_url && (
+            <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl" h="full">
+              <CardBody p={8}>
+                <VStack spacing={6} h="full" justify="center">
+                  <VStack spacing={2}>
+                    <Icon as={FiTrendingUp} boxSize={8} color="brand.500" />
+                    <Heading size="md" fontWeight="700">
+                      Join Session
+                    </Heading>
+                    <Text color="gray.600" textAlign="center">
+                      Launch a standalone join screen with the QR code for your students
                     </Text>
                   </VStack>
 
-                  <Box
-                    w="full"
-                    p={4}
+                  <Button
+                    leftIcon={<Icon as={FiExternalLink} />}
+                    colorScheme="brand"
+                    size="lg"
                     borderRadius="xl"
-                    border="2px solid"
-                    borderColor="gray.100"
-                    bg="gray.50"
+                    fontWeight="700"
+                    onClick={handleOpenShareScreen}
+                    w="full"
+                    maxW="md"
                   >
-                    <VStack align="stretch" spacing={3}>
-                      <Text fontSize="sm" fontWeight="700" color="gray.600">
-                        Join Link
-                      </Text>
-                      <Button
-                        leftIcon={<Icon as={FiLink} />}
-                        variant="outline"
-                        colorScheme="brand"
-                        borderRadius="xl"
-                        fontWeight="600"
-                        onClick={handleCopyJoinLink}
-                        isDisabled={!joinUrl}
-                      >
-                        Copy Join Link
-                      </Button>
-                    </VStack>
-                  </Box>
-                </VStack>
-              </VStack>
-            </CardBody>
-          </Card>
-        )}
+                    Open Join Screen
+                  </Button>
 
-        {/* Mood Summary Card */}
-        <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
-          <CardBody p={6}>
-            <VStack align="stretch" spacing={4}>
-              <HStack spacing={3}>
-                <Icon as={FiTrendingUp} boxSize={6} color="accent.500" />
-                <Heading size="md" fontWeight="700">
-                  Mood Distribution
-                </Heading>
-              </HStack>
-
-              {moodEntries.length > 0 ? (
-                <Stack spacing={3}>
-                  {moodEntries.map(([mood, count]) => (
-                    <HStack key={mood} justify="space-between">
-                      <HStack spacing={3}>
-                        <Box
-                          w="12px"
-                          h="12px"
-                          borderRadius="full"
-                          bgGradient="linear(to-r, accent.400, accent.600)"
-                        />
-                        <Text fontWeight="600" textTransform="capitalize">
-                          {mood}
-                        </Text>
+                  <VStack spacing={4} w="full" maxW="md">
+                    <VStack spacing={2} w="full">
+                      <HStack w="full" justify="center" spacing={2}>
+                        <Badge
+                          fontSize="lg"
+                          px={4}
+                          py={2}
+                          borderRadius="xl"
+                          colorScheme="brand"
+                          fontWeight="800"
+                          fontFamily="mono"
+                          textTransform="none"
+                        >
+                          {sessionMeta.join_token}
+                        </Badge>
+                        <Tooltip label="Copy token">
+                          <IconButton
+                            aria-label="Copy token"
+                            icon={<Icon as={FiCopy} />}
+                            onClick={handleCopyToken}
+                            colorScheme="brand"
+                            variant="ghost"
+                            size="lg"
+                          />
+                        </Tooltip>
                       </HStack>
-                      <Badge colorScheme="accent" fontSize="md" px={3} py={1} borderRadius="full">
-                        {count}
-                      </Badge>
-                    </HStack>
-                  ))}
-                </Stack>
-              ) : (
-                <VStack py={8} spacing={2}>
-                  <Icon as={FiUsers} boxSize={12} color="gray.300" />
-                  <Text color="gray.500">No mood data yet</Text>
+                      <Text fontSize="sm" color="gray.500">
+                        Or share the join token above
+                      </Text>
+                    </VStack>
+
+                    <Box
+                      w="full"
+                      p={4}
+                      borderRadius="xl"
+                      border="2px solid"
+                      borderColor="gray.100"
+                      bg="gray.50"
+                    >
+                      <VStack align="stretch" spacing={3}>
+                        <Text fontSize="sm" fontWeight="700" color="gray.600">
+                          Join Link
+                        </Text>
+                        <Button
+                          leftIcon={<Icon as={FiLink} />}
+                          variant="outline"
+                          colorScheme="brand"
+                          borderRadius="xl"
+                          fontWeight="600"
+                          onClick={handleCopyJoinLink}
+                          isDisabled={!joinUrl}
+                        >
+                          Copy Join Link
+                        </Button>
+                      </VStack>
+                    </Box>
+                  </VStack>
                 </VStack>
-              )}
-            </VStack>
-          </CardBody>
-        </Card>
+              </CardBody>
+            </Card>
+          )}
+        </GridItem>
+
+        {/* Stats (Right, stacked) */}
+        <GridItem colSpan={1}>
+          <VStack spacing={6} h="full">
+            {/* Participants Count */}
+            <Card
+              borderRadius="xl"
+              border="2px solid"
+              borderColor="blue.100"
+              bg="blue.50"
+              w="full"
+              flex={1}
+            >
+              <CardBody p={6} display="flex" alignItems="center">
+                <HStack spacing={4}>
+                  <Box bg="whiteAlpha.300" p={3} borderRadius="xl">
+                    <Icon as={FiUsers} boxSize={6} />
+                  </Box>
+                  <VStack align="flex-start" spacing={0}>
+                    <Text fontSize="sm" fontWeight="600" opacity={0.9}>
+                      Participants
+                    </Text>
+                    <Text fontSize="3xl" fontWeight="800">
+                      {totalParticipants}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            {/* Session Time */}
+            <Card
+              borderRadius="xl"
+              border="2px solid"
+              borderColor="red.100"
+              bg="red.50"
+              w="full"
+              flex={1}
+            >
+              <CardBody p={6} display="flex" alignItems="center">
+                <HStack spacing={4}>
+                  <Box bg="whiteAlpha.300" p={3} borderRadius="xl">
+                    <Icon as={FiClock} boxSize={6} />
+                  </Box>
+                  <VStack align="flex-start" spacing={0}>
+                    <Text fontSize="sm" fontWeight="600" opacity={0.9}>
+                      Started
+                    </Text>
+                    <Text fontSize="md" fontWeight="700">
+                      {sessionMeta
+                        ? new Date(sessionMeta.started_at).toLocaleTimeString()
+                        : 'N/A'}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </GridItem>
       </SimpleGrid>
+
+      {/* Mood Summary Card */}
+      <Card
+        borderRadius="2xl"
+        border="2px solid"
+        borderColor="gray.100"
+        boxShadow="xl"
+      >
+        <CardBody p={{ base: 6, md: 8 }}>
+          <VStack align="stretch" spacing={5}>
+            <HStack spacing={3}>
+              <Icon as={FiTrendingUp} boxSize={6} color="accent.500" />
+              <Heading size="md" fontWeight="800">
+                Mood & Survey Insights
+              </Heading>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+              <Box
+                p={5}
+                borderRadius="xl"
+                border="1px solid"
+                borderColor="gray.100"
+                bg="blue.50"
+                >
+                <HStack justify="space-between" mb={4}>
+                  <HStack>
+                    <Text fontWeight="800" color="gray.800">
+                      Mood Distribution
+                    </Text>
+                    <Badge colorScheme="accent" borderRadius="full" fontWeight="800" bg="accent.100">
+                      {totalMoodResponses} responses
+                    </Badge>
+                  </HStack>
+                  <ButtonGroup size="sm" isAttached variant="outline">
+                    <IconButton
+                      aria-label="Pie Chart"
+                      icon={<Icon as={FiPieChart} />}
+                      isActive={moodChartType === 'pie'}
+                      onClick={() => setMoodChartType('pie')}
+                      colorScheme={moodChartType === 'pie' ? 'accent' : 'gray'}
+                      variant={moodChartType === 'pie' ? 'solid' : 'outline'}
+                    />
+                    <IconButton
+                      aria-label="Bar Chart"
+                      icon={<Icon as={FiBarChart2} />}
+                      isActive={moodChartType === 'bar'}
+                      onClick={() => setMoodChartType('bar')}
+                      colorScheme={moodChartType === 'bar' ? 'accent' : 'gray'}
+                      variant={moodChartType === 'bar' ? 'solid' : 'outline'}
+                    />
+                  </ButtonGroup>
+                </HStack>
+
+                {moodData.length > 0 ? (
+                  <Box h="450px" w="100%">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={moodChartType}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ width: '100%', height: '100%' }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          {moodChartType === 'pie' ? (
+                            <PieChart>
+                              <Pie
+                                data={moodData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={80}
+                                outerRadius={120}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {moodData.map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={MOOD_COLORS[index % MOOD_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                              <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                          ) : (
+                            <BarChart
+                              data={moodData}
+                              layout="vertical"
+                              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                            >
+                              <XAxis type="number" hide />
+                              <YAxis
+                                dataKey="name"
+                                type="category"
+                                width={100}
+                                tick={{ fontSize: 12 }}
+                                interval={0}
+                              />
+                              <RechartsTooltip />
+                              <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+                                {moodData.map((_, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={MOOD_COLORS[index % MOOD_COLORS.length]}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          )}
+                        </ResponsiveContainer>
+                      </motion.div>
+                    </AnimatePresence>
+                  </Box>
+                ) : (
+                  <VStack py={8} spacing={3}>
+                    <Icon as={FiUsers} boxSize={14} color="gray.300" />
+                    <Text color="gray.500" fontWeight="600">
+                      No mood data yet
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+
+              <Box
+                p={5}
+                borderRadius="xl"
+                border="1px solid"
+                borderColor="purple.100"
+                bg="purple.50"
+              >
+                <HStack justify="space-between" mb={4}>
+                  <HStack>
+                    <Text fontWeight="800" color="purple.800">
+                      Survey Results
+                    </Text>
+                    <Badge colorScheme="purple" borderRadius="full" fontWeight="800" bg="purple.200">
+                      {totalSurveyResponses} responses
+                    </Badge>
+                  </HStack>
+                  <ButtonGroup size="sm" isAttached variant="outline">
+                    <IconButton
+                      aria-label="Pie Chart"
+                      icon={<Icon as={FiPieChart} />}
+                      isActive={surveyChartType === 'pie'}
+                      onClick={() => setSurveyChartType('pie')}
+                      colorScheme={surveyChartType === 'pie' ? 'purple' : 'gray'}
+                      variant={surveyChartType === 'pie' ? 'solid' : 'outline'}
+                    />
+                    <IconButton
+                      aria-label="Bar Chart"
+                      icon={<Icon as={FiBarChart2} />}
+                      isActive={surveyChartType === 'bar'}
+                      onClick={() => setSurveyChartType('bar')}
+                      colorScheme={surveyChartType === 'bar' ? 'purple' : 'gray'}
+                      variant={surveyChartType === 'bar' ? 'solid' : 'outline'}
+                    />
+                  </ButtonGroup>
+                </HStack>
+
+                {surveyData.length > 0 ? (
+                  <Box h="450px" w="100%">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={surveyChartType}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ width: '100%', height: '100%' }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          {surveyChartType === 'bar' ? (
+                            <BarChart
+                              data={surveyData}
+                              layout="vertical"
+                              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                            >
+                              <XAxis type="number" hide />
+                              <YAxis
+                                dataKey="name"
+                                type="category"
+                                width={100}
+                                tick={{ fontSize: 12 }}
+                                interval={0}
+                              />
+                              <RechartsTooltip />
+                              <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+                                {surveyData.map((_, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={SURVEY_COLORS[index % SURVEY_COLORS.length]}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          ) : (
+                            <PieChart>
+                              <Pie
+                                data={surveyData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={80}
+                                outerRadius={120}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {surveyData.map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={SURVEY_COLORS[index % SURVEY_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                              <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                          )}
+                        </ResponsiveContainer>
+                      </motion.div>
+                    </AnimatePresence>
+                  </Box>
+                ) : (
+                  <VStack py={8} spacing={3}>
+                    <Icon as={FiUsers} boxSize={14} color="purple.300" />
+                    <Text color="purple.700" fontWeight="600">
+                      Survey results will appear here
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+            </SimpleGrid>
+          </VStack>
+        </CardBody>
+      </Card>
 
       {/* Participants List */}
       <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
         <CardBody p={6}>
-          <HStack spacing={3} mb={6}>
-            <Icon as={FiUsers} boxSize={6} color="brand.500" />
-            <Heading size="md" fontWeight="700">
-              Active Participants ({totalParticipants})
-            </Heading>
-            {isSessionOpen && (
-              <Badge colorScheme="green" fontSize="xs" px={2} py={1} borderRadius="full">
-                Live Updates
-              </Badge>
-            )}
-          </HStack>
+          <Flex
+            direction={{ base: 'column', lg: 'row' }}
+            justify="space-between"
+            align={{ base: 'flex-start', lg: 'center' }}
+            gap={4}
+            mb={6}
+          >
+            <HStack spacing={3}>
+              <Icon as={FiUsers} boxSize={6} color="brand.500" />
+              <Heading size="md" fontWeight="700">
+                Active Participants ({filteredParticipants.length}/{totalParticipants})
+              </Heading>
+              {isSessionOpen && (
+                <Badge colorScheme="green" fontSize="xs" px={2} py={1} borderRadius="full">
+                  Live Updates
+                </Badge>
+              )}
+            </HStack>
+
+            <HStack spacing={3} w={{ base: 'full', lg: 'auto' }}>
+              <Select
+                value={moodFilter}
+                onChange={(event) => setMoodFilter(event.target.value)}
+                maxW={{ base: 'full', lg: '220px' }}
+                borderRadius="xl"
+                bg="white"
+              >
+                <option value="all">All moods</option>
+                {moodOptions.map((mood) => (
+                  <option key={mood} value={mood}>
+                    {mood.charAt(0).toUpperCase() + mood.slice(1)}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={surveyFilter}
+                onChange={(event) => setSurveyFilter(event.target.value)}
+                maxW={{ base: 'full', lg: '240px' }}
+                borderRadius="xl"
+                bg="white"
+              >
+                <option value="all">All survey results</option>
+                {surveyOptions.map((style) => (
+                  <option key={style} value={style}>
+                    {style}
+                  </option>
+                ))}
+              </Select>
+            </HStack>
+          </Flex>
 
           {dashboard.participants.length > 0 ? (
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              {dashboard.participants.map((participant, idx) => (
-                <Card
-                  key={`${participant.mode}-${participant.display_name}-${idx}`}
-                  borderRadius="xl"
-                  border="2px solid"
-                  borderColor="gray.100"
-                  _hover={{ borderColor: 'brand.200', boxShadow: 'md' }}
-                  transition="all 0.2s"
-                >
-                  <CardBody p={5}>
-                    <VStack align="stretch" spacing={3}>
-                      <HStack spacing={3}>
-                        <Avatar
-                          name={participant.display_name}
-                          size="md"
-                          bg="brand.400"
-                          color="white"
-                          fontWeight="700"
-                        />
-                        <VStack align="flex-start" spacing={0} flex={1}>
-                          <Heading size="sm" fontWeight="700">
-                            {participant.display_name}
-                          </Heading>
-                          <HStack fontSize="xs" color="gray.500" spacing={2}>
-                            <Badge size="sm" colorScheme="purple">
-                              {participant.mode}
-                            </Badge>
-                            <Text>•</Text>
-                            <Text textTransform="capitalize">{participant.mood}</Text>
-                          </HStack>
-                        </VStack>
-                      </HStack>
-
-                      <Divider />
-
-                      <VStack align="stretch" spacing={2} fontSize="sm">
-                        <HStack justify="space-between">
-                          <Text color="gray.600">Learning Style:</Text>
-                          <Badge colorScheme="blue">
-                            {participant.learning_style ?? 'N/A'}
-                          </Badge>
+            filteredParticipants.length > 0 ? (
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                {filteredParticipants.map((participant, idx) => (
+                  <Card
+                    key={`${participant.mode}-${participant.display_name}-${idx}`}
+                    borderRadius="xl"
+                    border="2px solid"
+                    borderColor="gray.100"
+                    _hover={{ borderColor: 'brand.200', boxShadow: 'md' }}
+                    transition="all 0.2s"
+                  >
+                    <CardBody p={5}>
+                      <VStack align="stretch" spacing={3}>
+                        <HStack spacing={3}>
+                          <Avatar
+                            name={participant.display_name}
+                            size="md"
+                            bg="brand.400"
+                            color="white"
+                            fontWeight="700"
+                          />
+                          <VStack align="flex-start" spacing={0} flex={1}>
+                            <Heading size="sm" fontWeight="700">
+                              {participant.display_name}
+                            </Heading>
+                            <HStack fontSize="xs" color="gray.500" spacing={2}>
+                              <Badge size="sm" colorScheme="purple">
+                                {participant.mode}
+                              </Badge>
+                              <Text>•</Text>
+                              <Text textTransform="capitalize">{participant.mood}</Text>
+                            </HStack>
+                          </VStack>
                         </HStack>
 
-                        {participant.recommended_activity && (
-                          <Box
-                            bg="green.50"
-                            p={3}
-                            borderRadius="lg"
-                            border="1px solid"
-                            borderColor="green.200"
-                          >
-                            <VStack align="stretch" spacing={1}>
-                              <Text fontSize="xs" fontWeight="700" color="green.700">
-                                Recommended Activity:
-                              </Text>
-                              <Text fontWeight="600" color="green.900">
-                                {participant.recommended_activity.activity.name}
-                              </Text>
-                              <Text fontSize="xs" color="green.700">
-                                {participant.recommended_activity.activity.summary}
-                              </Text>
-                            </VStack>
-                          </Box>
-                        )}
+                        <Divider />
+
+                        <VStack align="stretch" spacing={2} fontSize="sm">
+                          <HStack justify="space-between">
+                            <Text color="gray.600">Learning Style:</Text>
+                            <Badge colorScheme="blue">
+                              {participant.learning_style ?? 'N/A'}
+                            </Badge>
+                          </HStack>
+
+                          {participant.recommended_activity && (
+                            <Box
+                              bg="green.50"
+                              p={3}
+                              borderRadius="lg"
+                              border="1px solid"
+                              borderColor="green.200"
+                            >
+                              <VStack align="stretch" spacing={1}>
+                                <Text fontSize="xs" fontWeight="700" color="green.700">
+                                  Recommended Activity:
+                                </Text>
+                                <Text fontWeight="600" color="green.900">
+                                  {participant.recommended_activity.activity.name}
+                                </Text>
+                                <Text fontSize="xs" color="green.700">
+                                  {participant.recommended_activity.activity.summary}
+                                </Text>
+                              </VStack>
+                            </Box>
+                          )}
+                        </VStack>
                       </VStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </SimpleGrid>
+                    </CardBody>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            ) : (
+              <VStack py={12} spacing={3}>
+                <Text fontSize="lg" fontWeight="700" color="gray.700">
+                  No students match these filters
+                </Text>
+                <Text color="gray.500" textAlign="center">
+                  Try selecting another mood or survey result to see matching students
+                </Text>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMoodFilter('all')
+                    setSurveyFilter('all')
+                  }}
+                  borderRadius="xl"
+                >
+                  Clear filters
+                </Button>
+              </VStack>
+            )
           ) : (
             <VStack py={12} spacing={4}>
               <Box
