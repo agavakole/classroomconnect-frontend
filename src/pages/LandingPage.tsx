@@ -364,17 +364,13 @@ export function LandingPage() {
               {/* Stats */}
               <HStack spacing={{ base: 8, md: 12 }} pt={4}>
                 <VStack align="flex-start" spacing={1}>
-                  <Heading size="xl" color="#B8D8E8" fontWeight="900">
-                    100+
-                  </Heading>
+                
                   <Text color="gray.600" fontSize="sm" fontWeight="600">
                     Teachers
                   </Text>
                 </VStack>
                 <VStack align="flex-start" spacing={1}>
-                  <Heading size="xl" color="#B8D8E8" fontWeight="900">
-                    1K+
-                  </Heading>
+             
                   <Text color="gray.600" fontSize="sm" fontWeight="600">
                     Students
                   </Text>
