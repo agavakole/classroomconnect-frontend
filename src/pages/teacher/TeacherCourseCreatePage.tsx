@@ -14,7 +14,6 @@ import {
   HStack,
   IconButton,
   Input,
-  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -23,8 +22,15 @@ import {
   VStack,
   Icon,
   Divider,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
-import { CloseIcon } from '@chakra-ui/icons'
+import { CloseIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -34,6 +40,7 @@ import {
   FiCheckCircle,
   FiTag,
   FiAlertCircle,
+  FiChevronDown,
 } from 'react-icons/fi'
 import { createCourse, listCourses } from '../../api/courses'
 import { listSurveys } from '../../api/surveys'
@@ -104,12 +111,49 @@ export function TeacherCourseCreatePage() {
 
   const totalCourses = coursesQuery.data?.length || 0
 
+  // Get selected survey title for display
+  const selectedSurveyTitle = surveysQuery.data?.find(
+    (s) => s.id === baselineSurveyId
+  )?.title
+
   return (
     <Stack spacing={8}>
       <Box>
-        <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
-          Create Course
-        </Heading>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          spacing={2}
+          separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
+          mb={4}
+          fontSize="sm"
+          fontWeight="500"
+        >
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/dashboard')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Dashboard
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              onClick={() => navigate('/teacher/courses')}
+              color="gray.600"
+              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              cursor="pointer"
+            >
+              Course Library
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem isCurrentPage>
+            <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+              Create Course
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
+
         <Text color="gray.600" fontSize="lg">
           Set up a new course with baseline surveys and mood options
         </Text>
@@ -117,7 +161,7 @@ export function TeacherCourseCreatePage() {
 
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
         <Card
-           border="2px solid"
+          border="2px solid"
           borderColor="blue.100"
           bg="blue.50"
         >
@@ -129,7 +173,7 @@ export function TeacherCourseCreatePage() {
                 borderRadius="xl"
                 backdropFilter="blur(10px)"
               >
-                <Icon as={FiBookOpen} boxSize={6} color="blue.500"/>
+                <Icon as={FiBookOpen} boxSize={6} color="blue.500" />
               </Box>
               <VStack align="flex-start" spacing={1}>
                 <Text fontSize="sm" fontWeight="600" opacity={0.9}>
@@ -144,7 +188,7 @@ export function TeacherCourseCreatePage() {
         </Card>
 
         <Card
-           border="2px solid"
+          border="2px solid"
           borderColor="red.100"
           bg="red.50"
         >
@@ -156,7 +200,7 @@ export function TeacherCourseCreatePage() {
                 borderRadius="xl"
                 backdropFilter="blur(10px)"
               >
-                <Icon as={FiCheckCircle} boxSize={6} color ="red.500"/>
+                <Icon as={FiCheckCircle} boxSize={6} color="red.500" />
               </Box>
               <VStack align="flex-start" spacing={1}>
                 <Text fontSize="sm" fontWeight="600" opacity={0.9}>
@@ -176,7 +220,6 @@ export function TeacherCourseCreatePage() {
           <Box as="form" onSubmit={handleSubmit} noValidate>
             <Stack spacing={6}>
               <HStack spacing={3}>
-              
                 <Heading size="md" fontWeight="700">
                   Create New Course
                 </Heading>
@@ -184,7 +227,7 @@ export function TeacherCourseCreatePage() {
 
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
                 <FormControl>
-                  <FormLabel fontWeight="600" fontSize="sm" mb={2}>
+                  <FormLabel htmlFor="course-title" fontWeight="600" fontSize="sm" mb={2}>
                     <HStack spacing={2}>
                       <Icon as={FiBookOpen} boxSize={4} color="brand.500" />
                       <Text>Course Title</Text>
@@ -192,6 +235,7 @@ export function TeacherCourseCreatePage() {
                     </HStack>
                   </FormLabel>
                   <Input
+                    id="course-title"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="e.g., Mathematics Grade 5"
@@ -208,36 +252,63 @@ export function TeacherCourseCreatePage() {
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel fontWeight="600" fontSize="sm" mb={2}>
+                  <FormLabel htmlFor="baseline-survey" fontWeight="600" fontSize="sm" mb={2}>
                     <HStack spacing={2}>
                       <Icon as={FiCheckCircle} boxSize={4} color="brand.500" />
                       <Text>Baseline Survey</Text>
                       <Text color="red.500">*</Text>
                     </HStack>
                   </FormLabel>
-                  <Select
-                    placeholder={
-                      surveysQuery.isLoading ? 'Loading surveys...' : 'Select survey template'
-                    }
-                    value={baselineSurveyId}
-                    onChange={(event) => setBaselineSurveyId(event.target.value)}
-                    isDisabled={surveysQuery.isLoading || !surveysQuery.data?.length}
-                    size="lg"
-                    borderRadius="xl"
-                    border="2px solid"
-                    borderColor="gray.200"
-                    _hover={{ borderColor: 'brand.300' }}
-                    _focus={{
-                      borderColor: 'brand.400',
-                      boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
-                    }}
-                  >
-                    {surveysQuery.data?.map((survey) => (
-                      <option value={survey.id} key={survey.id}>
-                        {survey.title}
-                      </option>
-                    ))}
-                  </Select>
+                  <Menu matchWidth>
+                    <MenuButton
+                      id="baseline-survey"
+                      as={Button}
+                      rightIcon={<Icon as={FiChevronDown} />}
+                      w="full"
+                      size="lg"
+                      borderRadius="xl"
+                      border="2px solid"
+                      borderColor="gray.200"
+                      fontWeight="600"
+                      textAlign="left"
+                      justifyContent="space-between"
+                      _hover={{ borderColor: 'brand.300' }}
+                      _active={{ borderColor: 'brand.400' }}
+                      bg="white"
+                      color={baselineSurveyId ? 'gray.800' : 'gray.400'}
+                      isDisabled={surveysQuery.isLoading || !surveysQuery.data?.length}
+                    >
+                      {surveysQuery.isLoading
+                        ? 'Loading surveys...'
+                        : selectedSurveyTitle || 'Select survey template'}
+                    </MenuButton>
+                    <MenuList
+                      maxH="300px"
+                      overflowY="auto"
+                      borderRadius="xl"
+                      border="2px solid"
+                      borderColor="gray.200"
+                      boxShadow="xl"
+                      py={2}
+                      zIndex={1500}
+                    >
+                      {surveysQuery.data?.map((survey) => (
+                        <MenuItem
+                          key={survey.id}
+                          onClick={() => setBaselineSurveyId(survey.id)}
+                          bg={baselineSurveyId === survey.id ? 'brand.50' : 'transparent'}
+                          fontWeight={baselineSurveyId === survey.id ? '700' : '500'}
+                          color={baselineSurveyId === survey.id ? 'brand.700' : 'gray.700'}
+                          _hover={{ bg: 'brand.50' }}
+                          borderRadius="lg"
+                          mx={2}
+                          fontSize="md"
+                        >
+                          {survey.title}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
                 </FormControl>
               </SimpleGrid>
 
@@ -280,6 +351,7 @@ export function TeacherCourseCreatePage() {
 
                   <HStack spacing={3}>
                     <Input
+                      id="mood-label-input"
                       isRequired={false}
                       value={moodInput}
                       onChange={(event) => setMoodInput(event.target.value)}

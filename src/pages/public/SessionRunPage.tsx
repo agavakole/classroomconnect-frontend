@@ -12,11 +12,21 @@ import {
   Spinner,
   Stack,
   Text,
+  VStack,
+  HStack,
+  Icon,
+  Progress,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from '@chakra-ui/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { getJoinSession, submitJoinSession } from '../../api/public'
+import { FiArrowLeft, FiChevronLeft, FiUser, FiLogOut } from 'react-icons/fi'
+import { getJoinSession, submitJoinSession, getJoinSubmissionStatus } from '../../api/public'
 import { ApiError } from '../../api/client'
 import type { PublicJoinResponse } from '../../api/types'
 import { useAuth } from '../../contexts/AuthContext'
@@ -59,6 +69,21 @@ export function SessionRunPage() {
     enabled: Boolean(joinToken),
     retry: false,
   })
+
+  // Check if user already submitted
+  const submissionStatusQuery = useQuery({
+    queryKey: ['submissionStatus', joinToken, guestId],
+    queryFn: () => getJoinSubmissionStatus(joinToken ?? '', guestId),
+    enabled: Boolean(joinToken) && Boolean(sessionQuery.data),
+    retry: false,
+  })
+
+  // Redirect to result page if already submitted
+  useEffect(() => {
+    if (submissionStatusQuery.data?.submitted) {
+      navigate(`/session/run/${joinToken}/already-submitted`, { replace: true })
+    }
+  }, [submissionStatusQuery.data, navigate, joinToken])
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -111,47 +136,18 @@ export function SessionRunPage() {
   const showSurvey = Boolean(sessionData?.survey)
   const requireGuestIdentity = !authToken || Boolean(guestJoinState?.forceGuest)
 
-  // Determine if we need to ask for name first
-  // We need name if:
-  // 1. Guest identity is required (not logged in or forced guest)
-  // 2. We don't have a name from state/storage
-  // 3. We haven't set a name in the local state yet (handled by the input)
-  // Actually, we just check if we have a valid name to proceed.
-  // If we are at step 0 and need a name, we show the name input.
-  
-  // We can use a flag to indicate if the "Name Input" step is active.
-  // However, to fit into the wizard flow, it's cleaner to treat it as Step 0 if needed.
-  
-  // Let's refine:
-  // If `requireGuestIdentity` is true, and we don't have `guestJoinState?.guestName` or `storedGuest?.guestName`,
-  // then we treat the first step as "Enter Name".
-  
   const initialName = guestJoinState?.guestName ?? storedGuest?.guestName ?? ''
   const needsNameInput = requireGuestIdentity && !initialName
   
-  // If needsNameInput is true, step 0 is Name Input.
-  // Survey questions start at index 1 (if present).
-  // Mood check is last.
-  
   const [currentStep, setCurrentStep] = useState(0)
   
-  // Calculate total steps
-  // Base steps: Survey Questions + Mood Check
-  // Add 1 if Name Input is needed
   const surveyStepCount = showSurvey ? (sessionData?.survey?.questions?.length ?? 0) : 0
   const totalSteps = (needsNameInput ? 1 : 0) + surveyStepCount + 1
   
-  // Helper to map currentStep to content
   const isNameStep = needsNameInput && currentStep === 0
-  
-  // Survey question index:
-  // If needsNameInput, survey starts at step 1. So question index = currentStep - 1.
-  // If !needsNameInput, survey starts at step 0. So question index = currentStep.
   const surveyQuestionIndex = needsNameInput ? currentStep - 1 : currentStep
-  
   const isSurveyStep = showSurvey && surveyQuestionIndex >= 0 && surveyQuestionIndex < surveyStepCount
   const currentQuestion = isSurveyStep ? sessionData?.survey?.questions[surveyQuestionIndex] : null
-  
   const isMoodStep = currentStep === totalSteps - 1
 
   const handleNext = () => {
@@ -160,9 +156,26 @@ export function SessionRunPage() {
     }
   }
 
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1)
+    }
+  }
+
+  const handleAnswerSelect = (questionId: string, optionId: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: optionId }))
+    setTimeout(() => {
+      handleNext()
+    }, 300)
+  }
+
   const handleSubmit = () => {
     if (!sessionData) return
     mutation.mutate()
+  }
+
+  const handleBack = () => {
+    navigate(-1)
   }
 
   const errorMessage =
@@ -172,12 +185,14 @@ export function SessionRunPage() {
         ? 'Unable to submit your response.'
         : null
 
-  if (sessionQuery.isLoading) {
+  if (sessionQuery.isLoading || submissionStatusQuery.isLoading) {
     return (
-      <Stack align="center" spacing={4} py={12}>
-        <Spinner size="xl" color="brand.500" thickness="4px" />
-        <Text color="gray.500" fontWeight="600">Loading session...</Text>
-      </Stack>
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <VStack spacing={4}>
+          <Spinner size="xl" color="brand.500" thickness="4px" />
+          <Text fontWeight="600" fontSize="lg" color="gray.700">Loading session...</Text>
+        </VStack>
+      </Box>
     )
   }
 
@@ -187,149 +202,368 @@ export function SessionRunPage() {
         ? sessionQuery.error.message
         : 'We could not find this session or it is no longer available.'
     return (
-      <Alert status="error" borderRadius="xl" variant="subtle">
-        <AlertIcon />
-        <AlertDescription fontWeight="600">{message}</AlertDescription>
-      </Alert>
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <Card maxW="md" borderRadius="2xl" boxShadow="lg">
+          <CardBody p={8}>
+            <VStack spacing={4}>
+              <Text fontSize="4xl">😕</Text>
+              <Heading size="md" color="gray.800" textAlign="center">
+                Session Not Found
+              </Heading>
+              <Text color="gray.600" textAlign="center" fontSize="sm">
+                {message}
+              </Text>
+              <Button
+                colorScheme="brand"
+                size="md"
+                onClick={() => navigate('/dashboard')}
+                mt={2}
+              >
+                Back to Dashboard
+              </Button>
+            </VStack>
+          </CardBody>
+        </Card>
+      </Box>
     )
   }
 
   if (sessionData.status !== 'OPEN') {
     return (
-      <Alert status="warning" borderRadius="xl" variant="subtle">
-        <AlertIcon />
-        <AlertDescription fontWeight="600">This session is closed.</AlertDescription>
-      </Alert>
+      <Box minH="100vh" bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" display="flex" alignItems="center" justifyContent="center" p={4}>
+        <Card maxW="md" borderRadius="2xl" boxShadow="lg">
+          <CardBody p={8}>
+            <VStack spacing={4}>
+              <Text fontSize="4xl">🔒</Text>
+              <Heading size="md" color="gray.800" textAlign="center">
+                Session Closed
+              </Heading>
+              <Text color="gray.600" textAlign="center" fontSize="sm">
+                This session is no longer accepting responses.
+              </Text>
+              <Button
+                colorScheme="brand"
+                size="md"
+                onClick={() => navigate('/dashboard')}
+                mt={2}
+              >
+                Back to Dashboard
+              </Button>
+            </VStack>
+          </CardBody>
+        </Card>
+      </Box>
     )
   }
 
   const progress = ((currentStep + 1) / totalSteps) * 100
-  
-  // Display name logic
-  const displayName = studentName || auth.fullName || 'Guest'
+  const displayName = studentName || auth.fullName || 'Student'
+
+  // Mood emoji mapping
+  const moodEmojis: Record<string, string> = {
+    'Happy': '😊',
+    'Excited': '🤩',
+    'Sad': '😢',
+    'Tired': '😴',
+    'Confused': '😕',
+    'Angry': '😠',
+    'Calm': '😌',
+    'Energetic': '⚡',
+    'Nervous': '😰',
+    'Good': '👍',
+    'Great': '🌟',
+    'Okay': '👌',
+    'Not Great': '😐',
+  }
 
   return (
-    <Box maxW="2xl" mx="auto" px={{ base: 4, md: 0 }}>
-      <Stack spacing={6}>
-        {/* Header */}
-        <Stack spacing={2} textAlign="center">
-          <Heading size="lg" color="gray.800">{sessionData.course_title}</Heading>
-          
-          {/* Show welcome message if we have a name and are not on the name input step */}
-          {!isNameStep && (
-             <Text color="brand.600" fontWeight="600" fontSize="md">
-               Welcome, {displayName}
-             </Text>
-          )}
-          
-          <Text color="gray.500" fontWeight="600" fontSize="sm">
-            Step {currentStep + 1} of {totalSteps}
-          </Text>
-          {/* Progress Bar */}
-          <Box w="full" h="2" bg="gray.100" borderRadius="full" overflow="hidden">
-            <Box h="full" bg="brand.500" w={`${progress}%`} transition="width 0.3s ease" />
-          </Box>
-        </Stack>
+    <Box 
+      minH="100vh" 
+      bgGradient="linear(135deg, mint.50 0%, blush.50 100%)" 
+      py={{ base: 4, md: 12 }} 
+      px={{ base: 4, md: 6 }}
+      position="relative"
+    >
+      {/* Header with Back and Logout */}
+      <Box 
+        maxW="2xl" 
+        mx="auto" 
+        mb={{ base: 4, md: 6 }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        {/* Back button */}
+        <Button
+          onClick={handleBack}
+          leftIcon={<Icon as={FiArrowLeft} />}
+          variant="ghost"
+          colorScheme="mint"
+          borderRadius="lg"
+          fontWeight="medium"
+          size={{ base: "sm", md: "md" }}
+          _hover={{ bg: 'whiteAlpha.800' }}
+        >
+          Back
+        </Button>
 
-        <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl" overflow="hidden">
-          <CardBody p={{ base: 6, md: 8 }}>
-            <Stack spacing={8}>
+        {/* User menu */}
+        {authToken && (
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              icon={<Icon as={FiUser} boxSize={{ base: 4, md: 5 }} />}
+              variant="ghost"
+              colorScheme="mint"
+              borderRadius="lg"
+              size={{ base: "sm", md: "md" }}
+              _hover={{ bg: 'whiteAlpha.800' }}
+            />
+            <MenuList>
+              <MenuItem 
+                icon={<Icon as={FiLogOut} />} 
+                onClick={() => {
+                  auth.logout()
+                  navigate('/')
+                }}
+              >
+                Logout
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        )}
+      </Box>
+
+      <Box maxW="2xl" mx="auto">
+        <Stack spacing={8}>
+
+          {/* Header Card */}
+          <Card 
+            borderRadius="2xl" 
+            boxShadow="md" 
+            bg="white"
+            border="1px solid"
+            borderColor="gray.100"
+          >
+            <CardBody p={6}>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between" align="flex-start">
+                  <VStack align="flex-start" spacing={1} flex="1">
+                    <HStack spacing={2}>
+                      <Box 
+                        w="8px" 
+                        h="8px" 
+                        borderRadius="full" 
+                        bg="green.400"
+                        boxShadow="0 0 0 3px rgba(72, 187, 120, 0.2)"
+                      />
+                      <Text fontSize="xs" fontWeight="700" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                        {sessionData.course_title}
+                      </Text>
+                    </HStack>
+                    {!isNameStep && (
+                      <Text fontSize="lg" fontWeight="700" color="gray.800">
+                        Welcome, {displayName} 👋
+                      </Text>
+                    )}
+                  </VStack>
+                  <Box 
+                    px={3} 
+                    py={1} 
+                    bg="brand.50" 
+                    borderRadius="full"
+                  >
+                    <Text fontSize="xs" fontWeight="700" color="brand.600">
+                      {currentStep + 1} of {totalSteps}
+                    </Text>
+                  </Box>
+                </HStack>
+                
+                <Box>
+                  <Progress
+                    value={progress}
+                    size="sm"
+                    colorScheme="brand"
+                    borderRadius="full"
+                    bg="gray.100"
+                    sx={{
+                      '& > div': {
+                        transition: 'width 0.4s ease',
+                      }
+                    }}
+                  />
+                </Box>
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Main Content Card */}
+          <Card 
+            borderRadius="2xl" 
+            boxShadow="lg" 
+            bg="white"
+            border="1px solid"
+            borderColor="gray.100"
+          >
+            <CardBody p={{ base: 8, md: 10 }}>
               
               {/* Name Input Step */}
               {isNameStep && (
-                <Stack spacing={6}>
-                   <Heading size="md" fontWeight="700" color="gray.800">
-                    Let's get started
-                  </Heading>
-                  <Text color="gray.600">
-                    Please enter your name so the teacher can identify you.
-                  </Text>
+                <VStack spacing={7} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Heading size="lg" fontWeight="800" color="gray.900">
+                      What's your name?
+                    </Heading>
+                    <Text color="gray.600" fontSize="md">
+                      Your teacher will see this name
+                    </Text>
+                  </VStack>
                   
-                  <Input 
+                  <Input
                     value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)} // We need to expose setStudentName
-                    placeholder="Your Full Name"
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="Enter your full name"
                     size="lg"
-                    borderRadius="xl"
+                    fontSize="md"
+                    h="56px"
                     autoFocus
+                    borderRadius="xl"
+                    _focus={{
+                      borderColor: 'brand.500',
+                      boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)',
+                    }}
                   />
                   
                   <Button
                     size="lg"
+                    h="56px"
                     colorScheme="brand"
                     onClick={handleNext}
                     isDisabled={!studentName.trim()}
+                    fontWeight="700"
+                    fontSize="md"
                     borderRadius="xl"
-                    w="full"
-                    mt={4}
+                    boxShadow="md"
+                    _hover={{
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'xl',
+                    }}
+                    _active={{
+                      transform: 'translateY(0)',
+                    }}
+                    transition="all 0.2s"
                   >
-                    Next
+                    Continue
                   </Button>
-                </Stack>
+                </VStack>
               )}
               
               {/* Survey Question Step */}
               {currentQuestion && (
-                <Stack spacing={6}>
-                  <Heading size="md" fontWeight="700" color="gray.800">
-                    {currentQuestion.text}
-                  </Heading>
+                <VStack spacing={8} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Box 
+                      px={3} 
+                      py={1} 
+                      bg="brand.50" 
+                      borderRadius="full"
+                      mb={1}
+                    >
+                      <Text fontSize="xs" fontWeight="700" color="brand.600" textTransform="uppercase">
+                        Question {surveyQuestionIndex + 1} of {surveyStepCount}
+                      </Text>
+                    </Box>
+                    <Heading size="lg" fontWeight="800" color="gray.900" lineHeight="shorter">
+                      {currentQuestion.text}
+                    </Heading>
+                  </VStack>
                   
-                  <Stack spacing={3}>
+                  <Stack spacing={4}>
                     {currentQuestion.options.map((option) => {
                       const isSelected = answers[currentQuestion.question_id] === option.option_id
+                      
                       return (
                         <Box
                           key={option.option_id}
                           as="button"
-                          onClick={() => setAnswers(prev => ({ ...prev, [currentQuestion.question_id]: option.option_id }))}
-                          p={4}
+                          onClick={() => handleAnswerSelect(currentQuestion.question_id, option.option_id)}
+                          p={5}
                           borderRadius="xl"
                           border="2px solid"
                           borderColor={isSelected ? 'brand.500' : 'gray.200'}
                           bg={isSelected ? 'brand.50' : 'white'}
-                          _hover={{ borderColor: isSelected ? 'brand.500' : 'brand.200', bg: isSelected ? 'brand.50' : 'gray.50' }}
-                          transition="all 0.2s"
+                          boxShadow={isSelected ? 'md' : 'sm'}
+                          _hover={{
+                            borderColor: isSelected ? 'brand.600' : 'brand.300',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'lg',
+                          }}
+                          transition="all 0.2s ease-in-out"
                           textAlign="left"
                           w="full"
                         >
-                          <Text fontWeight={isSelected ? "700" : "500"} color={isSelected ? "brand.900" : "gray.700"}>
-                            {option.text}
-                          </Text>
+                          <HStack spacing={4}>
+                            <Box
+                              w="20px"
+                              h="20px"
+                              borderRadius="full"
+                              border="2px solid"
+                              borderColor={isSelected ? 'brand.500' : 'gray.300'}
+                              bg={isSelected ? 'brand.500' : 'white'}
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              flexShrink={0}
+                              transition="all 0.2s"
+                            >
+                              {isSelected && (
+                                <Box w="10px" h="10px" borderRadius="full" bg="white" />
+                              )}
+                            </Box>
+                            <Text
+                              fontWeight={isSelected ? '600' : '500'}
+                              fontSize="md"
+                              color={isSelected ? 'brand.700' : 'gray.700'}
+                              flex="1"
+                            >
+                              {option.text}
+                            </Text>
+                          </HStack>
                         </Box>
                       )
                     })}
                   </Stack>
-
-                  <Button
-                    size="lg"
-                    colorScheme="brand"
-                    onClick={handleNext}
-                    isDisabled={!answers[currentQuestion.question_id]}
-                    borderRadius="xl"
-                    w="full"
-                    mt={4}
-                  >
-                    Next Question
-                  </Button>
-                </Stack>
+                </VStack>
               )}
 
               {/* Mood Check Step */}
               {isMoodStep && (
-                <Stack spacing={6}>
-                  <Stack spacing={2}>
-                    <Heading size="md" fontWeight="700" color="gray.800">
-                      Last step!
-                    </Heading>
-                    <Text fontSize="lg" color="gray.600">
+                <VStack spacing={8} align="stretch">
+                  <VStack spacing={3} align="flex-start">
+                    <Box 
+                      px={3} 
+                      py={1} 
+                      bg="purple.50" 
+                      borderRadius="full"
+                      mb={1}
+                    >
+                      <Text fontSize="xs" fontWeight="700" color="purple.600" textTransform="uppercase">
+                        Final Step
+                      </Text>
+                    </Box>
+                    <Heading size="lg" fontWeight="800" color="gray.900">
                       {sessionData.mood_check_schema.prompt}
+                    </Heading>
+                    <Text color="gray.600" fontSize="md">
+                      Select the option that best describes how you're feeling right now
                     </Text>
-                  </Stack>
+                  </VStack>
 
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
+                  <SimpleGrid columns={2} spacing={4}>
                     {sessionData.mood_check_schema.options.map((option) => {
                       const isSelected = mood === option
+                      const emoji = moodEmojis[option] || '😊'
+                      
                       return (
                         <Box
                           key={option}
@@ -338,48 +572,103 @@ export function SessionRunPage() {
                           p={6}
                           borderRadius="xl"
                           border="2px solid"
-                          borderColor={isSelected ? 'accent.500' : 'gray.200'}
-                          bg={isSelected ? 'accent.50' : 'white'}
-                          _hover={{ borderColor: isSelected ? 'accent.500' : 'accent.200', transform: 'translateY(-2px)' }}
-                          transition="all 0.2s"
-                          textAlign="center"
-                          boxShadow={isSelected ? 'md' : 'none'}
+                          borderColor={isSelected ? 'brand.500' : 'gray.200'}
+                          bg={isSelected ? 'brand.50' : 'white'}
+                          boxShadow={isSelected ? 'lg' : 'sm'}
+                          _hover={{
+                            borderColor: isSelected ? 'brand.600' : 'brand.300',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'lg',
+                          }}
+                          transition="all 0.2s ease-in-out"
+                          position="relative"
+                          overflow="hidden"
+                          _before={{
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            bg: isSelected ? 'brand.500' : 'transparent',
+                            transition: 'all 0.2s',
+                          }}
                         >
-                          <Text fontWeight="700" fontSize="lg" color={isSelected ? "accent.900" : "gray.700"}>
-                            {option}
-                          </Text>
+                          <VStack spacing={3}>
+                            <Text fontSize="3xl">{emoji}</Text>
+                            <Text
+                              fontWeight={isSelected ? '700' : '600'}
+                              fontSize="md"
+                              color={isSelected ? 'brand.700' : 'gray.700'}
+                            >
+                              {option}
+                            </Text>
+                          </VStack>
                         </Box>
                       )
                     })}
                   </SimpleGrid>
 
                   {errorMessage && (
-                    <Alert status="error" borderRadius="xl">
+                    <Alert 
+                      status="error" 
+                      borderRadius="xl"
+                      boxShadow="sm"
+                    >
                       <AlertIcon />
-                      <AlertDescription>{errorMessage}</AlertDescription>
+                      <AlertDescription fontSize="sm" fontWeight="500">
+                        {errorMessage}
+                      </AlertDescription>
                     </Alert>
                   )}
 
                   <Button
                     size="lg"
-                    colorScheme="accent"
+                    colorScheme="brand"
                     onClick={handleSubmit}
                     isDisabled={!mood}
                     isLoading={mutation.isPending}
                     loadingText="Submitting..."
+                    fontWeight="700"
+                    fontSize="md"
+                    h="56px"
                     borderRadius="xl"
-                    w="full"
-                    mt={4}
+                    boxShadow="md"
+                    _hover={{
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'xl',
+                    }}
+                    _active={{
+                      transform: 'translateY(0)',
+                    }}
+                    transition="all 0.2s"
                   >
                     Submit Check-in
                   </Button>
-                </Stack>
+                </VStack>
               )}
 
-            </Stack>
-          </CardBody>
-        </Card>
-      </Stack>
+            </CardBody>
+          </Card>
+
+          {/* Previous Button */}
+          {currentStep > 0 && (
+            <HStack justify="center">
+              <Button
+                leftIcon={<Icon as={FiChevronLeft} />}
+                variant="ghost"
+                size="sm"
+                onClick={handlePrevious}
+                fontWeight="600"
+                color="gray.600"
+                _hover={{ bg: 'gray.100' }}
+              >
+                Previous
+              </Button>
+            </HStack>
+          )}
+        </Stack>
+      </Box>
     </Box>
   )
 }
