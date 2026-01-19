@@ -102,18 +102,16 @@ function App() {
         }
       />
       <Route path="scan" element={<ScanPage />} />
-              <Route path="session/run/:token" element={<SessionRunPage />} />
-              
-        <Route
-          path="session/run/:token/result"
-          element={<SessionResultPage />}
-        />
-        <Route path="/session/run/:token/already-submitted" element={<AlreadySubmittedPage />} />
-        <Route path="join" element={<SessionSharePage />} />
+      <Route path="session/run/:token" element={<SessionRunPage />} />
+
+      <Route path="session/run/:token/result" element={<SessionResultPage />} />
+      <Route
+        path="/session/run/:token/already-submitted"
+        element={<AlreadySubmittedPage />}
+      />
+      <Route path="join" element={<SessionSharePage />} />
       {/* All other routes - Use AppLayout (top navigation) */}
       <Route path="/" element={<AppLayout />}>
-        
-
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

@@ -30,12 +30,12 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
-} from '@chakra-ui/react'
-import { ChevronRightIcon } from '@chakra-ui/icons'
-import { useNavigate } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+} from "@chakra-ui/react";
+import { ChevronRightIcon } from "@chakra-ui/icons";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import {
   FiGrid,
   FiPlus,
@@ -44,29 +44,29 @@ import {
   FiLayers,
   FiAlertCircle,
   FiChevronDown,
-} from 'react-icons/fi'
-import { createActivity, listActivityTypes } from '../../api/activities'
-import { ApiError } from '../../api/client'
+} from "react-icons/fi";
+import { createActivity, listActivityTypes } from "../../api/activities";
+import { ApiError } from "../../api/client";
 
 export function TeacherActivityCreatePage() {
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [summary, setSummary] = useState('')
-  const [typeName, setTypeName] = useState('')
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
-  const [tagsInput, setTagsInput] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [summary, setSummary] = useState("");
+  const [typeName, setTypeName] = useState("");
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [tagsInput, setTagsInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
 
   const activityTypesQuery = useQuery({
-    queryKey: ['activityTypes'],
+    queryKey: ["activityTypes"],
     queryFn: listActivityTypes,
-  })
+  });
 
   const selectedType = useMemo(
     () => activityTypesQuery.data?.find((item) => item.type_name === typeName),
     [activityTypesQuery.data, typeName],
-  )
+  );
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -76,30 +76,32 @@ export function TeacherActivityCreatePage() {
         type: typeName,
         tags,
         content_json: Object.fromEntries(
-          Object.entries(fieldValues).filter(([, value]) => value && value.trim()),
+          Object.entries(fieldValues).filter(
+            ([, value]) => value && value.trim(),
+          ),
         ),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activities'] })
-      navigate('/teacher/activities')
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      navigate("/teacher/activities");
     },
-  })
+  });
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    createMutation.mutate()
-  }
+    event.preventDefault();
+    createMutation.mutate();
+  };
 
   const handleAddTag = () => {
-    const trimmed = tagsInput.trim()
-    if (!trimmed || tags.includes(trimmed)) return
-    setTags((prev) => [...prev, trimmed])
-    setTagsInput('')
-  }
+    const trimmed = tagsInput.trim();
+    if (!trimmed || tags.includes(trimmed)) return;
+    setTags((prev) => [...prev, trimmed]);
+    setTagsInput("");
+  };
 
   const allFields = selectedType
     ? [...selectedType.required_fields, ...selectedType.optional_fields]
-    : []
+    : [];
 
   return (
     <Stack spacing={8}>
@@ -115,9 +117,9 @@ export function TeacherActivityCreatePage() {
         >
           <BreadcrumbItem>
             <BreadcrumbLink
-              onClick={() => navigate('/teacher/dashboard')}
+              onClick={() => navigate("/teacher/dashboard")}
               color="gray.600"
-              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              _hover={{ color: "brand.600", textDecoration: "none" }}
               cursor="pointer"
             >
               Dashboard
@@ -125,9 +127,9 @@ export function TeacherActivityCreatePage() {
           </BreadcrumbItem>
           <BreadcrumbItem>
             <BreadcrumbLink
-              onClick={() => navigate('/teacher/activities')}
+              onClick={() => navigate("/teacher/activities")}
               color="gray.600"
-              _hover={{ color: 'brand.600', textDecoration: 'none' }}
+              _hover={{ color: "brand.600", textDecoration: "none" }}
               cursor="pointer"
             >
               Activity Library
@@ -156,7 +158,12 @@ export function TeacherActivityCreatePage() {
       <Box as="form" onSubmit={handleSubmit}>
         <Stack spacing={6}>
           {/* Basic Information Card */}
-          <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+          <Card
+            borderRadius="2xl"
+            border="2px solid"
+            borderColor="gray.100"
+            boxShadow="xl"
+          >
             <CardBody p={6}>
               <VStack align="stretch" spacing={5}>
                 <HStack spacing={3}>
@@ -164,14 +171,25 @@ export function TeacherActivityCreatePage() {
                   <Heading size="md" fontWeight="700">
                     Basic Information
                   </Heading>
-                  <Badge colorScheme="red" fontSize="xs" px={2} py={1} borderRadius="full">
+                  <Badge
+                    colorScheme="red"
+                    fontSize="xs"
+                    px={2}
+                    py={1}
+                    borderRadius="full"
+                  >
                     Required
                   </Badge>
                 </HStack>
 
                 <Stack spacing={4}>
                   <FormControl isRequired>
-                    <FormLabel htmlFor="activity-name" fontWeight="600" fontSize="sm" mb={2}>
+                    <FormLabel
+                      htmlFor="activity-name"
+                      fontWeight="600"
+                      fontSize="sm"
+                      mb={2}
+                    >
                       Activity Name
                     </FormLabel>
                     <Input
@@ -183,16 +201,21 @@ export function TeacherActivityCreatePage() {
                       borderRadius="xl"
                       border="2px solid"
                       borderColor="gray.200"
-                      _hover={{ borderColor: 'brand.300' }}
+                      _hover={{ borderColor: "brand.300" }}
                       _focus={{
-                        borderColor: 'brand.400',
-                        boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
+                        borderColor: "brand.400",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-brand-400)",
                       }}
                     />
                   </FormControl>
 
                   <FormControl isRequired>
-                    <FormLabel htmlFor="activity-summary" fontWeight="600" fontSize="sm" mb={2}>
+                    <FormLabel
+                      htmlFor="activity-summary"
+                      fontWeight="600"
+                      fontSize="sm"
+                      mb={2}
+                    >
                       Summary
                     </FormLabel>
                     <Textarea
@@ -204,10 +227,10 @@ export function TeacherActivityCreatePage() {
                       borderRadius="xl"
                       border="2px solid"
                       borderColor="gray.200"
-                      _hover={{ borderColor: 'brand.300' }}
+                      _hover={{ borderColor: "brand.300" }}
                       _focus={{
-                        borderColor: 'brand.400',
-                        boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)',
+                        borderColor: "brand.400",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-brand-400)",
                       }}
                     />
                   </FormControl>
@@ -217,7 +240,12 @@ export function TeacherActivityCreatePage() {
           </Card>
 
           {/* Activity Type Card */}
-          <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+          <Card
+            borderRadius="2xl"
+            border="2px solid"
+            borderColor="gray.100"
+            boxShadow="xl"
+          >
             <CardBody p={6}>
               <VStack align="stretch" spacing={5}>
                 <HStack spacing={3}>
@@ -225,7 +253,13 @@ export function TeacherActivityCreatePage() {
                   <Heading size="md" fontWeight="700">
                     Activity Type
                   </Heading>
-                  <Badge colorScheme="red" fontSize="xs" px={2} py={1} borderRadius="full">
+                  <Badge
+                    colorScheme="red"
+                    fontSize="xs"
+                    px={2}
+                    py={1}
+                    borderRadius="full"
+                  >
                     Required
                   </Badge>
                 </HStack>
@@ -251,15 +285,15 @@ export function TeacherActivityCreatePage() {
                       fontWeight="600"
                       textAlign="left"
                       justifyContent="space-between"
-                      _hover={{ borderColor: 'purple.300' }}
-                      _active={{ borderColor: 'purple.400' }}
+                      _hover={{ borderColor: "purple.300" }}
+                      _active={{ borderColor: "purple.400" }}
                       bg="white"
-                      color={typeName ? 'gray.800' : 'gray.400'}
+                      color={typeName ? "gray.800" : "gray.400"}
                       isDisabled={activityTypesQuery.isLoading}
                     >
                       {activityTypesQuery.isLoading
-                        ? 'Loading types...'
-                        : typeName || 'Choose an activity type'}
+                        ? "Loading types..."
+                        : typeName || "Choose an activity type"}
                     </MenuButton>
                     <MenuList
                       maxH="300px"
@@ -275,10 +309,20 @@ export function TeacherActivityCreatePage() {
                         <MenuItem
                           key={type.type_name}
                           onClick={() => setTypeName(type.type_name)}
-                          bg={typeName === type.type_name ? 'purple.50' : 'transparent'}
-                          fontWeight={typeName === type.type_name ? '700' : '500'}
-                          color={typeName === type.type_name ? 'purple.700' : 'gray.700'}
-                          _hover={{ bg: 'purple.50' }}
+                          bg={
+                            typeName === type.type_name
+                              ? "purple.50"
+                              : "transparent"
+                          }
+                          fontWeight={
+                            typeName === type.type_name ? "700" : "500"
+                          }
+                          color={
+                            typeName === type.type_name
+                              ? "purple.700"
+                              : "gray.700"
+                          }
+                          _hover={{ bg: "purple.50" }}
                           borderRadius="lg"
                           mx={2}
                           fontSize="md"
@@ -309,8 +353,9 @@ export function TeacherActivityCreatePage() {
                           {selectedType.type_name}
                         </Text>
                         <Text fontSize="xs" color="purple.700">
-                          {selectedType.required_fields.length} required fields •{' '}
-                          {selectedType.optional_fields.length} optional fields
+                          {selectedType.required_fields.length} required fields
+                          • {selectedType.optional_fields.length} optional
+                          fields
                         </Text>
                       </VStack>
                     </HStack>
@@ -322,7 +367,12 @@ export function TeacherActivityCreatePage() {
 
           {/* Dynamic Fields Card */}
           {selectedType && allFields.length > 0 && (
-            <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+            <Card
+              borderRadius="2xl"
+              border="2px solid"
+              borderColor="gray.100"
+              boxShadow="xl"
+            >
               <CardBody p={6}>
                 <VStack align="stretch" spacing={5}>
                   <HStack spacing={3}>
@@ -340,7 +390,12 @@ export function TeacherActivityCreatePage() {
                     borderColor="blue.100"
                   >
                     <HStack spacing={3} align="start">
-                      <Icon as={FiAlertCircle} color="blue.500" boxSize={5} mt={0.5} />
+                      <Icon
+                        as={FiAlertCircle}
+                        color="blue.500"
+                        boxSize={5}
+                        mt={0.5}
+                      />
                       <VStack align="start" spacing={1}>
                         <Text fontSize="sm" fontWeight="700" color="blue.900">
                           Type-Specific Fields
@@ -354,43 +409,55 @@ export function TeacherActivityCreatePage() {
 
                   <Stack spacing={4}>
                     {allFields.map((field) => {
-                      const isRequired = selectedType.required_fields.includes(field)
-                      const fieldId = `field-${field}`
+                      const isRequired =
+                        selectedType.required_fields.includes(field);
+                      const fieldId = `field-${field}`;
                       return (
                         <FormControl key={field} isRequired={isRequired}>
                           <HStack justify="space-between" mb={2}>
-                            <FormLabel htmlFor={fieldId} fontWeight="600" fontSize="sm" mb={0}>
-                              {field.replaceAll('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                            <FormLabel
+                              htmlFor={fieldId}
+                              fontWeight="600"
+                              fontSize="sm"
+                              mb={0}
+                            >
+                              {field
+                                .replaceAll("_", " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase())}
                             </FormLabel>
                             <Badge
-                              colorScheme={isRequired ? 'red' : 'gray'}
+                              colorScheme={isRequired ? "red" : "gray"}
                               fontSize="xs"
                               px={2}
                               py={1}
                               borderRadius="full"
                             >
-                              {isRequired ? 'Required' : 'Optional'}
+                              {isRequired ? "Required" : "Optional"}
                             </Badge>
                           </HStack>
                           <Input
                             id={fieldId}
-                            value={fieldValues[field] ?? ''}
+                            value={fieldValues[field] ?? ""}
                             onChange={(event) =>
-                              setFieldValues((prev) => ({ ...prev, [field]: event.target.value }))
+                              setFieldValues((prev) => ({
+                                ...prev,
+                                [field]: event.target.value,
+                              }))
                             }
-                            placeholder={`Enter ${field.replaceAll('_', ' ')}...`}
+                            placeholder={`Enter ${field.replaceAll("_", " ")}...`}
                             size="lg"
                             borderRadius="xl"
                             border="2px solid"
                             borderColor="gray.200"
-                            _hover={{ borderColor: 'accent.300' }}
+                            _hover={{ borderColor: "accent.300" }}
                             _focus={{
-                              borderColor: 'accent.400',
-                              boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
+                              borderColor: "accent.400",
+                              boxShadow:
+                                "0 0 0 1px var(--chakra-colors-accent-400)",
                             }}
                           />
                         </FormControl>
-                      )
+                      );
                     })}
                   </Stack>
                 </VStack>
@@ -399,7 +466,12 @@ export function TeacherActivityCreatePage() {
           )}
 
           {/* Tags Card */}
-          <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+          <Card
+            borderRadius="2xl"
+            border="2px solid"
+            borderColor="gray.100"
+            boxShadow="xl"
+          >
             <CardBody p={6}>
               <VStack align="stretch" spacing={5}>
                 <HStack spacing={3}>
@@ -408,17 +480,28 @@ export function TeacherActivityCreatePage() {
                     Tags
                   </Heading>
                   {tags.length > 0 && (
-                    <Badge colorScheme="accent" fontSize="xs" px={2} py={1} borderRadius="full">
+                    <Badge
+                      colorScheme="accent"
+                      fontSize="xs"
+                      px={2}
+                      py={1}
+                      borderRadius="full"
+                    >
                       {tags.length}
                     </Badge>
                   )}
                 </HStack>
 
                 <FormControl>
-                  <FormLabel htmlFor="tag-input" fontWeight="600" fontSize="sm" mb={2}>
+                  <FormLabel
+                    htmlFor="tag-input"
+                    fontWeight="600"
+                    fontSize="sm"
+                    mb={2}
+                  >
                     Add Tags
                   </FormLabel>
-                  <Stack spacing={3} direction={{ base: 'column', sm: 'row' }}>
+                  <Stack spacing={3} direction={{ base: "column", sm: "row" }}>
                     <Input
                       id="tag-input"
                       value={tagsInput}
@@ -429,15 +512,15 @@ export function TeacherActivityCreatePage() {
                       border="2px solid"
                       borderColor="gray.200"
                       flex={1}
-                      _hover={{ borderColor: 'accent.300' }}
+                      _hover={{ borderColor: "accent.300" }}
                       _focus={{
-                        borderColor: 'accent.400',
-                        boxShadow: '0 0 0 1px var(--chakra-colors-accent-400)',
+                        borderColor: "accent.400",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-accent-400)",
                       }}
                       onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault()
-                          handleAddTag()
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleAddTag();
                         }
                       }}
                     />
@@ -449,7 +532,7 @@ export function TeacherActivityCreatePage() {
                       px={8}
                       borderRadius="xl"
                       fontWeight="600"
-                      w={{ base: 'full', sm: 'auto' }}
+                      w={{ base: "full", sm: "auto" }}
                     >
                       Add
                     </Button>
@@ -460,7 +543,12 @@ export function TeacherActivityCreatePage() {
                   <>
                     <Divider />
                     <Box>
-                      <Text fontSize="sm" fontWeight="600" color="gray.600" mb={3}>
+                      <Text
+                        fontSize="sm"
+                        fontWeight="600"
+                        color="gray.600"
+                        mb={3}
+                      >
                         Current Tags
                       </Text>
                       <Wrap spacing={2}>
@@ -475,7 +563,9 @@ export function TeacherActivityCreatePage() {
                           >
                             <TagLabel fontWeight="600">{tag}</TagLabel>
                             <TagCloseButton
-                              onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                              onClick={() =>
+                                setTags((prev) => prev.filter((t) => t !== tag))
+                              }
                             />
                           </Tag>
                         ))}
@@ -492,7 +582,8 @@ export function TeacherActivityCreatePage() {
                     textAlign="center"
                   >
                     <Text fontSize="sm" color="gray.500">
-                      No tags yet. Add tags to help organize and search for this activity.
+                      No tags yet. Add tags to help organize and search for this
+                      activity.
                     </Text>
                   </Box>
                 )}
@@ -530,14 +621,19 @@ export function TeacherActivityCreatePage() {
                     Ready to create?
                   </Text>
                   <Text fontSize="sm" color="gray.600" textAlign="center">
-                    This activity will be available for personalized recommendations
+                    This activity will be available for personalized
+                    recommendations
                   </Text>
                 </VStack>
 
-                <Stack spacing={4} w="full" direction={{ base: 'column', sm: 'row' }}>
+                <Stack
+                  spacing={4}
+                  w="full"
+                  direction={{ base: "column", sm: "row" }}
+                >
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/teacher/activities')}
+                    onClick={() => navigate("/teacher/activities")}
                     size="lg"
                     borderRadius="xl"
                     fontWeight="600"
@@ -567,5 +663,5 @@ export function TeacherActivityCreatePage() {
         </Stack>
       </Box>
     </Stack>
-  )
+  );
 }

@@ -24,13 +24,13 @@ import {
   Flex,
   Tooltip,
   Divider,
-} from '@chakra-ui/react'
+} from "@chakra-ui/react";
 import {
   Outlet,
   useLocation,
   Link as RouterLink,
   useNavigate,
-} from 'react-router-dom'
+} from "react-router-dom";
 import {
   FiBook,
   FiClipboard,
@@ -43,120 +43,120 @@ import {
   FiX,
   FiHome,
   FiUser,
-} from 'react-icons/fi'
-import { PiGraduationCapBold } from 'react-icons/pi'
-import { useAuth } from '../../contexts/AuthContext'
-import { useEffect, useState, useRef } from 'react'
-import { CourseSearch } from '../../components/CourseSearch'
+} from "react-icons/fi";
+import { PiGraduationCapBold } from "react-icons/pi";
+import { useAuth } from "../../contexts/AuthContext";
+import { useEffect, useState, useRef } from "react";
+import { CourseSearch } from "../../components/CourseSearch";
 
 interface NavItem {
-  label: string
-  to: string
-  icon: any
-  section?: 'home' | 'surveys' | 'courses' | 'activities' | 'sessions'
-  excludePrefixes?: string[]
+  label: string;
+  to: string;
+  icon: any;
+  section?: "home" | "surveys" | "courses" | "activities" | "sessions";
+  excludePrefixes?: string[];
 }
 
 const navItems: NavItem[] = [
   // Home/Dashboard
   {
-    label: 'Dashboard',
-    to: '/teacher/dashboard',
+    label: "Dashboard",
+    to: "/teacher/dashboard",
     icon: FiHome,
-    section: 'home',
+    section: "home",
   },
 
   // Surveys
   {
-    label: 'Survey templates',
-    to: '/teacher/surveys',
+    label: "Survey templates",
+    to: "/teacher/surveys",
     icon: FiClipboard,
-    section: 'surveys',
-    excludePrefixes: ['/teacher/surveys/new'],
+    section: "surveys",
+    excludePrefixes: ["/teacher/surveys/new"],
   },
   {
-    label: 'Create survey',
-    to: '/teacher/surveys/new',
+    label: "Create survey",
+    to: "/teacher/surveys/new",
     icon: FiPlus,
-    section: 'surveys',
+    section: "surveys",
   },
 
   // Courses
   {
-    label: 'Courses',
-    to: '/teacher/courses',
+    label: "Courses",
+    to: "/teacher/courses",
     icon: FiBook,
-    section: 'courses',
-    excludePrefixes: ['/teacher/courses/new'],
+    section: "courses",
+    excludePrefixes: ["/teacher/courses/new"],
   },
   {
-    label: 'Create course',
-    to: '/teacher/courses/new',
+    label: "Create course",
+    to: "/teacher/courses/new",
     icon: FiPlus,
-    section: 'courses',
+    section: "courses",
   },
 
   // Activities
   {
-    label: 'Activity library',
-    to: '/teacher/activities',
+    label: "Activity library",
+    to: "/teacher/activities",
     icon: FiGrid,
-    section: 'activities',
-    excludePrefixes: ['/teacher/activities/new'],
+    section: "activities",
+    excludePrefixes: ["/teacher/activities/new"],
   },
   {
-    label: 'Create activity',
-    to: '/teacher/activities/new',
+    label: "Create activity",
+    to: "/teacher/activities/new",
     icon: FiPlus,
-    section: 'activities',
+    section: "activities",
   },
   {
-    label: 'Activity types',
-    to: '/teacher/activity-types',
+    label: "Activity types",
+    to: "/teacher/activity-types",
     icon: FiLayers,
-    section: 'activities',
-    excludePrefixes: ['/teacher/activity-types/new'],
+    section: "activities",
+    excludePrefixes: ["/teacher/activity-types/new"],
   },
 
   // Sessions
   {
-    label: 'Session library',
-    to: '/teacher/sessions',
+    label: "Session library",
+    to: "/teacher/sessions",
     icon: FiPlayCircle,
-    section: 'sessions',
-    excludePrefixes: ['/teacher/sessions/new'],
+    section: "sessions",
+    excludePrefixes: ["/teacher/sessions/new"],
   },
   {
-    label: 'Launch session',
-    to: '/teacher/sessions/new',
+    label: "Launch session",
+    to: "/teacher/sessions/new",
     icon: FiPlus,
-    section: 'sessions',
+    section: "sessions",
   },
-]
+];
 
 // Bottom nav items for mobile - key sections only (reordered)
 const bottomNavItems = [
-  { label: 'Home', to: '/teacher/dashboard', icon: FiHome },
-  { label: 'Surveys', to: '/teacher/surveys', icon: FiClipboard },
-  { label: 'Courses', to: '/teacher/courses', icon: FiBook },
-  { label: 'Activities', to: '/teacher/activities', icon: FiGrid },
-]
+  { label: "Home", to: "/teacher/dashboard", icon: FiHome },
+  { label: "Surveys", to: "/teacher/surveys", icon: FiClipboard },
+  { label: "Courses", to: "/teacher/courses", icon: FiBook },
+  { label: "Activities", to: "/teacher/activities", icon: FiGrid },
+];
 
 // Mobile Bottom Navigation Component
 function MobileBottomNav({ onMenuOpen }: { onMenuOpen: () => void }) {
-  const location = useLocation()
-  const teacherName = localStorage.getItem('teacher_name') || 'Teacher'
+  const location = useLocation();
+  const teacherName = localStorage.getItem("teacher_name") || "Teacher";
 
   const isActive = (path: string) => {
-    if (path === '/teacher/dashboard') {
-      return location.pathname === '/teacher/dashboard'
+    if (path === "/teacher/dashboard") {
+      return location.pathname === "/teacher/dashboard";
     }
-    return location.pathname.startsWith(path)
-  }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <Box
-      display={{ base: 'flex', md: 'none' }}
+      display={{ base: "flex", md: "none" }}
       position="fixed"
       bottom={0}
       left={0}
@@ -171,7 +171,7 @@ function MobileBottomNav({ onMenuOpen }: { onMenuOpen: () => void }) {
     >
       <HStack justify="space-around" w="100%" spacing={0}>
         {bottomNavItems.map((item) => {
-          const active = isActive(item.to)
+          const active = isActive(item.to);
           return (
             <VStack
               key={item.to}
@@ -182,19 +182,19 @@ function MobileBottomNav({ onMenuOpen }: { onMenuOpen: () => void }) {
               py={1}
               px={2}
               borderRadius="lg"
-              bg={active ? 'brand.50' : 'transparent'}
-              color={active ? 'brand.600' : 'gray.500'}
+              bg={active ? "brand.50" : "transparent"}
+              color={active ? "brand.600" : "gray.500"}
               transition="all 0.2s"
-              _hover={{ color: 'brand.600' }}
+              _hover={{ color: "brand.600" }}
             >
               <Icon as={item.icon} boxSize={5} />
-              <Text fontSize="2xs" fontWeight={active ? '700' : '600'}>
+              <Text fontSize="2xs" fontWeight={active ? "700" : "600"}>
                 {item.label}
               </Text>
             </VStack>
-          )
+          );
         })}
-        
+
         {/* More/Menu button */}
         <VStack
           as="button"
@@ -206,7 +206,7 @@ function MobileBottomNav({ onMenuOpen }: { onMenuOpen: () => void }) {
           borderRadius="lg"
           color="gray.500"
           transition="all 0.2s"
-          _hover={{ color: 'brand.600' }}
+          _hover={{ color: "brand.600" }}
         >
           <Icon as={FiMenu} boxSize={5} />
           <Text fontSize="2xs" fontWeight="600">
@@ -215,7 +215,7 @@ function MobileBottomNav({ onMenuOpen }: { onMenuOpen: () => void }) {
         </VStack>
       </HStack>
     </Box>
-  )
+  );
 }
 
 // Mobile Sidebar Component
@@ -223,36 +223,36 @@ function MobileSidebar({
   isOpen,
   onClose,
 }: {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }) {
-  const location = useLocation()
-  const { logout } = useAuth()
-  const navigate = useNavigate()
-  const teacherName = localStorage.getItem('teacher_name') || 'Teacher'
-  const prevPathRef = useRef(location.pathname)
+  const location = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const teacherName = localStorage.getItem("teacher_name") || "Teacher";
+  const prevPathRef = useRef(location.pathname);
 
   // Close drawer only when navigating to a DIFFERENT page
   useEffect(() => {
     if (prevPathRef.current !== location.pathname) {
-      onClose()
-      prevPathRef.current = location.pathname
+      onClose();
+      prevPathRef.current = location.pathname;
     }
-  }, [location.pathname, onClose])
+  }, [location.pathname, onClose]);
 
   const grouped = {
-    home: navItems.filter((item) => item.section === 'home'),
-    surveys: navItems.filter((item) => item.section === 'surveys'),
-    courses: navItems.filter((item) => item.section === 'courses'),
-    activities: navItems.filter((item) => item.section === 'activities'),
-    sessions: navItems.filter((item) => item.section === 'sessions'),
-  }
+    home: navItems.filter((item) => item.section === "home"),
+    surveys: navItems.filter((item) => item.section === "surveys"),
+    courses: navItems.filter((item) => item.section === "courses"),
+    activities: navItems.filter((item) => item.section === "activities"),
+    sessions: navItems.filter((item) => item.section === "sessions"),
+  };
 
   const handleLogout = () => {
-    onClose()
-    logout()
-    navigate('/')
-  }
+    onClose();
+    logout();
+    navigate("/");
+  };
 
   return (
     <Drawer isOpen={isOpen} placement="left" onClose={onClose} size="xs">
@@ -323,7 +323,7 @@ function MobileSidebar({
                 </Text>
                 <VStack spacing={1} align="stretch">
                   {grouped.home.map((item) => {
-                    const isActive = location.pathname === '/teacher/dashboard'
+                    const isActive = location.pathname === "/teacher/dashboard";
 
                     return (
                       <Button
@@ -335,17 +335,17 @@ function MobileSidebar({
                         variant="ghost"
                         size="md"
                         w="full"
-                        fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'brand.600' : 'gray.700'}
-                        bg={isActive ? 'brand.50' : 'transparent'}
+                        fontWeight={isActive ? "700" : "600"}
+                        color={isActive ? "brand.600" : "gray.700"}
+                        bg={isActive ? "brand.50" : "transparent"}
                         borderRadius="xl"
                         _hover={{
-                          bg: isActive ? 'brand.50' : 'gray.100',
+                          bg: isActive ? "brand.50" : "gray.100",
                         }}
                       >
                         {item.label}
                       </Button>
-                    )
+                    );
                   })}
                 </VStack>
               </Box>
@@ -365,14 +365,14 @@ function MobileSidebar({
                 </Text>
                 <VStack spacing={1} align="stretch">
                   {grouped.surveys.map((item) => {
-                    const excludes = item.excludePrefixes ?? []
+                    const excludes = item.excludePrefixes ?? [];
                     const isExcluded = excludes.some((prefix) =>
                       location.pathname.startsWith(prefix),
-                    )
+                    );
                     const isBaseMatch =
                       location.pathname === item.to ||
-                      location.pathname.startsWith(`${item.to}/`)
-                    const isActive = !isExcluded && isBaseMatch
+                      location.pathname.startsWith(`${item.to}/`);
+                    const isActive = !isExcluded && isBaseMatch;
 
                     return (
                       <Button
@@ -384,17 +384,17 @@ function MobileSidebar({
                         variant="ghost"
                         size="md"
                         w="full"
-                        fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'brand.600' : 'gray.700'}
-                        bg={isActive ? 'brand.50' : 'transparent'}
+                        fontWeight={isActive ? "700" : "600"}
+                        color={isActive ? "brand.600" : "gray.700"}
+                        bg={isActive ? "brand.50" : "transparent"}
                         borderRadius="xl"
                         _hover={{
-                          bg: isActive ? 'brand.50' : 'gray.100',
+                          bg: isActive ? "brand.50" : "gray.100",
                         }}
                       >
                         {item.label}
                       </Button>
-                    )
+                    );
                   })}
                 </VStack>
               </Box>
@@ -414,14 +414,14 @@ function MobileSidebar({
                 </Text>
                 <VStack spacing={1} align="stretch">
                   {grouped.courses.map((item) => {
-                    const excludes = item.excludePrefixes ?? []
+                    const excludes = item.excludePrefixes ?? [];
                     const isExcluded = excludes.some((prefix) =>
                       location.pathname.startsWith(prefix),
-                    )
+                    );
                     const isBaseMatch =
                       location.pathname === item.to ||
-                      location.pathname.startsWith(`${item.to}/`)
-                    const isActive = !isExcluded && isBaseMatch
+                      location.pathname.startsWith(`${item.to}/`);
+                    const isActive = !isExcluded && isBaseMatch;
 
                     return (
                       <Button
@@ -433,17 +433,17 @@ function MobileSidebar({
                         variant="ghost"
                         size="md"
                         w="full"
-                        fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'brand.600' : 'gray.700'}
-                        bg={isActive ? 'brand.50' : 'transparent'}
+                        fontWeight={isActive ? "700" : "600"}
+                        color={isActive ? "brand.600" : "gray.700"}
+                        bg={isActive ? "brand.50" : "transparent"}
                         borderRadius="xl"
                         _hover={{
-                          bg: isActive ? 'brand.50' : 'gray.100',
+                          bg: isActive ? "brand.50" : "gray.100",
                         }}
                       >
                         {item.label}
                       </Button>
-                    )
+                    );
                   })}
                 </VStack>
               </Box>
@@ -463,14 +463,14 @@ function MobileSidebar({
                 </Text>
                 <VStack spacing={1} align="stretch">
                   {grouped.activities.map((item) => {
-                    const excludes = item.excludePrefixes ?? []
+                    const excludes = item.excludePrefixes ?? [];
                     const isExcluded = excludes.some((prefix) =>
                       location.pathname.startsWith(prefix),
-                    )
+                    );
                     const isBaseMatch =
                       location.pathname === item.to ||
-                      location.pathname.startsWith(`${item.to}/`)
-                    const isActive = !isExcluded && isBaseMatch
+                      location.pathname.startsWith(`${item.to}/`);
+                    const isActive = !isExcluded && isBaseMatch;
 
                     return (
                       <Button
@@ -482,17 +482,17 @@ function MobileSidebar({
                         variant="ghost"
                         size="md"
                         w="full"
-                        fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'brand.600' : 'gray.700'}
-                        bg={isActive ? 'brand.50' : 'transparent'}
+                        fontWeight={isActive ? "700" : "600"}
+                        color={isActive ? "brand.600" : "gray.700"}
+                        bg={isActive ? "brand.50" : "transparent"}
                         borderRadius="xl"
                         _hover={{
-                          bg: isActive ? 'brand.50' : 'gray.100',
+                          bg: isActive ? "brand.50" : "gray.100",
                         }}
                       >
                         {item.label}
                       </Button>
-                    )
+                    );
                   })}
                 </VStack>
               </Box>
@@ -512,14 +512,14 @@ function MobileSidebar({
                 </Text>
                 <VStack spacing={1} align="stretch">
                   {grouped.sessions.map((item) => {
-                    const excludes = item.excludePrefixes ?? []
+                    const excludes = item.excludePrefixes ?? [];
                     const isExcluded = excludes.some((prefix) =>
                       location.pathname.startsWith(prefix),
-                    )
+                    );
                     const isBaseMatch =
                       location.pathname === item.to ||
-                      location.pathname.startsWith(`${item.to}/`)
-                    const isActive = !isExcluded && isBaseMatch
+                      location.pathname.startsWith(`${item.to}/`);
+                    const isActive = !isExcluded && isBaseMatch;
 
                     return (
                       <Button
@@ -531,17 +531,17 @@ function MobileSidebar({
                         variant="ghost"
                         size="md"
                         w="full"
-                        fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'brand.600' : 'gray.700'}
-                        bg={isActive ? 'brand.50' : 'transparent'}
+                        fontWeight={isActive ? "700" : "600"}
+                        color={isActive ? "brand.600" : "gray.700"}
+                        bg={isActive ? "brand.50" : "transparent"}
                         borderRadius="xl"
                         _hover={{
-                          bg: isActive ? 'brand.50' : 'gray.100',
+                          bg: isActive ? "brand.50" : "gray.100",
                         }}
                       >
                         {item.label}
                       </Button>
-                    )
+                    );
                   })}
                 </VStack>
               </Box>
@@ -566,24 +566,30 @@ function MobileSidebar({
         </DrawerBody>
       </DrawerContent>
     </Drawer>
-  )
+  );
 }
 
 // Tablet Icon-Only Nav Item Component
-function TabletNavItem({ item, location }: { item: NavItem; location: ReturnType<typeof useLocation> }) {
-  const excludes = item.excludePrefixes ?? []
+function TabletNavItem({
+  item,
+  location,
+}: {
+  item: NavItem;
+  location: ReturnType<typeof useLocation>;
+}) {
+  const excludes = item.excludePrefixes ?? [];
   const isExcluded = excludes.some((prefix) =>
     location.pathname.startsWith(prefix),
-  )
-  
-  let isActive: boolean
-  if (item.to === '/teacher/dashboard') {
-    isActive = location.pathname === '/teacher/dashboard'
+  );
+
+  let isActive: boolean;
+  if (item.to === "/teacher/dashboard") {
+    isActive = location.pathname === "/teacher/dashboard";
   } else {
     const isBaseMatch =
       location.pathname === item.to ||
-      location.pathname.startsWith(`${item.to}/`)
-    isActive = !isExcluded && isBaseMatch
+      location.pathname.startsWith(`${item.to}/`);
+    isActive = !isExcluded && isBaseMatch;
   }
 
   return (
@@ -598,39 +604,39 @@ function TabletNavItem({ item, location }: { item: NavItem; location: ReturnType
         w="44px"
         h="44px"
         borderRadius="xl"
-        color={isActive ? 'brand.600' : 'gray.600'}
-        bg={isActive ? 'brand.50' : 'transparent'}
+        color={isActive ? "brand.600" : "gray.600"}
+        bg={isActive ? "brand.50" : "transparent"}
         _hover={{
-          bg: isActive ? 'brand.50' : 'gray.100',
+          bg: isActive ? "brand.50" : "gray.100",
         }}
       />
     </Tooltip>
-  )
+  );
 }
 
 export function TeacherLayout() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const { logout } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const bg = useColorModeValue('#F7F8FA', 'gray.900')
-  const sidebarBg = useColorModeValue('white', 'gray.800')
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const bg = useColorModeValue("#F7F8FA", "gray.900");
+  const sidebarBg = useColorModeValue("white", "gray.800");
 
-  const teacherName = localStorage.getItem('teacher_name') || 'Teacher'
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const teacherName = localStorage.getItem("teacher_name") || "Teacher";
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+    logout();
+    navigate("/");
+  };
 
   const grouped = {
-    home: navItems.filter((item) => item.section === 'home'),
-    surveys: navItems.filter((item) => item.section === 'surveys'),
-    courses: navItems.filter((item) => item.section === 'courses'),
-    activities: navItems.filter((item) => item.section === 'activities'),
-    sessions: navItems.filter((item) => item.section === 'sessions'),
-  }
+    home: navItems.filter((item) => item.section === "home"),
+    surveys: navItems.filter((item) => item.section === "surveys"),
+    courses: navItems.filter((item) => item.section === "courses"),
+    activities: navItems.filter((item) => item.section === "activities"),
+    sessions: navItems.filter((item) => item.section === "sessions"),
+  };
 
   return (
     <Flex minH="100vh" bg={bg} overflow="hidden">
@@ -642,7 +648,7 @@ export function TeacherLayout() {
 
       {/* Tablet Sidebar - Icons only (md to lg) */}
       <Box
-        display={{ base: 'none', md: 'flex', lg: 'none' }}
+        display={{ base: "none", md: "flex", lg: "none" }}
         position="fixed"
         left="0"
         top="0"
@@ -677,30 +683,30 @@ export function TeacherLayout() {
           {grouped.home.map((item) => (
             <TabletNavItem key={item.to} item={item} location={location} />
           ))}
-          
+
           <Divider my={2} />
-          
+
           {/* Surveys */}
           {grouped.surveys.map((item) => (
             <TabletNavItem key={item.to} item={item} location={location} />
           ))}
-          
+
           <Divider my={2} />
-          
+
           {/* Courses */}
           {grouped.courses.map((item) => (
             <TabletNavItem key={item.to} item={item} location={location} />
           ))}
-          
+
           <Divider my={2} />
-          
+
           {/* Activities */}
           {grouped.activities.map((item) => (
             <TabletNavItem key={item.to} item={item} location={location} />
           ))}
-          
+
           <Divider my={2} />
-          
+
           {/* Sessions */}
           {grouped.sessions.map((item) => (
             <TabletNavItem key={item.to} item={item} location={location} />
@@ -719,17 +725,16 @@ export function TeacherLayout() {
               h="44px"
               borderRadius="xl"
               color="red.600"
-              _hover={{ bg: 'red.50', color: 'red.500' }}
+              _hover={{ bg: "red.50", color: "red.500" }}
               onClick={handleLogout}
             />
           </Tooltip>
-          
         </VStack>
       </Box>
 
       {/* Desktop Sidebar - Full width with text (lg and up) */}
       <Box
-        w={isSidebarOpen ? '280px' : '0'}
+        w={isSidebarOpen ? "280px" : "0"}
         h="100vh"
         bg={sidebarBg}
         borderRight="1px solid"
@@ -737,7 +742,7 @@ export function TeacherLayout() {
         transition="all 0.3s"
         overflow="hidden"
         boxShadow="sm"
-        display={{ base: 'none', lg: 'block' }}
+        display={{ base: "none", lg: "block" }}
         position="fixed"
         left="0"
         top="0"
@@ -779,12 +784,7 @@ export function TeacherLayout() {
               border="1px solid"
               borderColor="gray.200"
             >
-              <Avatar
-                name={teacherName}
-                size="md"
-                bg="ink.300"
-                color="white"
-              />
+              <Avatar name={teacherName} size="md" bg="ink.300" color="white" />
               <VStack align="flex-start" spacing={0} flex="1" minW="0">
                 <Text
                   fontWeight="700"
@@ -809,15 +809,15 @@ export function TeacherLayout() {
             align="stretch"
             overflowY="auto"
             css={{
-              '&::-webkit-scrollbar': {
-                width: '6px',
+              "&::-webkit-scrollbar": {
+                width: "6px",
               },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
+              "&::-webkit-scrollbar-track": {
+                background: "transparent",
               },
-              '&::-webkit-scrollbar-thumb': {
-                background: '#CBD5E0',
-                borderRadius: '24px',
+              "&::-webkit-scrollbar-thumb": {
+                background: "#CBD5E0",
+                borderRadius: "24px",
               },
             }}
           >
@@ -836,7 +836,7 @@ export function TeacherLayout() {
               </Text>
               <VStack spacing={1} align="stretch">
                 {grouped.home.map((item) => {
-                  const isActive = location.pathname === '/teacher/dashboard'
+                  const isActive = location.pathname === "/teacher/dashboard";
 
                   return (
                     <Button
@@ -848,19 +848,19 @@ export function TeacherLayout() {
                       variant="ghost"
                       size="md"
                       w="full"
-                      fontWeight={isActive ? '700' : '600'}
-                      color={isActive ? 'brand.600' : 'gray.700'}
-                      bg={isActive ? 'brand.50' : 'transparent'}
+                      fontWeight={isActive ? "700" : "600"}
+                      color={isActive ? "brand.600" : "gray.700"}
+                      bg={isActive ? "brand.50" : "transparent"}
                       borderRadius="xl"
                       px={3}
                       _hover={{
-                        bg: isActive ? 'brand.50' : 'gray.100',
+                        bg: isActive ? "brand.50" : "gray.100",
                       }}
                       transition="all 0.2s"
                     >
                       {item.label}
                     </Button>
-                  )
+                  );
                 })}
               </VStack>
             </Box>
@@ -880,14 +880,14 @@ export function TeacherLayout() {
               </Text>
               <VStack spacing={1} align="stretch">
                 {grouped.surveys.map((item) => {
-                  const excludes = item.excludePrefixes ?? []
+                  const excludes = item.excludePrefixes ?? [];
                   const isExcluded = excludes.some((prefix) =>
                     location.pathname.startsWith(prefix),
-                  )
+                  );
                   const isBaseMatch =
                     location.pathname === item.to ||
-                    location.pathname.startsWith(`${item.to}/`)
-                  const isActive = !isExcluded && isBaseMatch
+                    location.pathname.startsWith(`${item.to}/`);
+                  const isActive = !isExcluded && isBaseMatch;
 
                   return (
                     <Button
@@ -899,19 +899,19 @@ export function TeacherLayout() {
                       variant="ghost"
                       size="md"
                       w="full"
-                      fontWeight={isActive ? '700' : '600'}
-                      color={isActive ? 'brand.600' : 'gray.700'}
-                      bg={isActive ? 'brand.50' : 'transparent'}
+                      fontWeight={isActive ? "700" : "600"}
+                      color={isActive ? "brand.600" : "gray.700"}
+                      bg={isActive ? "brand.50" : "transparent"}
                       borderRadius="xl"
                       px={3}
                       _hover={{
-                        bg: isActive ? 'brand.50' : 'gray.100',
+                        bg: isActive ? "brand.50" : "gray.100",
                       }}
                       transition="all 0.2s"
                     >
                       {item.label}
                     </Button>
-                  )
+                  );
                 })}
               </VStack>
             </Box>
@@ -931,14 +931,14 @@ export function TeacherLayout() {
               </Text>
               <VStack spacing={1} align="stretch">
                 {grouped.courses.map((item) => {
-                  const excludes = item.excludePrefixes ?? []
+                  const excludes = item.excludePrefixes ?? [];
                   const isExcluded = excludes.some((prefix) =>
                     location.pathname.startsWith(prefix),
-                  )
+                  );
                   const isBaseMatch =
                     location.pathname === item.to ||
-                    location.pathname.startsWith(`${item.to}/`)
-                  const isActive = !isExcluded && isBaseMatch
+                    location.pathname.startsWith(`${item.to}/`);
+                  const isActive = !isExcluded && isBaseMatch;
 
                   return (
                     <Button
@@ -950,19 +950,19 @@ export function TeacherLayout() {
                       variant="ghost"
                       size="md"
                       w="full"
-                      fontWeight={isActive ? '700' : '600'}
-                      color={isActive ? 'brand.600' : 'gray.700'}
-                      bg={isActive ? 'brand.50' : 'transparent'}
+                      fontWeight={isActive ? "700" : "600"}
+                      color={isActive ? "brand.600" : "gray.700"}
+                      bg={isActive ? "brand.50" : "transparent"}
                       borderRadius="xl"
                       px={3}
                       _hover={{
-                        bg: isActive ? 'brand.50' : 'gray.100',
+                        bg: isActive ? "brand.50" : "gray.100",
                       }}
                       transition="all 0.2s"
                     >
                       {item.label}
                     </Button>
-                  )
+                  );
                 })}
               </VStack>
             </Box>
@@ -982,14 +982,14 @@ export function TeacherLayout() {
               </Text>
               <VStack spacing={1} align="stretch">
                 {grouped.activities.map((item) => {
-                  const excludes = item.excludePrefixes ?? []
+                  const excludes = item.excludePrefixes ?? [];
                   const isExcluded = excludes.some((prefix) =>
                     location.pathname.startsWith(prefix),
-                  )
+                  );
                   const isBaseMatch =
                     location.pathname === item.to ||
-                    location.pathname.startsWith(`${item.to}/`)
-                  const isActive = !isExcluded && isBaseMatch
+                    location.pathname.startsWith(`${item.to}/`);
+                  const isActive = !isExcluded && isBaseMatch;
 
                   return (
                     <Button
@@ -1001,19 +1001,19 @@ export function TeacherLayout() {
                       variant="ghost"
                       size="md"
                       w="full"
-                      fontWeight={isActive ? '700' : '600'}
-                      color={isActive ? 'brand.600' : 'gray.700'}
-                      bg={isActive ? 'brand.50' : 'transparent'}
+                      fontWeight={isActive ? "700" : "600"}
+                      color={isActive ? "brand.600" : "gray.700"}
+                      bg={isActive ? "brand.50" : "transparent"}
                       borderRadius="xl"
                       px={3}
                       _hover={{
-                        bg: isActive ? 'brand.50' : 'gray.100',
+                        bg: isActive ? "brand.50" : "gray.100",
                       }}
                       transition="all 0.2s"
                     >
                       {item.label}
                     </Button>
-                  )
+                  );
                 })}
               </VStack>
             </Box>
@@ -1033,14 +1033,14 @@ export function TeacherLayout() {
               </Text>
               <VStack spacing={1} align="stretch">
                 {grouped.sessions.map((item) => {
-                  const excludes = item.excludePrefixes ?? []
+                  const excludes = item.excludePrefixes ?? [];
                   const isExcluded = excludes.some((prefix) =>
                     location.pathname.startsWith(prefix),
-                  )
+                  );
                   const isBaseMatch =
                     location.pathname === item.to ||
-                    location.pathname.startsWith(`${item.to}/`)
-                  const isActive = !isExcluded && isBaseMatch
+                    location.pathname.startsWith(`${item.to}/`);
+                  const isActive = !isExcluded && isBaseMatch;
 
                   return (
                     <Button
@@ -1052,19 +1052,19 @@ export function TeacherLayout() {
                       variant="ghost"
                       size="md"
                       w="full"
-                      fontWeight={isActive ? '700' : '600'}
-                      color={isActive ? 'brand.600' : 'gray.700'}
-                      bg={isActive ? 'brand.50' : 'transparent'}
+                      fontWeight={isActive ? "700" : "600"}
+                      color={isActive ? "brand.600" : "gray.700"}
+                      bg={isActive ? "brand.50" : "transparent"}
                       borderRadius="xl"
                       px={3}
                       _hover={{
-                        bg: isActive ? 'brand.50' : 'gray.100',
+                        bg: isActive ? "brand.50" : "gray.100",
                       }}
                       transition="all 0.2s"
                     >
                       {item.label}
                     </Button>
-                  )
+                  );
                 })}
               </VStack>
             </Box>
@@ -1093,7 +1093,7 @@ export function TeacherLayout() {
         flex="1"
         direction="column"
         overflow="hidden"
-        ml={{ base: 0, md: '72px', lg: isSidebarOpen ? '280px' : 0 }}
+        ml={{ base: 0, md: "72px", lg: isSidebarOpen ? "280px" : 0 }}
         transition="margin-left 0.3s"
       >
         {/* Top Navigation Bar */}
@@ -1107,7 +1107,7 @@ export function TeacherLayout() {
         >
           <HStack spacing={4} justify="space-between">
             {/* Left: Search */}
-            <HStack spacing={4} flex="1" maxW={{ base: 'full', md: '600px' }}>
+            <HStack spacing={4} flex="1" maxW={{ base: "full", md: "600px" }}>
               {/* Desktop menu button - only when sidebar closed */}
               <IconButton
                 aria-label="Open sidebar"
@@ -1117,7 +1117,7 @@ export function TeacherLayout() {
                 size="lg"
                 flexShrink={0}
                 borderRadius="lg"
-                display={{ base: 'none', lg: isSidebarOpen ? 'none' : 'flex' }}
+                display={{ base: "none", lg: isSidebarOpen ? "none" : "flex" }}
               />
 
               {/* Search Bar */}
@@ -1135,7 +1135,7 @@ export function TeacherLayout() {
                   borderRadius="full"
                   p={0}
                   h="auto"
-                  _hover={{ transform: 'scale(1.05)' }}
+                  _hover={{ transform: "scale(1.05)" }}
                   transition="all 0.2s"
                 >
                   <HStack spacing={2}>
@@ -1148,7 +1148,7 @@ export function TeacherLayout() {
                     <Text
                       fontSize="sm"
                       fontWeight="600"
-                      display={{ base: 'none', md: 'block' }}
+                      display={{ base: "none", md: "block" }}
                     >
                       {teacherName}
                     </Text>
@@ -1189,15 +1189,15 @@ export function TeacherLayout() {
         </Box>
 
         {/* Page Content - Add bottom padding for mobile nav */}
-        <Box 
-          flex="1" 
-          overflow="auto" 
+        <Box
+          flex="1"
+          overflow="auto"
           p={{ base: 4, sm: 5, md: 6, lg: 8 }}
-          pb={{ base: '80px', md: 6, lg: 8 }}
+          pb={{ base: "80px", md: 6, lg: 8 }}
         >
           <Outlet />
         </Box>
       </Flex>
     </Flex>
-  )
+  );
 }
