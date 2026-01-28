@@ -23,6 +23,9 @@ import {
   FormControl,
   FormLabel,
   SimpleGrid,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
 import { FiArrowLeft, FiCheckCircle, FiPlus, FiTrash2 } from 'react-icons/fi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -31,6 +34,7 @@ import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSurvey } from '../../api/surveys'
 import { ApiError } from '../../api/client'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 
 interface CategoryForm {
   id: string
@@ -208,30 +212,46 @@ export function TeacherSurveyCreatePage() {
     <Stack spacing={8}>
       {/* Header */}
       <Box>
-        <Button
-          leftIcon={<Icon as={FiArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate('/teacher/surveys')}
-          mb={4}
-          fontWeight="600"
-        >
-          Back to Survey Library
-        </Button>
+         {/* Breadcrumb Navigation */}
+                     <Breadcrumb
+                       spacing={2}
+                       separator={<ChevronRightIcon color="gray.400" boxSize={4} />}
+                       mb={4}
+                       fontSize="sm"
+                       fontWeight="500"
+                     >
+                       <BreadcrumbItem>
+                         <BreadcrumbLink
+                           onClick={() => navigate('/teacher/dashboard')}
+                           color="gray.600"
+                           _hover={{ color: 'brand.600', textDecoration: 'none' }}
+                           cursor="pointer"
+                         >
+                           Dashboard
+                         </BreadcrumbLink>
+                       </BreadcrumbItem>
+                       <BreadcrumbItem>
+                         <BreadcrumbLink
+                           onClick={() => navigate('/teacher/surveys')}
+                           color="gray.600"
+                           _hover={{ color: 'brand.600', textDecoration: 'none' }}
+                           cursor="pointer"
+                         >
+                           Survey Library
+                         </BreadcrumbLink>
+                       </BreadcrumbItem>
+                       <BreadcrumbItem isCurrentPage>
+                         <BreadcrumbLink color="gray.900" fontWeight="600" cursor="default">
+                           Create Survey
+                         </BreadcrumbLink>
+                       </BreadcrumbItem>
+                     </Breadcrumb>
+       
 
         <HStack spacing={4} align="flex-start">
-          <Box
-            bgGradient="linear(135deg, brand.400, brand.600)"
-            color="white"
-            p={4}
-            borderRadius="2xl"
-            boxShadow="lg"
-          >
-            <Icon as={FiPlus} boxSize={8} />
-          </Box>
+      
           <VStack align="flex-start" spacing={1}>
-            <Heading size="lg" fontWeight="800">
-              Add Survey to Library
-            </Heading>
+          
             <HStack spacing={4} fontSize="sm" color="gray.600" fontWeight="600">
               <HStack>
                 <Icon as={FiCheckCircle} />

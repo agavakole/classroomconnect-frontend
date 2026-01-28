@@ -24,7 +24,7 @@ import {
   IconButton,
   Tooltip,
   ButtonGroup,
-} from '@chakra-ui/react'
+} from "@chakra-ui/react";
 import {
   PieChart,
   Pie,
@@ -36,11 +36,11 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+} from "recharts";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   FiUsers,
   FiClock,
@@ -54,204 +54,220 @@ import {
   FiLink,
   FiPieChart,
   FiBarChart2,
-} from 'react-icons/fi'
+} from "react-icons/fi";
 import {
   closeSession,
   getSessionDashboard,
   getSessionSubmissions,
   listCourseSessions,
-} from '../../api/sessions'
+} from "../../api/sessions";
 
 export function TeacherSessionDashboardPage() {
-  const { sessionId } = useParams<{ sessionId: string }>()
-  const queryClient = useQueryClient()
-  const toast = useToast()
-  const navigate = useNavigate()
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const navigate = useNavigate();
 
   const sessionQuery = useQuery({
-    queryKey: ['sessionDashboard', sessionId],
-    queryFn: () => getSessionDashboard(sessionId ?? ''),
+    queryKey: ["sessionDashboard", sessionId],
+    queryFn: () => getSessionDashboard(sessionId ?? ""),
     enabled: Boolean(sessionId),
-  })
+  });
 
   const submissionsQuery = useQuery({
-    queryKey: ['sessionSubmissions', sessionId],
-    queryFn: () => getSessionSubmissions(sessionId ?? ''),
+    queryKey: ["sessionSubmissions", sessionId],
+    queryFn: () => getSessionSubmissions(sessionId ?? ""),
     enabled: Boolean(sessionId),
-  })
+  });
 
   const sessionListQuery = useQuery({
-    queryKey: ['courseSessions', sessionQuery.data?.course_id],
-    queryFn: () => listCourseSessions(sessionQuery.data?.course_id ?? ''),
+    queryKey: ["courseSessions", sessionQuery.data?.course_id],
+    queryFn: () => listCourseSessions(sessionQuery.data?.course_id ?? ""),
     enabled: Boolean(sessionQuery.data?.course_id),
-  })
+  });
 
   const closeMutation = useMutation({
-    mutationFn: () => closeSession(sessionId ?? ''),
+    mutationFn: () => closeSession(sessionId ?? ""),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['sessionDashboard', sessionId],
-      })
+        queryKey: ["sessionDashboard", sessionId],
+      });
       if (sessionQuery.data?.course_id) {
         queryClient.invalidateQueries({
-          queryKey: ['courseSessions', sessionQuery.data.course_id],
-        })
+          queryKey: ["courseSessions", sessionQuery.data.course_id],
+        });
       }
       toast({
-        title: 'Session closed',
-        description: 'No more submissions will be accepted',
-        status: 'success',
+        title: "Session closed",
+        description: "No more submissions will be accepted",
+        status: "success",
         duration: 3000,
         isClosable: true,
-      })
+      });
     },
-  })
+  });
 
   const sessionMeta = useMemo(() => {
-    return sessionListQuery.data?.find((item) => item.session_id === sessionId)
-  }, [sessionListQuery.data, sessionId])
+    return sessionListQuery.data?.find((item) => item.session_id === sessionId);
+  }, [sessionListQuery.data, sessionId]);
 
-  const isSessionOpen = !sessionMeta?.closed_at
+  const isSessionOpen = !sessionMeta?.closed_at;
   const joinUrl = useMemo(() => {
-    if (!sessionMeta?.join_token || typeof window === 'undefined') return ''
-    return `${window.location.origin}/session/run/${sessionMeta.join_token}`
-  }, [sessionMeta?.join_token])
+    if (!sessionMeta?.join_token || typeof window === "undefined") return "";
+    return `${window.location.origin}/session/run/${sessionMeta.join_token}`;
+  }, [sessionMeta?.join_token]);
 
   // Real-time updates every 3 seconds
   useEffect(() => {
-    if (!isSessionOpen) return
+    if (!isSessionOpen) return;
     const interval = setInterval(() => {
       queryClient.invalidateQueries({
-        queryKey: ['sessionDashboard', sessionId],
-      })
+        queryKey: ["sessionDashboard", sessionId],
+      });
       queryClient.invalidateQueries({
-        queryKey: ['sessionSubmissions', sessionId],
-      })
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [isSessionOpen, queryClient, sessionId])
+        queryKey: ["sessionSubmissions", sessionId],
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isSessionOpen, queryClient, sessionId]);
 
   const handleCloseSession = () => {
-    if (!isSessionOpen) return
+    if (!isSessionOpen) return;
     const confirmed = window.confirm(
-      'Closing the session will stop new submissions. Are you sure?'
-    )
-    if (!confirmed) return
-    closeMutation.mutate()
-  }
+      "Closing the session will stop new submissions. Are you sure?",
+    );
+    if (!confirmed) return;
+    closeMutation.mutate();
+  };
 
-  const copyToClipboard = async (value: string, successTitle: string, successDescription: string) => {
-    if (!value) return
+  const copyToClipboard = async (
+    value: string,
+    successTitle: string,
+    successDescription: string,
+  ) => {
+    if (!value) return;
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value)
+        await navigator.clipboard.writeText(value);
       } else {
-        const tempInput = document.createElement('input')
-        tempInput.value = value
-        document.body.appendChild(tempInput)
-        tempInput.select()
-        document.execCommand('copy')
-        document.body.removeChild(tempInput)
+        const tempInput = document.createElement("input");
+        tempInput.value = value;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
       }
       toast({
         title: successTitle,
         description: successDescription,
-        status: 'success',
+        status: "success",
         duration: 2000,
         isClosable: true,
-      })
+      });
     } catch (error) {
       toast({
-        title: 'Copy failed',
-        description: error instanceof Error ? error.message : 'Please copy manually',
-        status: 'error',
+        title: "Copy failed",
+        description:
+          error instanceof Error ? error.message : "Please copy manually",
+        status: "error",
         duration: 3000,
         isClosable: true,
-      })
+      });
     }
-  }
+  };
 
   const handleCopyToken = async () => {
-    if (!sessionMeta?.join_token) return
+    if (!sessionMeta?.join_token) return;
     await copyToClipboard(
       sessionMeta.join_token,
-      'Token copied! 🔑',
-      'Share this token with your students',
-    )
-  }
+      "Token copied! 🔑",
+      "Share this token with your students",
+    );
+  };
 
   const handleCopyJoinLink = async () => {
-    if (!joinUrl) return
-    await copyToClipboard(joinUrl, 'Link copied! 🎉', 'Students can now join the session')
-  }
+    if (!joinUrl) return;
+    await copyToClipboard(
+      joinUrl,
+      "Link copied! 🎉",
+      "Students can now join the session",
+    );
+  };
 
   const handleOpenShareScreen = () => {
-    if (!sessionMeta?.qr_url) return
-    window.open(sessionMeta.qr_url, '_blank', 'noopener,noreferrer')
-  }
+    if (!sessionMeta?.join_token) return;
+    const shareUrl = `http://localhost:5173/join?s=${sessionMeta.join_token}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
 
-  const dashboard = sessionQuery.data
-  const participants = dashboard?.participants ?? []
+  const dashboard = sessionQuery.data;
+  const participants = dashboard?.participants ?? [];
   const moodEntries = useMemo(
     () => Object.entries(dashboard?.mood_summary ?? {}),
-    [dashboard?.mood_summary]
-  )
+    [dashboard?.mood_summary],
+  );
   const totalMoodResponses = useMemo(
     () => moodEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
-    [moodEntries]
-  )
+    [moodEntries],
+  );
 
   const surveyEntries = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const counts: Record<string, number> = {};
     participants.forEach((participant) => {
-      const label = participant.learning_style ?? 'Not set'
-      counts[label] = (counts[label] ?? 0) + 1
-    })
-    return Object.entries(counts)
-  }, [participants])
+      const label = participant.learning_style ?? "Not set";
+      counts[label] = (counts[label] ?? 0) + 1;
+    });
+    return Object.entries(counts);
+  }, [participants]);
 
   const totalSurveyResponses = useMemo(
-    () => surveyEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
-    [surveyEntries]
-  )
+    () =>
+      surveyEntries.reduce((sum, [, count]) => sum + (Number(count) || 0), 0),
+    [surveyEntries],
+  );
 
   const moodData = useMemo(() => {
     return moodEntries.map(([name, value]) => ({
-      name: name.replace(/_/g, ' '),
+      name: name.replace(/_/g, " "),
       value: Number(value) || 0,
-    }))
-  }, [moodEntries])
+    }));
+  }, [moodEntries]);
 
   const surveyData = useMemo(() => {
     return surveyEntries.map(([name, value]) => ({
-      name: name.replace(/_/g, ' '),
+      name: name.replace(/_/g, " "),
       value: Number(value) || 0,
-    }))
-  }, [surveyEntries])
+    }));
+  }, [surveyEntries]);
 
-  const MOOD_COLORS = ['#00C49F', '#FFBB28', '#FF8042', '#0088FE', '#8884d8']
-  const SURVEY_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE']
+  const MOOD_COLORS = ["#00C49F", "#FFBB28", "#FF8042", "#0088FE", "#8884d8"];
+  const SURVEY_COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088FE"];
 
-  const [moodFilter, setMoodFilter] = useState<string>('all')
-  const [surveyFilter, setSurveyFilter] = useState<string>('all')
+  const [moodFilter, setMoodFilter] = useState<string>("all");
+  const [surveyFilter, setSurveyFilter] = useState<string>("all");
 
-  const [moodChartType, setMoodChartType] = useState<'pie' | 'bar'>('pie')
-  const [surveyChartType, setSurveyChartType] = useState<'pie' | 'bar'>('bar')
+  const [moodChartType, setMoodChartType] = useState<"pie" | "bar">("pie");
+  const [surveyChartType, setSurveyChartType] = useState<"pie" | "bar">("bar");
 
   const filteredParticipants = useMemo(() => {
     return participants.filter((participant) => {
-      const matchesMood = moodFilter === 'all' || participant.mood === moodFilter
-      const surveyValue = participant.learning_style ?? 'Not set'
-      const matchesSurvey = surveyFilter === 'all' || surveyValue === surveyFilter
-      return matchesMood && matchesSurvey
-    })
-  }, [participants, moodFilter, surveyFilter])
+      const matchesMood =
+        moodFilter === "all" || participant.mood === moodFilter;
+      const surveyValue = participant.learning_style ?? "Not set";
+      const matchesSurvey =
+        surveyFilter === "all" || surveyValue === surveyFilter;
+      return matchesMood && matchesSurvey;
+    });
+  }, [participants, moodFilter, surveyFilter]);
 
-  const moodOptions = useMemo(() => moodEntries.map(([mood]) => mood), [moodEntries])
+  const moodOptions = useMemo(
+    () => moodEntries.map(([mood]) => mood),
+    [moodEntries],
+  );
   const surveyOptions = useMemo(
     () => surveyEntries.map(([style]) => style),
-    [surveyEntries]
-  )
+    [surveyEntries],
+  );
 
   if (sessionQuery.isLoading) {
     return (
@@ -260,7 +276,7 @@ export function TeacherSessionDashboardPage() {
           Loading session dashboard...
         </Text>
       </Box>
-    )
+    );
   }
 
   if (sessionQuery.isError || !dashboard) {
@@ -277,10 +293,10 @@ export function TeacherSessionDashboardPage() {
           Unable to load session dashboard
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
-  const totalParticipants = participants.length
+  const totalParticipants = participants.length;
 
   return (
     <Stack spacing={8}>
@@ -289,7 +305,7 @@ export function TeacherSessionDashboardPage() {
         <Button
           leftIcon={<Icon as={FiArrowLeft} />}
           variant="ghost"
-          onClick={() => navigate('/teacher/sessions')}
+          onClick={() => navigate("/teacher/sessions")}
           mb={4}
           fontWeight="600"
         >
@@ -297,17 +313,17 @@ export function TeacherSessionDashboardPage() {
         </Button>
 
         <Flex
-          direction={{ base: 'column', md: 'row' }}
+          direction={{ base: "column", md: "row" }}
           justify="space-between"
-          align={{ base: 'flex-start', md: 'center' }}
+          align={{ base: "flex-start", md: "center" }}
           gap={4}
         >
           <HStack spacing={4} align="flex-start">
             <Box
               bgGradient={
                 isSessionOpen
-                  ? 'linear(135deg, #10B981, #059669)'
-                  : 'linear(135deg, gray.400, gray.600)'
+                  ? "linear(135deg, #10B981, #059669)"
+                  : "linear(135deg, gray.400, gray.600)"
               }
               color="white"
               p={4}
@@ -322,14 +338,14 @@ export function TeacherSessionDashboardPage() {
               </Heading>
               <HStack spacing={3} fontSize="sm" color="gray.600">
                 <Badge
-                  colorScheme={isSessionOpen ? 'green' : 'gray'}
+                  colorScheme={isSessionOpen ? "green" : "gray"}
                   fontSize="xs"
                   px={3}
                   py={1}
                   borderRadius="full"
                   fontWeight="700"
                 >
-                  {isSessionOpen ? '🟢 LIVE' : '⚫ CLOSED'}
+                  {isSessionOpen ? "🟢 LIVE" : "⚫ CLOSED"}
                 </Badge>
                 <Text fontWeight="600">
                   Session {sessionId?.slice(0, 8)}...
@@ -341,8 +357,8 @@ export function TeacherSessionDashboardPage() {
           {isSessionOpen && (
             <Button
               leftIcon={<Icon as={FiAlertCircle} />}
-              colorScheme='white'
-			  color="red.600"
+              colorScheme="white"
+              color="red.600"
               onClick={handleCloseSession}
               isLoading={closeMutation.isPending}
               size="lg"
@@ -360,7 +376,13 @@ export function TeacherSessionDashboardPage() {
         {/* Join Session (Left, larger) */}
         <GridItem colSpan={{ base: 1, lg: 2 }}>
           {sessionMeta?.qr_url && (
-            <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl" h="full">
+            <Card
+              borderRadius="2xl"
+              border="2px solid"
+              borderColor="gray.100"
+              boxShadow="xl"
+              h="full"
+            >
               <CardBody p={8}>
                 <VStack spacing={6} h="full" justify="center">
                   <VStack spacing={2}>
@@ -369,7 +391,8 @@ export function TeacherSessionDashboardPage() {
                       Join Session
                     </Heading>
                     <Text color="gray.600" textAlign="center">
-                      Launch a standalone join screen with the QR code for your students
+                      Launch a standalone join screen with the QR code for your
+                      students
                     </Text>
                   </VStack>
 
@@ -499,7 +522,7 @@ export function TeacherSessionDashboardPage() {
                     <Text fontSize="md" fontWeight="700">
                       {sessionMeta
                         ? new Date(sessionMeta.started_at).toLocaleTimeString()
-                        : 'N/A'}
+                        : "N/A"}
                     </Text>
                   </VStack>
                 </HStack>
@@ -532,13 +555,18 @@ export function TeacherSessionDashboardPage() {
                 border="1px solid"
                 borderColor="gray.100"
                 bg="blue.50"
-                >
+              >
                 <HStack justify="space-between" mb={4}>
                   <HStack>
                     <Text fontWeight="800" color="gray.800">
                       Mood Distribution
                     </Text>
-                    <Badge colorScheme="accent" borderRadius="full" fontWeight="800" bg="accent.100">
+                    <Badge
+                      colorScheme="accent"
+                      borderRadius="full"
+                      fontWeight="800"
+                      bg="accent.100"
+                    >
                       {totalMoodResponses} responses
                     </Badge>
                   </HStack>
@@ -546,18 +574,18 @@ export function TeacherSessionDashboardPage() {
                     <IconButton
                       aria-label="Pie Chart"
                       icon={<Icon as={FiPieChart} />}
-                      isActive={moodChartType === 'pie'}
-                      onClick={() => setMoodChartType('pie')}
-                      colorScheme={moodChartType === 'pie' ? 'accent' : 'gray'}
-                      variant={moodChartType === 'pie' ? 'solid' : 'outline'}
+                      isActive={moodChartType === "pie"}
+                      onClick={() => setMoodChartType("pie")}
+                      colorScheme={moodChartType === "pie" ? "accent" : "gray"}
+                      variant={moodChartType === "pie" ? "solid" : "outline"}
                     />
                     <IconButton
                       aria-label="Bar Chart"
                       icon={<Icon as={FiBarChart2} />}
-                      isActive={moodChartType === 'bar'}
-                      onClick={() => setMoodChartType('bar')}
-                      colorScheme={moodChartType === 'bar' ? 'accent' : 'gray'}
-                      variant={moodChartType === 'bar' ? 'solid' : 'outline'}
+                      isActive={moodChartType === "bar"}
+                      onClick={() => setMoodChartType("bar")}
+                      colorScheme={moodChartType === "bar" ? "accent" : "gray"}
+                      variant={moodChartType === "bar" ? "solid" : "outline"}
                     />
                   </ButtonGroup>
                 </HStack>
@@ -571,10 +599,10 @@ export function TeacherSessionDashboardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3 }}
-                        style={{ width: '100%', height: '100%' }}
+                        style={{ width: "100%", height: "100%" }}
                       >
                         <ResponsiveContainer width="100%" height="100%">
-                          {moodChartType === 'pie' ? (
+                          {moodChartType === "pie" ? (
                             <PieChart>
                               <Pie
                                 data={moodData}
@@ -586,7 +614,12 @@ export function TeacherSessionDashboardPage() {
                                 dataKey="value"
                               >
                                 {moodData.map((_, index) => (
-                                  <Cell key={`cell-${index}`} fill={MOOD_COLORS[index % MOOD_COLORS.length]} />
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={
+                                      MOOD_COLORS[index % MOOD_COLORS.length]
+                                    }
+                                  />
                                 ))}
                               </Pie>
                               <RechartsTooltip />
@@ -596,7 +629,12 @@ export function TeacherSessionDashboardPage() {
                             <BarChart
                               data={moodData}
                               layout="vertical"
-                              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 40,
+                                bottom: 5,
+                              }}
                             >
                               <XAxis type="number" hide />
                               <YAxis
@@ -611,7 +649,9 @@ export function TeacherSessionDashboardPage() {
                                 {moodData.map((_, index) => (
                                   <Cell
                                     key={`cell-${index}`}
-                                    fill={MOOD_COLORS[index % MOOD_COLORS.length]}
+                                    fill={
+                                      MOOD_COLORS[index % MOOD_COLORS.length]
+                                    }
                                   />
                                 ))}
                               </Bar>
@@ -643,7 +683,12 @@ export function TeacherSessionDashboardPage() {
                     <Text fontWeight="800" color="purple.800">
                       Survey Results
                     </Text>
-                    <Badge colorScheme="purple" borderRadius="full" fontWeight="800" bg="purple.200">
+                    <Badge
+                      colorScheme="purple"
+                      borderRadius="full"
+                      fontWeight="800"
+                      bg="purple.200"
+                    >
                       {totalSurveyResponses} responses
                     </Badge>
                   </HStack>
@@ -651,18 +696,22 @@ export function TeacherSessionDashboardPage() {
                     <IconButton
                       aria-label="Pie Chart"
                       icon={<Icon as={FiPieChart} />}
-                      isActive={surveyChartType === 'pie'}
-                      onClick={() => setSurveyChartType('pie')}
-                      colorScheme={surveyChartType === 'pie' ? 'purple' : 'gray'}
-                      variant={surveyChartType === 'pie' ? 'solid' : 'outline'}
+                      isActive={surveyChartType === "pie"}
+                      onClick={() => setSurveyChartType("pie")}
+                      colorScheme={
+                        surveyChartType === "pie" ? "purple" : "gray"
+                      }
+                      variant={surveyChartType === "pie" ? "solid" : "outline"}
                     />
                     <IconButton
                       aria-label="Bar Chart"
                       icon={<Icon as={FiBarChart2} />}
-                      isActive={surveyChartType === 'bar'}
-                      onClick={() => setSurveyChartType('bar')}
-                      colorScheme={surveyChartType === 'bar' ? 'purple' : 'gray'}
-                      variant={surveyChartType === 'bar' ? 'solid' : 'outline'}
+                      isActive={surveyChartType === "bar"}
+                      onClick={() => setSurveyChartType("bar")}
+                      colorScheme={
+                        surveyChartType === "bar" ? "purple" : "gray"
+                      }
+                      variant={surveyChartType === "bar" ? "solid" : "outline"}
                     />
                   </ButtonGroup>
                 </HStack>
@@ -676,14 +725,19 @@ export function TeacherSessionDashboardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3 }}
-                        style={{ width: '100%', height: '100%' }}
+                        style={{ width: "100%", height: "100%" }}
                       >
                         <ResponsiveContainer width="100%" height="100%">
-                          {surveyChartType === 'bar' ? (
+                          {surveyChartType === "bar" ? (
                             <BarChart
                               data={surveyData}
                               layout="vertical"
-                              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 40,
+                                bottom: 5,
+                              }}
                             >
                               <XAxis type="number" hide />
                               <YAxis
@@ -698,7 +752,11 @@ export function TeacherSessionDashboardPage() {
                                 {surveyData.map((_, index) => (
                                   <Cell
                                     key={`cell-${index}`}
-                                    fill={SURVEY_COLORS[index % SURVEY_COLORS.length]}
+                                    fill={
+                                      SURVEY_COLORS[
+                                        index % SURVEY_COLORS.length
+                                      ]
+                                    }
                                   />
                                 ))}
                               </Bar>
@@ -715,7 +773,14 @@ export function TeacherSessionDashboardPage() {
                                 dataKey="value"
                               >
                                 {surveyData.map((_, index) => (
-                                  <Cell key={`cell-${index}`} fill={SURVEY_COLORS[index % SURVEY_COLORS.length]} />
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={
+                                      SURVEY_COLORS[
+                                        index % SURVEY_COLORS.length
+                                      ]
+                                    }
+                                  />
                                 ))}
                               </Pie>
                               <RechartsTooltip />
@@ -741,32 +806,44 @@ export function TeacherSessionDashboardPage() {
       </Card>
 
       {/* Participants List */}
-      <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+      <Card
+        borderRadius="2xl"
+        border="2px solid"
+        borderColor="gray.100"
+        boxShadow="xl"
+      >
         <CardBody p={6}>
           <Flex
-            direction={{ base: 'column', lg: 'row' }}
+            direction={{ base: "column", lg: "row" }}
             justify="space-between"
-            align={{ base: 'flex-start', lg: 'center' }}
+            align={{ base: "flex-start", lg: "center" }}
             gap={4}
             mb={6}
           >
             <HStack spacing={3}>
               <Icon as={FiUsers} boxSize={6} color="brand.500" />
               <Heading size="md" fontWeight="700">
-                Active Participants ({filteredParticipants.length}/{totalParticipants})
+                Active Participants ({filteredParticipants.length}/
+                {totalParticipants})
               </Heading>
               {isSessionOpen && (
-                <Badge colorScheme="green" fontSize="xs" px={2} py={1} borderRadius="full">
+                <Badge
+                  colorScheme="green"
+                  fontSize="xs"
+                  px={2}
+                  py={1}
+                  borderRadius="full"
+                >
                   Live Updates
                 </Badge>
               )}
             </HStack>
 
-            <HStack spacing={3} w={{ base: 'full', lg: 'auto' }}>
+            <HStack spacing={3} w={{ base: "full", lg: "auto" }}>
               <Select
                 value={moodFilter}
                 onChange={(event) => setMoodFilter(event.target.value)}
-                maxW={{ base: 'full', lg: '220px' }}
+                maxW={{ base: "full", lg: "220px" }}
                 borderRadius="xl"
                 bg="white"
               >
@@ -780,7 +857,7 @@ export function TeacherSessionDashboardPage() {
               <Select
                 value={surveyFilter}
                 onChange={(event) => setSurveyFilter(event.target.value)}
-                maxW={{ base: 'full', lg: '240px' }}
+                maxW={{ base: "full", lg: "240px" }}
                 borderRadius="xl"
                 bg="white"
               >
@@ -803,7 +880,7 @@ export function TeacherSessionDashboardPage() {
                     borderRadius="xl"
                     border="2px solid"
                     borderColor="gray.100"
-                    _hover={{ borderColor: 'brand.200', boxShadow: 'md' }}
+                    _hover={{ borderColor: "brand.200", boxShadow: "md" }}
                     transition="all 0.2s"
                   >
                     <CardBody p={5}>
@@ -825,7 +902,9 @@ export function TeacherSessionDashboardPage() {
                                 {participant.mode}
                               </Badge>
                               <Text>•</Text>
-                              <Text textTransform="capitalize">{participant.mood}</Text>
+                              <Text textTransform="capitalize">
+                                {participant.mood}
+                              </Text>
                             </HStack>
                           </VStack>
                         </HStack>
@@ -836,7 +915,7 @@ export function TeacherSessionDashboardPage() {
                           <HStack justify="space-between">
                             <Text color="gray.600">Learning Style:</Text>
                             <Badge colorScheme="blue">
-                              {participant.learning_style ?? 'N/A'}
+                              {participant.learning_style ?? "N/A"}
                             </Badge>
                           </HStack>
 
@@ -849,14 +928,24 @@ export function TeacherSessionDashboardPage() {
                               borderColor="green.200"
                             >
                               <VStack align="stretch" spacing={1}>
-                                <Text fontSize="xs" fontWeight="700" color="green.700">
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="700"
+                                  color="green.700"
+                                >
                                   Recommended Activity:
                                 </Text>
                                 <Text fontWeight="600" color="green.900">
-                                  {participant.recommended_activity.activity.name}
+                                  {
+                                    participant.recommended_activity.activity
+                                      .name
+                                  }
                                 </Text>
                                 <Text fontSize="xs" color="green.700">
-                                  {participant.recommended_activity.activity.summary}
+                                  {
+                                    participant.recommended_activity.activity
+                                      .summary
+                                  }
                                 </Text>
                               </VStack>
                             </Box>
@@ -873,13 +962,14 @@ export function TeacherSessionDashboardPage() {
                   No students match these filters
                 </Text>
                 <Text color="gray.500" textAlign="center">
-                  Try selecting another mood or survey result to see matching students
+                  Try selecting another mood or survey result to see matching
+                  students
                 </Text>
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setMoodFilter('all')
-                    setSurveyFilter('all')
+                    setMoodFilter("all");
+                    setSurveyFilter("all");
                   }}
                   borderRadius="xl"
                 >
@@ -912,7 +1002,12 @@ export function TeacherSessionDashboardPage() {
       </Card>
 
       {/* Submissions Log */}
-      <Card borderRadius="2xl" border="2px solid" borderColor="gray.100" boxShadow="xl">
+      <Card
+        borderRadius="2xl"
+        border="2px solid"
+        borderColor="gray.100"
+        boxShadow="xl"
+      >
         <CardBody p={6}>
           <HStack spacing={3} mb={6}>
             <Icon as={FiCheckCircle} boxSize={6} color="accent.500" />
@@ -945,7 +1040,7 @@ export function TeacherSessionDashboardPage() {
                   borderColor="gray.100"
                   borderRadius="xl"
                   p={4}
-                  _hover={{ borderColor: 'brand.200', bg: 'brand.50' }}
+                  _hover={{ borderColor: "brand.200", bg: "brand.50" }}
                   transition="all 0.2s"
                 >
                   <HStack justify="space-between" align="start">
@@ -955,7 +1050,7 @@ export function TeacherSessionDashboardPage() {
                           name={
                             submission.student_full_name ||
                             submission.student_name ||
-                            'Guest'
+                            "Guest"
                           }
                           size="sm"
                           bg="accent.400"
@@ -964,13 +1059,13 @@ export function TeacherSessionDashboardPage() {
                         <Text fontWeight="700">
                           {submission.student_full_name ||
                             submission.student_name ||
-                            'Guest'}
+                            "Guest"}
                         </Text>
                       </HStack>
                       <HStack spacing={2} flexWrap="wrap" fontSize="sm">
                         <Badge colorScheme="purple">{submission.mood}</Badge>
                         <Badge colorScheme="blue">
-                          {submission.learning_style ?? 'N/A'}
+                          {submission.learning_style ?? "N/A"}
                         </Badge>
                         {submission.is_baseline_update && (
                           <Badge colorScheme="green">Baseline Updated</Badge>
@@ -996,5 +1091,5 @@ export function TeacherSessionDashboardPage() {
         </CardBody>
       </Card>
     </Stack>
-  )
+  );
 }

@@ -320,65 +320,73 @@ export function LandingPage() {
               </HStack>
             </VStack>
 
-            {/* Right Side - Hero Image - Show on tablets and up */}
+            {/* Right Side - Hero Image - Responsive for all screen sizes */}
             <Box
               position="relative"
-              display={{ base: "none", md: "block" }}
+              display="block"
               mt={{ base: 8, lg: 0 }}
             >
-              <Box position="relative" h={{ base: "400px", lg: "600px" }}>
-                {/* Large pink circle */}
+              <Box 
+                position="relative" 
+                h={{ base: "350px", sm: "400px", md: "450px", lg: "600px" }}
+                mx={{ base: "auto", lg: 0 }}
+                maxW={{ base: "350px", sm: "400px", md: "full" }}
+              >
+                {/* Large pink circle - smaller on mobile */}
                 <Box
                   position="absolute"
-                  top="10%"
-                  right="0"
-                  w={{ base: "300px", lg: "450px" }}
-                  h={{ base: "300px", lg: "450px" }}
+                  top={{ base: "5%", md: "10%" }}
+                  right={{ base: "50%", md: "0" }}
+                  transform={{ base: "translateX(50%)", md: "none" }}
+                  w={{ base: "250px", sm: "280px", md: "300px", lg: "450px" }}
+                  h={{ base: "250px", sm: "280px", md: "300px", lg: "450px" }}
                   borderRadius="full"
                   bg="rgba(244, 194, 216, 0.2)"
                   zIndex={1}
                 />
 
-                {/* Blue circle*/}
+                {/* Blue circle - hidden on small mobile, show on larger screens */}
                 <Box
                   position="absolute"
-                  bottom={{ base: "-5%", lg: "10%" }}
-                  left={{ base: "0", lg: "10%" }}
-                  w={{ base: "150px", lg: "200px" }}
-                  h={{ base: "150px", lg: "200px" }}
+                  bottom={{ base: "5%", lg: "10%" }}
+                  left={{ base: "50%", lg: "10%" }}
+                  transform={{ base: "translateX(-50%)", lg: "none" }}
+                  w={{ base: "120px", sm: "150px", lg: "200px" }}
+                  h={{ base: "120px", sm: "150px", lg: "200px" }}
                   borderRadius="full"
                   bg="rgba(184, 216, 232, 0.4)"
                   zIndex={2}
+                  display={{ base: "none", sm: "block" }}
                 />
 
-                {/* Yellow small circle */}
+                {/* Yellow small circle - positioning adjusted for mobile */}
                 <Box
                   position="absolute"
-                  top={{ base: "15%", lg: "20%" }}
-                  left={{ base: "-5%", lg: "5%" }}
-                  w={{ base: "60px", lg: "80px" }}
-                  h={{ base: "60px", lg: "80px" }}
+                  top={{ base: "10%", lg: "20%" }}
+                  left={{ base: "5%", sm: "10%", lg: "5%" }}
+                  w={{ base: "50px", sm: "60px", lg: "80px" }}
+                  h={{ base: "50px", sm: "60px", lg: "80px" }}
                   borderRadius="full"
                   bg="rgba(232, 220, 200, 0.6)"
                   zIndex={2}
                 />
 
-                {/* Hero image with sharper rendering */}
+                {/* Hero image - centered and proportional on mobile */}
                 <Box
                   position="absolute"
                   top="50%"
                   left="50%"
                   transform="translate(-50%, -50%)"
                   zIndex={2}
-                  w={{ base: "280px", md: "340px", lg: "400px", xl: "450px" }}
-                  h={{ base: "280px", md: "340px", lg: "400px", xl: "450px" }}
+                  w={{ base: "240px", sm: "280px", md: "340px", lg: "400px", xl: "450px" }}
+                  h={{ base: "240px", sm: "280px", md: "340px", lg: "400px", xl: "450px" }}
                   borderRadius="full"
                   overflow="hidden"
                   boxShadow="xl"
                 >
                   <Image
                     src="/images/kids.jpg"
-                    alt="Kids learning"
+                    alt="Kids learning together in ClassConnect"
                     w="full"
                     h="full"
                     objectFit="cover"
@@ -390,39 +398,41 @@ export function LandingPage() {
                   />
                 </Box>
 
-                {/* Optional circle yellow graphic */}
+                {/* Optional yellow accent circle - hidden on mobile */}
                 <Box
                   position="absolute"
                   top="50%"
                   left="50%"
                   transform="translate(-50%, -50%) translate(190px, -190px)"
-                  w={{ base: "50px", lg: "60px" }}
-                  h={{ base: "50px", lg: "60px" }}
+                  w={{ base: "40px", lg: "60px" }}
+                  h={{ base: "40px", lg: "60px" }}
                   bg="rgba(232, 220, 200, 0.2)"
                   borderRadius="full"
                   zIndex={3}
+                  display={{ base: "none", md: "block" }}
                 />
 
-                {/* Badge bottom right */}
+                {/* Badge - repositioned for mobile */}
                 <Box
                   position="absolute"
-                  bottom={{ base: "5%", lg: "8%" }}
-                  right={{ base: "5%", lg: "10%" }}
+                  bottom={{ base: "0%", sm: "5%", lg: "8%" }}
+                  right={{ base: "50%", sm: "5%", lg: "10%" }}
+                  transform={{ base: "translateX(50%)", sm: "none" }}
                   bg="#dcd3e9ff"
                   backdropFilter="blur(10px)"
                   borderRadius="2xl"
-                  p={{ base: 4, lg: 6 }}
+                  p={{ base: 3, sm: 4, lg: 6 }}
                   boxShadow="2xl"
                   zIndex={3}
                 >
                   <VStack spacing={1}>
                     <Icon
                       as={FiBookOpen}
-                      boxSize={{ base: 6, lg: 8 }}
+                      boxSize={{ base: 5, sm: 6, lg: 8 }}
                       color="gray.800"
                     />
                     <Heading
-                      size={{ base: "md", lg: "lg" }}
+                      size={{ base: "sm", sm: "md", lg: "lg" }}
                       color="gray.900"
                       fontWeight="900"
                     >
@@ -430,7 +440,7 @@ export function LandingPage() {
                     </Heading>
                     <Text
                       color="gray.700"
-                      fontSize={{ base: "xs", lg: "sm" }}
+                      fontSize={{ base: "2xs", sm: "xs", lg: "sm" }}
                       fontWeight="600"
                     >
                       Activities
@@ -622,7 +632,7 @@ export function LandingPage() {
               borderColor="pink.100"
               _hover={{
                 transform: "translateY(-8px)",
-                boxShadow: "2xl",
+                boxShadow:"2xl",
                 borderColor: "pink.300",
               }}
               transition="all 0.3s"

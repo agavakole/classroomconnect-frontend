@@ -13,11 +13,15 @@ import {
   Icon,
   Badge,
   Flex,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { FiClipboard, FiPlus, FiUsers, FiCheckCircle } from 'react-icons/fi'
 import { listSurveys } from '../../api/surveys'
+import { ChevronRightIcon } from '@chakra-ui/icons'
 
 export function TeacherSurveysPage() {
   const navigate = useNavigate()
@@ -31,15 +35,19 @@ export function TeacherSurveysPage() {
 
   return (
     <Stack spacing={8}>
-      {/* Page Header */}
-      <Box>
-        <Heading size="lg" fontWeight="800" color="gray.800" mb={2}>
-          Survey Library 📋
-        </Heading>
-        <Text color="gray.600" fontSize="lg">
-          Create reusable surveys that power course baselines and live sessions
+       {/* Breadcrumb Navigation */}
+      <HStack spacing={2} fontSize="sm" color="gray.600">
+        <Text 
+          cursor="pointer" 
+          _hover={{ color: "brand.600" }}
+          onClick={() => navigate('/teacher/dashboard')}
+          fontWeight="500"
+        >
+          Dashboard
         </Text>
-      </Box>
+        <Text color="gray.400">/</Text>
+        <Text color="gray.800" fontWeight="600">Survey Library</Text>
+      </HStack>
 
       {/* Stats Cards Row */}
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
