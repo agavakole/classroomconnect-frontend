@@ -196,7 +196,7 @@ export function TeacherSessionDashboardPage() {
 
   const handleOpenShareScreen = () => {
     if (!sessionMeta?.join_token) return;
-    const shareUrl = `http://localhost:5173/join?s=${sessionMeta.join_token}`;
+    const shareUrl = `${window.location.origin}/join?s=${sessionMeta.join_token}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
   };
 
