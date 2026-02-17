@@ -594,10 +594,8 @@ See backend repository for deployment instructions.
 ## 🔗 Links
 
 - Live Demo: https://classroomconnect-frontend-tovf.onrender.com
-- **Live Demo**: 
+[![ClassroomConnect Demo](https://img.youtube.com/vi/ZhG1Rrx031I/maxresdefault.jpg)]
 
-
-https://github.com/user-attachments/assets/73eb1773-f4ca-461d-8bf6-27e2db6e4118
 
 
 ---
