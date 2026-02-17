@@ -10,54 +10,57 @@ import {
   VStack,
   HStack,
   Button,
-} from '@chakra-ui/react'
-import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import QRCode from 'react-qr-code'
-import { FiCopy, FiLink } from 'react-icons/fi'
+} from "@chakra-ui/react";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import QRCode from "react-qr-code";
+import { FiCopy, FiLink } from "react-icons/fi";
 
 export function SessionSharePage() {
-  const [searchParams] = useSearchParams()
-  const toast = useToast()
+  const [searchParams] = useSearchParams();
+  const toast = useToast();
 
-  const joinToken = searchParams.get('s') ?? searchParams.get('token') ?? ''
+  const joinToken = searchParams.get("s") ?? searchParams.get("token") ?? "";
+
+  // QR code points directly to session run page
   const joinLink = useMemo(() => {
-    if (!joinToken) return ''
-    return `${window.location.origin}/session/run/${joinToken}`
-  }, [joinToken])
+    if (!joinToken) return "";
+    return `${window.location.origin}/session/run/${joinToken}`;
+  }, [joinToken]);
 
   const copyValue = async (value: string, successTitle: string) => {
-    if (!value) return
+    if (!value) return;
     try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value)
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
       } else {
-        const tempInput = document.createElement('input')
-        tempInput.value = value
-        document.body.appendChild(tempInput)
-        tempInput.select()
-        document.execCommand('copy')
-        document.body.removeChild(tempInput)
+        const tempInput = document.createElement("input");
+        tempInput.value = value;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
       }
       toast({
         title: successTitle,
-        status: 'success',
+        status: "success",
         duration: 2000,
         isClosable: true,
-      })
+      });
     } catch (error) {
       toast({
-        title: 'Copy failed',
-        description: error instanceof Error ? error.message : 'Please copy manually',
-        status: 'error',
+        title: "Copy failed",
+        description:
+          error instanceof Error ? error.message : "Please copy manually",
+        status: "error",
         duration: 3000,
         isClosable: true,
-      })
+      });
     }
-  }
+  };
 
-  const handleCopyToken = () => copyValue(joinToken, 'Join token copied')
-  const handleCopyLink = () => copyValue(joinLink, 'Join link copied')
+  const handleCopyToken = () => copyValue(joinToken, "Join token copied");
+  const handleCopyLink = () => copyValue(joinLink, "Join link copied");
 
   if (!joinToken) {
     return (
@@ -87,7 +90,7 @@ export function SessionSharePage() {
           </Text>
         </Stack>
       </Box>
-    )
+    );
   }
 
   return (
@@ -178,5 +181,5 @@ export function SessionSharePage() {
         </VStack>
       </VStack>
     </Box>
-  )
+  );
 }
