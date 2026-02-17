@@ -593,9 +593,12 @@ See backend repository for deployment instructions.
 
 ## 🔗 Links
 
-- **Frontend Repository**: https://github.com/agavakole/classroomconnect-frontend
-- **Backend Repository**: https://github.com/Michael-Alz/cs5500-final-backend
-- **Live Demo**: _[Coming Soon]_
+- Live Demo: https://classroomconnect-frontend-tovf.onrender.com
+- **Live Demo**: 
+
+
+https://github.com/user-attachments/assets/73eb1773-f4ca-461d-8bf6-27e2db6e4118
+
 
 ---
 
