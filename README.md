@@ -8,6 +8,14 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)](https://www.docker.com)
 
+
+>## 🔗 Links
+
+- Live Demo: https://classroomconnect-frontend-tovf.onrender.com
+[![ClassroomConnect Demo](https://img.youtube.com/vi/ZhG1Rrx031I/maxresdefault.jpg)](https://www.youtube.com/watch?v=ZhG1Rrx031I)
+
+
+
 > **Note**: This project was developed as part of a team-based course at Northeastern University. 
 > **My role**: Frontend Lead - I was responsible for architecting and implementing the complete 
 > React/TypeScript frontend (15,000+ lines, 80+ components). The backend API was developed by my teammate.
@@ -588,13 +596,6 @@ vercel env add VITE_API_BASE_URL production
 
 ### Backend Deployment
 See backend repository for deployment instructions.
-
----
-
-## 🔗 Links
-
-- Live Demo: https://classroomconnect-frontend-tovf.onrender.com
-[![ClassroomConnect Demo](https://img.youtube.com/vi/ZhG1Rrx031I/maxresdefault.jpg)](https://www.youtube.com/watch?v=ZhG1Rrx031I)
 
 
 
