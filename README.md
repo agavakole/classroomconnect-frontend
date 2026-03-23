@@ -13,8 +13,8 @@ Youtube demo
 > [![ClassroomConnect Demo](https://img.youtube.com/vi/ZhG1Rrx031I/maxresdefault.jpg)](https://www.youtube.com/watch?v=ZhG1Rrx031I)
 
 > **Note**: This project was developed as part of a team-based course at Northeastern University.
-> **My role**: Frontend Lead — responsible for architecting and implementing the complete
-> React/TypeScript frontend (15,000+ lines, 80+ components). Backend API developed by teammate Michael.
+> **My role**: Frontend Lead — responsible for architecting and implementing the complete React/TypeScript frontend
+> Backend API developed by teammate Michael.
 
 ---
 
