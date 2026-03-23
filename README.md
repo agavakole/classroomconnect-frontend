@@ -186,11 +186,11 @@ As Frontend Lead, I architected and built the complete React/TypeScript frontend
 - Axios client with interceptors and centralized error handling
 - Custom Chakra UI theme with responsive design
 
-**Teacher Portal** — 15+ pages including course management, session monitoring, activity builder, survey designer, QR code generator, and analytics dashboard
+**Teacher Portal** — 10+ pages including course management, session monitoring, activity builder, survey designer, QR code generator, and analytics dashboard
 
 **Student Interface** — 8+ pages including session join, mood selector, learning style assessment, and activity recommendations
 
-**80+ Reusable Components** — layout, forms, data display, navigation, and feedback components
+**Reusable Components** — layout, forms, data display, navigation, and feedback components
 
 ---
 
